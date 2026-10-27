@@ -217,7 +217,8 @@ public class UnitView : MonoBehaviour
             float lay = Mathf.Clamp01((st.death.Value - 0.5f) / 0.5f);
             float minY = float.MaxValue;
             foreach (var j in S.joints.Values) minY = Mathf.Min(minY, j.t.position.y);
-            float lift = transform.position.y + 0.1f * lay - minY;
+            // 누르지 않은 몸은 관절 아래로 두께가 남아 땅에 잠겨 보임 → 관절 선을 조금 더 높여 몸 아랫면이 땅에 닿게
+            float lift = transform.position.y + 0.2f * lay - minY;
             if (lift > 0 && lift < 1.2f) rig.localPosition = rigBase + Vector3.up * lift;
         }
         // 색: 지배당함 · 매복(반투명)

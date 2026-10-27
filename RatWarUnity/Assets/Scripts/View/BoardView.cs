@@ -739,7 +739,8 @@ public class BoardView : MonoBehaviour
             u.st.death = k;
             if (!cut && k > 0.12f && parts.Length > 0) { cut = true; foreach (var p in parts) Detach(u, p, gore == "burst" ? 1.3f : 1); }
             // 몸 밑으로 번지는 웅덩이 (잘렸으면 더 크게). 땅에 닿을 무렵부터 흘러나와 몇 초에 걸쳐 고임
-            if (!pooled && k > 0.6f && u.view) { pooled = true; AddPool(u.view.transform.position + new Vector3(u.view.curFlip ? 0.4f : -0.4f, 0, 0.05f), parts.Length > 0 ? 1.5f : 1.1f, parts.Length > 0 ? 4.5f : 5.5f); }
+            // 몸보다 큰 웅덩이가 앞쪽까지 감싸면 몸이 피에 잠긴 듯 보임 → 조금 작게, 몸 뒤쪽(먼 쪽)으로 비켜 깔아 몸 밑에서 흘러나오게
+            if (!pooled && k > 0.6f && u.view) { pooled = true; AddPool(u.view.transform.position + new Vector3(u.view.curFlip ? 0.35f : -0.35f, 0, 0.25f), parts.Length > 0 ? 1.2f : 0.9f, parts.Length > 0 ? 4.5f : 5.5f); }
         });
         u.st.death = 1;
     }
