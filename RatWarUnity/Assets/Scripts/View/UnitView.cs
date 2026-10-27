@@ -21,7 +21,7 @@ public class UnitView : MonoBehaviour
     public Unit u;
     RigData R, B; // R = 그릴 리그(장비 버전 포함), B = 머리 · 웅크림을 가진 병종 기본 리그
     readonly Dictionary<string, ViewSet> sets = new Dictionary<string, ViewSet>();
-    Transform rig;
+    Transform rig; Vector3 rigBase;
     UnityEngine.Rendering.SortingGroup sg;
     float k;
     public bool aiming;
@@ -35,7 +35,7 @@ public class UnitView : MonoBehaviour
         R = ArtLib.RigFor(rat, u.cls, rat ? u.r.gear : 0, u.abil.Contains("flame"));
         B = ArtLib.BaseRig(rat, u.cls);
         k = UNIT_H * (u.def.aura > 0 ? 1.05f : 1) / 470f;
-        rig = transform.Find("Rig");
+        rig = transform.Find("Rig"); rigBase = rig.localPosition;
         foreach (var vn in new[] { "front", "side", "back" }) if (R.views.ContainsKey(vn)) sets[vn] = Build(vn);
         Update();
     }
@@ -150,9 +150,11 @@ public class UnitView : MonoBehaviour
         st.crouch += (wantCrouch - st.crouch) * Mathf.Min(1, dt * 8);
 
         transform.position = BoardView.Foot(u.px, u.pz);
-        // 그리는 순서 = 지금 서 있는 줄 깊이 (같은 줄 소품보다 위). 쓰러진 몸은 소품과 같은 높이로
+        // 그리는 순서 = 지금 서 있는 줄 깊이. 선 병사는 같은 줄 소품보다 위,
+        // 쓰러진 몸은 같은 줄 소품 밑 (옆으로 길게 누워 옆 칸 모래주머니 위에 얹혀 보이던 것 막음)
         if (!sg) sg = GetComponent<UnityEngine.Rendering.SortingGroup>();
-        sg.sortingOrder = BoardView.DepthOrder(transform.position.z) + (u.alive ? 3 : 1);
+        sg.sortingOrder = BoardView.DepthOrder(transform.position.z) + (u.alive && st.death == null ? 3 + (Mathf.RoundToInt(u.px) & 1) : -1);
+        // ↑ 같은 줄 옆 칸 병사끼리 순서가 같으면 프레임마다 앞뒤가 바뀌어 깜빡임 → 칸 홀짝으로 갈라 고정
         var (vn, flip) = ViewOf();
         if (!sets.ContainsKey(vn)) vn = sets.Keys.First();
         curView = vn; curFlip = flip;
@@ -197,6 +199,16 @@ public class UnitView : MonoBehaviour
                 var sc = P.sc.TryGetValue(p.name, out var sv) ? sv : Vector2.one;
                 j.t.localScale = new Vector3(sc.x, sc.y, 1);
             }
+        }
+        // 쓰러진 몸: 발 축으로 눕히면 몸 절반이 땅 밑으로 내려감 → 바닥을 안 가리는 판(ZTest Always)이라 앞줄 땅 위에 떠 보였음.
+        // 가장 낮은 그림 끝이 땅에 닿게 들어 올림 (그림 둘레 투명 여백 몫으로 조금 덜)
+        rig.localPosition = rigBase;
+        if (st.death != null)
+        {
+            float minY = float.MaxValue;
+            foreach (var sr in all) if (sr && sr.enabled && sr.sprite && sr.gameObject.activeInHierarchy) minY = Mathf.Min(minY, sr.bounds.min.y);
+            float lift = transform.position.y - minY;
+            if (lift > 0 && lift < 1.2f) rig.localPosition = rigBase + Vector3.up * lift * 0.85f;
         }
         // 색: 지배당함 · 매복(반투명)
         var col = u.tint; if (u.hidden) col.a = 0.55f;

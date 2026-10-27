@@ -29,7 +29,7 @@ public class CameraRig : MonoBehaviour
     }
 
     public void Focus(Vector3 p, bool snap = false) { focusT = new Vector3(p.x, 0, p.z); following = true; if (snap) focus = focusT; }
-    public void Shake(float s) => shake = Mathf.Max(shake, s);
+    public void Shake(float s) => shake = Mathf.Max(shake, Mathf.Min(s, 16));
     public void Kick(Vector2 k) => kick += k;
     public void Cine(bool on) => cineT = on ? 0.62f : 1;
 
@@ -84,7 +84,8 @@ public class CameraRig : MonoBehaviour
         focus = dragging && rightDragged ? focusT : following ? Vector3.Lerp(focus, focusT, Mathf.Min(1, dt * 6)) : focus;
         dist = Mathf.Lerp(dist, distT, Mathf.Min(1, dt * 8));
         cineMul = Mathf.Lerp(cineMul, cineT, Mathf.Min(1, dt * 8));
-        shake = Mathf.Max(0, shake - dt * 3);
+        // 흔들림은 짧게: 지수 감쇠(약 0.35초에 1/10). 예전 선형 감쇠는 폭발 한 번에 7초씩 흔들렸음
+        shake *= Mathf.Exp(-dt * 6.5f); if (shake < 0.05f) shake = 0;
         kick *= Mathf.Pow(0.0005f, dt);
         Apply();
     }
@@ -95,7 +96,7 @@ public class CameraRig : MonoBehaviour
         float d = dist * cineMul;
         pitch = Mathf.Lerp(pitchNear, pitchFar, Mathf.InverseLerp(distMin, distMax, d));
         var rot = Quaternion.Euler(pitch, 0, 0);
-        var sh = new Vector3((Random.value - 0.5f) * shake + kick.x, (Random.value - 0.5f) * shake + kick.y, 0) * 0.04f;
+        var sh = new Vector3((Random.value - 0.5f) * shake + kick.x * 0.5f, (Random.value - 0.5f) * shake + kick.y * 0.5f, 0) * 0.015f;
         transform.position = focus + rot * new Vector3(0, 0, -d) + sh;
         transform.rotation = rot;
     }
