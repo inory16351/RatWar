@@ -247,6 +247,14 @@
   ],
   "blood": [
    "fx/blood0.png"
+  ],
+  "drop": [
+   "fx/drop0.png",
+   "fx/drop1.png",
+   "fx/drop2.png",
+   "fx/drop3.png",
+   "fx/drop4.png",
+   "fx/drop5.png"
   ]
  },
  "icons": {

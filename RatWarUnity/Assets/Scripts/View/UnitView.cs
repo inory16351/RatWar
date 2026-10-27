@@ -16,6 +16,7 @@ public class UnitView : MonoBehaviour
         public Dictionary<string, Joint> joints = new Dictionary<string, Joint>();
         public GameObject crouch; public Transform crouchHead; public RigComposite crouchC;
         public GameObject[] throwG; public Transform[] throwHead;
+        public float legK = 1;
     }
 
     public Unit u;
@@ -65,6 +66,13 @@ public class UnitView : MonoBehaviour
     {
         var V = R.views[vn];
         var S = new ViewSet { V = V };
+        // 다리 길이 (엉덩이 축 → 발끝) 를 쥐 기준(옆 180 · 앞 183px)에 견줌
+        if (V.parts.TryGetValue("thighN", out var th) && V.parts.TryGetValue("shinN", out var sh)) S.legK = (sh.y + sh.h - th.pivot.y) / 180f;
+        else if (V.parts.TryGetValue("legL", out var lg)) S.legK = (lg.y + lg.h - lg.pivot.y) / 183f;
+        S.legK = Mathf.Clamp(S.legK, 0.4f, 1.2f);
+        // 긴 외투 고양이 옆모습: 가까운 허벅지가 외투 위에 그려져 걸을 때 바지가 외투를 뚫고 나왔음 → 외투 밑으로
+        var order = new List<string>(V.order);
+        if (R.kind == "cat" && order.Contains("thighN") && order.Contains("torso")) { order.Remove("thighN"); order.Insert(order.IndexOf("torso"), "thighN"); }
         S.root = Tpl.Spawn("RigJoint", rig); S.root.name = vn;
         S.pose = Tpl.Spawn("RigJoint", S.root.transform).transform; S.pose.name = "Pose";
         S.ground = Tpl.Spawn("RigJoint", S.pose).transform; S.ground.name = "Ground";
@@ -80,7 +88,7 @@ public class UnitView : MonoBehaviour
             t.localPosition = new Vector3(p.pivot.x - pp.x, p.pivot.y - pp.y, 0);
             j = new Joint { t = t, p = p };
             var im = n == "head" ? (HeadSprite(R, vn) ?? p.img) : p.img;
-            j.sr = Img(t, im, p.x - p.pivot.x, p.y - p.pivot.y, p.w, p.h, V.order.IndexOf(n));
+            j.sr = Img(t, im, p.x - p.pivot.x, p.y - p.pivot.y, p.w, p.h, order.IndexOf(n));
             if (u.r != null && u.r.prosthetic.Count > 0)
             {
                 if (u.r.prosthetic.Contains("arm") && n == "arm") j.sr.color = new Color(0.68f, 0.7f, 0.74f);
@@ -187,7 +195,7 @@ public class UnitView : MonoBehaviour
         }
         else
         {
-            var P = RigPose.Get(vn, st, t);
+            var P = RigPose.Get(vn, st, t, S.legK);
             S.pose.localPosition = new Vector3(P.dx, P.dy, 0);
             S.pose.localRotation = Quaternion.Euler(0, 0, P.rot);
             foreach (var j in S.joints.Values)
@@ -201,14 +209,17 @@ public class UnitView : MonoBehaviour
             }
         }
         // 쓰러진 몸: 발 축으로 눕히면 몸 절반이 땅 밑으로 내려감 → 바닥을 안 가리는 판(ZTest Always)이라 앞줄 땅 위에 떠 보였음.
-        // 가장 낮은 그림 끝이 땅에 닿게 들어 올림 (그림 둘레 투명 여백 몫으로 조금 덜)
+        // 관절 축(몸 한가운데 선)이 땅 바로 위에 오게 들어 올림. 그림 테두리(투명 여백 포함)로 재면 너무 떠서 관절로 잼
+        // 누운 몸은 세운 판이라 몸 두께(고양이 ≈ 0.7칸)가 그대로 위로 서서 벽처럼 떠 보임 → 세로로 눌러 바닥에 깔린 듯이
         rig.localPosition = rigBase;
         if (st.death != null)
         {
+            float lay = Mathf.Clamp01((st.death.Value - 0.5f) / 0.5f);
+            rig.localScale = new Vector3(rig.localScale.x, rig.localScale.y * (1 - 0.45f * lay), 1);
             float minY = float.MaxValue;
-            foreach (var sr in all) if (sr && sr.enabled && sr.sprite && sr.gameObject.activeInHierarchy) minY = Mathf.Min(minY, sr.bounds.min.y);
-            float lift = transform.position.y - minY;
-            if (lift > 0 && lift < 1.2f) rig.localPosition = rigBase + Vector3.up * lift * 0.85f;
+            foreach (var j in S.joints.Values) minY = Mathf.Min(minY, j.t.position.y);
+            float lift = transform.position.y + 0.1f * lay - minY;
+            if (lift > 0 && lift < 1.2f) rig.localPosition = rigBase + Vector3.up * lift;
         }
         // 색: 지배당함 · 매복(반투명)
         var col = u.tint; if (u.hidden) col.a = 0.55f;

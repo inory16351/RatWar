@@ -13,7 +13,8 @@ public class Pose
 
 public static class RigPose
 {
-    public static Pose Get(string view, AnimState st, float t)
+    // legK = 이 리그 다리 길이 / 쥐 다리 길이. 웅크림 내려앉기 값이 쥐 기준이라 다리 짧은 고양이는 땅에 박혔음
+    public static Pose Get(string view, AnimState st, float t, float legK = 1)
     {
         var P = new Pose(); var a = P.a; var sc = P.sc;
         bool side = view == "side";
@@ -55,13 +56,13 @@ public static class RigPose
                 a["head"] += -10 * k;
                 a["thighN"] = A("thighN") * (1 - k) - 78 * k; a["shinN"] = A("shinN") * (1 - k) + 82 * k;
                 a["thighF"] = A("thighF") * (1 - k) - 8 * k; a["shinF"] = A("shinF") * (1 - k) + 86 * k;
-                P.dy += 132 * k;
+                P.dy += 132 * k * legK;
             }
             else
             {
                 sc["legL"] = new Vector2(1, 1 - 0.42f * k); sc["legR"] = new Vector2(1, 1 - 0.42f * k);
                 a["legL"] = -6 * k; a["legR"] = 6 * k;
-                P.dy += 120 * k;
+                P.dy += 120 * k * legK;
                 a["head"] += 3 * k;
             }
         }
