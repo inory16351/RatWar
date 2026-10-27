@@ -255,6 +255,48 @@
    "fx/drop3.png",
    "fx/drop4.png",
    "fx/drop5.png"
+  ],
+  "pool": [
+   "fx/pool0.png",
+   "fx/pool1.png",
+   "fx/pool2.png",
+   "fx/pool3.png"
+  ],
+  "splat": [
+   "fx/splat0.png",
+   "fx/splat1.png",
+   "fx/splat2.png",
+   "fx/splat3.png"
+  ],
+  "burst": [
+   "fx/spray0.png"
+  ],
+  "jet": [
+   "fx/spray1.png"
+  ],
+  "drip": [
+   "fx/drip0.png",
+   "fx/drip1.png",
+   "fx/drip2.png",
+   "fx/drip3.png"
+  ],
+  "mist": [
+   "fx/mist.png"
+  ],
+  "stump_neck": [
+   "fx/stump_neck.png"
+  ],
+  "stump_arm": [
+   "fx/stump_arm.png"
+  ],
+  "stump_leg": [
+   "fx/stump_leg.png"
+  ],
+  "gib": [
+   "fx/gib0.png",
+   "fx/gib1.png",
+   "fx/gib2.png",
+   "fx/gib3.png"
   ]
  },
  "icons": {

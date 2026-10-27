@@ -241,6 +241,21 @@ public class UnitView : MonoBehaviour
         return (j.sr.sprite, j.sr.transform.position, j.sr.transform.lossyScale, j.sr.transform.eulerAngles.z);
     }
 
+    // 잘린 자리 단면: 떨어져 나간 부위의 관절(목 · 어깨 · 무릎)에 붙임 → 몸과 같이 넘어짐. 크기는 리그 px
+    public void AddStump(string part, Sprite s)
+    {
+        if (!s) return;
+        float w = part == "head" ? 46 : part == "arm" ? 32 : 30, h = w * s.bounds.size.y / s.bounds.size.x;
+        foreach (var S in sets.Values)
+        {
+            if (!S.joints.TryGetValue(part, out var j)) continue;
+            var sr = Img(j.t, s, -w / 2, -h / 2, w, h, j.sr.sortingOrder);
+            sr.color = new Color(0.78f, 0.68f, 0.68f); // 반짝이는 단면 그림이 너무 밝아 공처럼 보임 → 살짝 어둡게
+            if (part == "arm") sr.transform.localRotation = Quaternion.Euler(0, 0, 90); // 팔은 옆으로 뻗어 단면이 세로
+        }
+    }
+    public Vector3 CutPoint(string part) => sets.TryGetValue(curView, out var S) && S.joints.TryGetValue(part, out var j) ? j.t.position : Chest;
+
     // 머리 · 가슴 · 총구 자리 (효과 · 팝업용)
     public Vector3 Chest => transform.position + Vector3.up * UNIT_H * 0.55f * BodyK;
     public Vector3 Top => transform.position + Vector3.up * (UNIT_H + 0.15f) * Mathf.Max(0.35f, BodyK);
