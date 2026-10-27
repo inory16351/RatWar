@@ -15,6 +15,9 @@ Shader "RatWar/SpriteFog"
         _NoFog ("Ignore Fog (sky)", Range(0,1)) = 0
         _FowAmt ("Fog of War Amount", Range(0,1)) = 1
         _FowDark ("Fog of War Darken", Range(0,1)) = 0.08
+        // 피 웅덩이 번짐: 0 = 안 보임 → 1.3 = 다 보임. 가운데(_SpreadC.xy, uv)에서 바깥으로 연무 무늬 따라 울퉁불퉁 퍼짐
+        _Spread ("Pool Spread", Float) = 9
+        _SpreadC ("Spread Center/Half (uv)", Vector) = (0.5, 0.5, 0.5, 0.5)
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
         [Toggle] _ZWrite ("ZWrite", Float) = 0
         // 전장 판때기(병사 · 소품 · 효과) = Always: 웹처럼 바닥 위에 늘 그려 쓰러진 몸 · 웅크림이 땅에 박히지 않음 (앞뒤는 정렬 축이 정함)
@@ -48,6 +51,8 @@ Shader "RatWar/SpriteFog"
                 float _NoFog;
                 float _FowAmt;
                 float _FowDark;
+                float _Spread;
+                float4 _SpreadC;
             CBUFFER_END
             // 전역 (BoardView 가 넣음)
             TEXTURE2D(_FowTex); SAMPLER(sampler_FowTex);
@@ -84,7 +89,15 @@ Shader "RatWar/SpriteFog"
                 half g = dot(c.rgb, half3(0.299, 0.587, 0.114));
                 c.rgb = lerp(c.rgb, g.xxx, _Gray);
                 c *= i.color;
-                half k = _FowOn * _FowAmt * Unseen(i.wpos);
+                if (_Spread < 2)
+                {
+                    // 웅덩이가 흘러 번지는 것처럼: 가운데에서 먼 곳일수록 늦게, 가장자리는 연무 무늬로 흔들림 (그림을 키우는 게 아니라 드러냄)
+                    float d = length((i.uv - _SpreadC.xy) / _SpreadC.zw);
+                    half n = SAMPLE_TEXTURE2D(_MistTex, sampler_MistTex, i.wpos.xz * 0.9).a;
+                    float edge = d * 0.85 + (n - 0.5) * 0.5;
+                    c.a *= smoothstep(edge, edge + 0.05, _Spread);
+                }
+                half k =_FowOn * _FowAmt * Unseen(i.wpos);
                 if (k > 0.001)
                 {
                     // ① 땅 어둡게  ② 채도 50%

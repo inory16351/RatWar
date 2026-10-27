@@ -497,8 +497,8 @@ public class BoardView : MonoBehaviour
     }
     // 유혈 그림(art_requests/gore 시트)은 이미 붉은색이라 틴트는 명암만: 밝게 · 짙게 두 톤
     static readonly Color GORE_A = Color.white, GORE_B = new Color(0.72f, 0.66f, 0.66f), GORE_POOL = new Color(0.78f, 0.72f, 0.72f);
-    // 커지는 피 웅덩이 (웹 stains pool: grow)
-    class Pool { public SpriteRenderer sr; public float size, max; }
+    // 번지는 피 웅덩이 (웹 stains pool: grow). 그림을 키우지 않고 셰이더 _Spread 로 가운데부터 드러냄
+    class Pool { public SpriteRenderer sr; public float age, dur, max; }
     readonly List<Pool> pools = new List<Pool>();
     readonly List<Fx> fx = new List<Fx>();
 
@@ -551,7 +551,7 @@ public class BoardView : MonoBehaviour
                     {
                         f.rest = true;
                         f.sr.sortingOrder = DepthOrder(tr.position.z) - 2; // 같은 줄 시체 · 소품 밑
-                        AddPool(tr.position, 0.55f);
+                        AddPool(tr.position, 0.55f, 2.2f);
                     }
                 }
                 continue;
@@ -565,7 +565,7 @@ public class BoardView : MonoBehaviour
                 if (f.sr.transform.position.y <= f.groundY)
                 {
                     // 땅에 닿음: 피 · 조각 → 바닥 자국
-                    if (f.stain) Stain(f.sr.transform.position, f.stainFrames ?? f.frames, f.size0 * 2.6f, f.col);
+                    if (f.stain) Stain(f.sr.transform.position, f.stainFrames ?? f.frames, f.size0 * 1.8f, f.col);
                     Destroy(f.sr.gameObject); fx.RemoveAt(i); continue;
                 }
             }
@@ -578,10 +578,22 @@ public class BoardView : MonoBehaviour
         {
             var p = pools[i];
             if (!p.sr) { pools.RemoveAt(i); continue; }
-            p.size = Mathf.Min(p.max, p.size + dt * 0.35f);
-            p.sr.transform.localScale = PoolScale(p.sr.sprite, p.size);
-            if (p.size >= p.max) pools.RemoveAt(i);
+            p.age += dt;
+            // 처음엔 빨리, 갈수록 느리게 (흘러나온 피가 고이는 느낌)
+            float k = Mathf.Clamp01(p.age / p.dur), e = 1 - (1 - k) * (1 - k) * (1 - k);
+            SetSpread(p.sr, e * 1.3f);
+            p.sr.transform.localScale = PoolScale(p.sr.sprite, p.max * (0.8f + 0.2f * e));
+            if (k >= 1) { SetSpread(p.sr, 9); pools.RemoveAt(i); }
         }
+    }
+    void SetSpread(SpriteRenderer sr, float v)
+    {
+        sr.GetPropertyBlock(mpb);
+        mpb.SetFloat("_Spread", v);
+        // 가운데 · 반폭 (uv): 낱장 그림이면 (0.5, 0.5, 0.5, 0.5)
+        var s = sr.sprite; var t = s.texture; var r = s.textureRect;
+        mpb.SetVector("_SpreadC", new Vector4(r.center.x / t.width, r.center.y / t.height, r.width / t.width * 0.5f, r.height / t.height * 0.5f));
+        sr.SetPropertyBlock(mpb);
     }
 
     // 바닥에 눕힌 그림 크기: 낮은 시점이면 바닥 그림이 납작하게 눌려 거의 안 보임 → 깊이 쪽(세로)을 늘려 웹처럼 2:1 타원으로 보이게
@@ -591,12 +603,14 @@ public class BoardView : MonoBehaviour
         return new Vector3(size / m, size / m * 1.6f, 1);
     }
     // 커지는 피 웅덩이 (웹 drawStain pool). 웅덩이 그림이 두 톤이라 한 장. 크면 넓은 웅덩이, 작으면 작은 것
-    void AddPool(Vector3 p, float max)
+    void AddPool(Vector3 p, float max, float dur = 4)
     {
         var all = FX("pool");
         var pick = all.Length >= 3 ? new[] { max > 1.2f ? all[2] : max > 0.8f ? all[1] : all[0] } : all;
-        var a = Stain(p, pick, 0.1f, GORE_POOL, 0.95f);
-        if (a) pools.Add(new Pool { sr = a, size = 0.1f, max = max });
+        var a = Stain(p, pick, max * 0.8f, GORE_POOL, 0.97f);
+        if (!a) return;
+        SetSpread(a, 0);
+        pools.Add(new Pool { sr = a, dur = dur, max = max });
     }
 
     // 바닥 자국 (핏자국 · 그을음): 바닥에 눕힌 납작 그림
@@ -651,13 +665,13 @@ public class BoardView : MonoBehaviour
         if (!u.view) return;
         var c = u.view.Chest; float gy = u.view.transform.position.y;
         // 웹: 검붉은 두 톤 방울이 사방으로 튀고, 떨어진 자리마다 바닥 방울 자국 + 맞은 자리 튐 그림
-        for (int i = 0; i < n * 2; i++) Drop(c + Vector3.up * (Random.value - 0.5f) * 0.3f, new Vector3((Random.value - 0.5f) * 3.4f, 1.0f + Random.value * 2.8f, (Random.value - 0.5f) * 1.4f), gy);
+        for (int i = 0; i < n; i++) Drop(c + Vector3.up * (Random.value - 0.5f) * 0.3f, new Vector3((Random.value - 0.5f) * 3.4f, 1.0f + Random.value * 2.8f, (Random.value - 0.5f) * 1.4f), gy);
         // 맞은 순간: 튐(옆으로 터짐) + 옅은 피 안개
         var sp = Spawn(FX("burst"), c, 0.42f + n * 0.025f, 0.32f, GORE_A);
         if (sp != null) { sp.size1 = sp.size0 * 1.35f; sp.sr.flipX = Random.value < 0.5f; sp.sr.transform.rotation = Quaternion.Euler(0, 0, Random.Range(-25f, 25f)); }
         // 옅은 피 안개는 짧게만 (반투명 붉은색이 파란 이동 칸 위에서 오래 남으면 보라색으로 보였음)
         if (u.alive) { var mi = Spawn(FX("mist"), c, 0.35f + n * 0.015f, 0.3f, GORE_A); if (mi != null) mi.size1 = mi.size0 * 1.5f; }
-        Stain(new Vector3(c.x + (Random.value - 0.5f) * 0.4f, gy, c.z + (Random.value - 0.5f) * 0.3f), FX("splat"), 0.3f + n * 0.03f, GORE_B);
+        // 바닥에 큰 튐 자국은 남기지 않음: 자국이 땅을 다 덮으면 번지는 웅덩이가 안 보임 (웹도 방울 자국만)
     }
     // 핏방울 하나: 눈물방울 그림이 날아가는 쪽으로 돌고, 땅에 닿으면 작은 자국
     void Drop(Vector3 p, Vector3 v, float gy, float size = 0)
@@ -666,7 +680,7 @@ public class BoardView : MonoBehaviour
         var b = Spawn(new[] { drips[Random.Range(0, drips.Length)] }, p, size > 0 ? size : 0.05f + Random.value * 0.07f, 3, Random.value < 0.6f ? GORE_B : GORE_A);
         if (b == null) return;
         b.vel = v; b.grav = 12; b.groundY = gy + (Random.value - 0.3f) * 0.12f + 0.01f; b.stain = true; b.fadeOut = false; b.orient = true;
-        b.stainFrames = Random.value < 0.7f ? FX("drop") : FX("splat");
+        b.stainFrames = FX("drop");
     }
 
     public void Explosion(int tx, int tz, float radius)
@@ -719,15 +733,15 @@ public class BoardView : MonoBehaviour
             "decap" => new[] { "head" }, "sever" => new[] { "arm" }, "burst" => new[] { "head", "arm", "shinN" },
             "arm" => new[] { "arm" }, "leg" => new[] { "shinN" }, _ => new string[0],
         };
-        bool cut = false;
+        bool cut = false, pooled = false;
         await View.Tween(1000, k =>
         {
             u.st.death = k;
             if (!cut && k > 0.12f && parts.Length > 0) { cut = true; foreach (var p in parts) Detach(u, p, gore == "burst" ? 1.3f : 1); }
+            // 몸 밑으로 번지는 웅덩이 (잘렸으면 더 크게). 땅에 닿을 무렵부터 흘러나와 몇 초에 걸쳐 고임
+            if (!pooled && k > 0.6f && u.view) { pooled = true; AddPool(u.view.transform.position + new Vector3(u.view.curFlip ? 0.4f : -0.4f, 0, 0.05f), parts.Length > 0 ? 1.5f : 1.1f, parts.Length > 0 ? 4.5f : 5.5f); }
         });
         u.st.death = 1;
-        // 몸 밑으로 번지는 웅덩이 (잘렸으면 더 크게)
-        if (u.view) AddPool(u.view.transform.position + new Vector3(u.view.curFlip ? 0.4f : -0.4f, 0, 0.05f), parts.Length > 0 ? 1.5f : 1.1f);
     }
 
     void Detach(Unit u, string part, float power)
@@ -746,13 +760,10 @@ public class BoardView : MonoBehaviour
         f.size0 = f.size1 = 0; // 크기는 그대로
         fx.Add(f);
         // 잘린 자리에서 피가 뿜어짐
-        for (int i = 0; i < 26; i++) Drop(pos, new Vector3(dir * Random.value * 2.6f, 1.6f + Random.value * 3f, (Random.value - 0.5f) * 1.2f), u.view.transform.position.y, 0.06f + Random.value * 0.09f);
-        // 남은 몸의 잘린 자리에 단면 (목 · 어깨 · 무릎 관절에 붙어 몸과 같이 움직임)
-        var stump = FX(part == "head" ? "stump_neck" : part == "arm" ? "stump_arm" : "stump_leg");
-        if (stump.Length > 0) u.view.AddStump(part, stump[0]);
+        for (int i = 0; i < 16; i++) Drop(pos, new Vector3(dir * Random.value * 2.6f, 1.6f + Random.value * 3f, (Random.value - 0.5f) * 1.2f), u.view.transform.position.y, 0.06f + Random.value * 0.09f);
+        // 단면 그림(stump_*)은 빨간 공처럼 보여 뺌 — 웹처럼 부위만 떨어져 나감
         _ = Spurt(u, part, dir);
         Blood(u, 10);
-        Chunks(pos, 7, new[] { GORE_A, GORE_B }, 0.8f, FX("gib"));
     }
 
     // 잘린 자리(목 · 어깨 · 무릎)에서 잠깐 동안 피가 뿜어져 나옴: 줄기 그림 + 방울
@@ -763,7 +774,7 @@ public class BoardView : MonoBehaviour
         {
             var c = u.view.CutPoint(part);
             float fade = (end - Time.time) / 1.6f;
-            for (int i = 0; i < 2; i++) Drop(c, new Vector3(dir * (0.5f + Random.value * 1.4f) * fade, (0.8f + Random.value * 1.6f) * fade, (Random.value - 0.5f) * 0.5f), u.view.transform.position.y);
+            if (Random.value < 0.4f) Drop(c, new Vector3(dir * (0.5f + Random.value * 1.4f) * fade, (0.8f + Random.value * 1.6f) * fade, (Random.value - 0.5f) * 0.5f), u.view.transform.position.y);
             if (Time.time >= nextJet)
             {
                 // 박동마다 한 줄기 (점점 약해짐)
