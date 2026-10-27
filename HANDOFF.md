@@ -40,7 +40,7 @@
 - 전장 판때기는 바닥 깊이 검사를 끔(`ZTest Always`, 병사가 땅에 박히던 것 때문) → **앞뒤는 `sortingOrder` 로만**
 - `BoardView.DepthOrder(z) = 3000 − round(z·20)`: 맵 줄 깊이 순(웹 painter's order). 카메라 거리 정렬 금지(넓은 트럭이 앞줄 소품을 덮었음)
 - 같은 줄 안: 시체 −1 · 소품 0 · 병사 +3/+4(칸 홀짝) · 날아가는 부위 +4 · 효과 +6. 멈춘 부위 −2. 바닥 자국 −500
-- 시체: 세운 판이라 누우면 몸 두께가 벽처럼 섬 → 세로 45% 누르고 관절 기준으로 땅 위에 맞춤 (`UnitView.Update`)
+- 시체: 웹처럼 누르지 않음(세로 45% 누름은 납작해 보여 사용자 요청으로 뺌). 관절 기준으로 땅 위에 맞춤만 (`UnitView.Update`)
 
 ## 그림 처리
 - 파이썬: `C:\Project\underworld-proto\.venv\Scripts\python.exe -I` (Pillow · numpy · scipy)

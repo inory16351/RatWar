@@ -210,12 +210,11 @@ public class UnitView : MonoBehaviour
         }
         // 쓰러진 몸: 발 축으로 눕히면 몸 절반이 땅 밑으로 내려감 → 바닥을 안 가리는 판(ZTest Always)이라 앞줄 땅 위에 떠 보였음.
         // 관절 축(몸 한가운데 선)이 땅 바로 위에 오게 들어 올림. 그림 테두리(투명 여백 포함)로 재면 너무 떠서 관절로 잼
-        // 누운 몸은 세운 판이라 몸 두께(고양이 ≈ 0.7칸)가 그대로 위로 서서 벽처럼 떠 보임 → 세로로 눌러 바닥에 깔린 듯이
+        // 세로로 누르면 납작한 종이처럼 보여 뺌 (사용자: 웹처럼 자연스러운 시체) — 웹 rig.js 도 누르지 않음
         rig.localPosition = rigBase;
         if (st.death != null)
         {
             float lay = Mathf.Clamp01((st.death.Value - 0.5f) / 0.5f);
-            rig.localScale = new Vector3(rig.localScale.x, rig.localScale.y * (1 - 0.45f * lay), 1);
             float minY = float.MaxValue;
             foreach (var j in S.joints.Values) minY = Mathf.Min(minY, j.t.position.y);
             float lift = transform.position.y + 0.1f * lay - minY;
