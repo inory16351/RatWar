@@ -1,0 +1,15 @@
+# Unity
+RatWarUnity/[Ll]ibrary/
+RatWarUnity/[Tt]emp/
+RatWarUnity/[Oo]bj/
+RatWarUnity/[Bb]uild/
+RatWarUnity/[Bb]uilds/
+RatWarUnity/[Ll]ogs/
+RatWarUnity/[Uu]ser[Ss]ettings/
+RatWarUnity/*.csproj
+RatWarUnity/*.sln
+RatWarUnity/*.slnx
+RatWarUnity/.vs/
+RatWarUnity/Assets/Screenshots/
+RatWarUnity/Assets/Screenshots.meta
+__pycache__/

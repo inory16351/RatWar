@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "war-web-reference",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Project/nkk_another/war/tools/serve.js", "5322"],
+      "port": 5322
+    }
+  ]
+}

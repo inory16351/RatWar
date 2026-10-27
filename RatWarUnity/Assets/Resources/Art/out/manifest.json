@@ -1,0 +1,299 @@
+{
+ "deco": {
+  "tank": {
+   "img": "deco/tank.png",
+   "w": 403,
+   "h": 249,
+   "pivot": [
+    201.5,
+    234.05999999999997
+   ],
+   "tiles": 2.4
+  },
+  "church": {
+   "img": "deco/church.png",
+   "w": 366,
+   "h": 399,
+   "pivot": [
+    183,
+    375.06
+   ],
+   "tiles": 2.2
+  },
+  "artillery": {
+   "img": "deco/artillery.png",
+   "w": 399,
+   "h": 253,
+   "pivot": [
+    199.5,
+    237.82
+   ],
+   "tiles": 2.2
+  },
+  "pole": {
+   "img": "deco/pole.png",
+   "w": 341,
+   "h": 356,
+   "pivot": [
+    170.5,
+    334.64
+   ],
+   "tiles": 1.3
+  },
+  "farmhouse": {
+   "img": "deco/farmhouse.png",
+   "w": 390,
+   "h": 304,
+   "pivot": [
+    195,
+    285.76
+   ],
+   "tiles": 2.4
+  },
+  "trees": {
+   "img": "deco/trees.png",
+   "w": 350,
+   "h": 338,
+   "pivot": [
+    175,
+    317.71999999999997
+   ],
+   "tiles": 2
+  },
+  "cart": {
+   "img": "deco/cart.png",
+   "w": 405,
+   "h": 228,
+   "pivot": [
+    202.5,
+    214.32
+   ],
+   "tiles": 1.8
+  },
+  "chimney": {
+   "img": "deco/chimney.png",
+   "w": 339,
+   "h": 350,
+   "pivot": [
+    169.5,
+    329
+   ],
+   "tiles": 1.2
+  },
+  "plane": {
+   "img": "deco/plane.png",
+   "w": 404,
+   "h": 298,
+   "pivot": [
+    202,
+    280.12
+   ],
+   "tiles": 2.6
+  },
+  "house2": {
+   "img": "deco/house2.png",
+   "w": 304,
+   "h": 286,
+   "pivot": [
+    148.5,
+    268.8
+   ],
+   "tiles": 2.4
+  },
+  "biplane": {
+   "img": "deco/biplane.png",
+   "w": 276,
+   "h": 230,
+   "pivot": [
+    132,
+    216.2
+   ],
+   "tiles": 2.4
+  },
+  "windmill": {
+   "img": "deco/windmill.png",
+   "w": 276,
+   "h": 329,
+   "pivot": [
+    137,
+    309.3
+   ],
+   "tiles": 2.3
+  },
+  "balloon": {
+   "img": "deco/balloon.png",
+   "w": 333,
+   "h": 224,
+   "pivot": [
+    183.5,
+    210.6
+   ],
+   "tiles": 2.2
+  },
+  "mousetrap": {
+   "img": "deco/mousetrap.png",
+   "w": 317,
+   "h": 182,
+   "pivot": [
+    174.5,
+    171.1
+   ],
+   "tiles": 2
+  },
+  "cattent": {
+   "img": "deco/cattent.png",
+   "w": 293,
+   "h": 261,
+   "pivot": [
+    135,
+    245.3
+   ],
+   "tiles": 2.1
+  },
+  "ambulance": {
+   "img": "deco/ambulance.png",
+   "w": 286,
+   "h": 191,
+   "pivot": [
+    169.5,
+    179.5
+   ],
+   "tiles": 2.1
+  },
+  "hedgehog": {
+   "img": "deco/hedgehog.png",
+   "w": 330,
+   "h": 194,
+   "pivot": [
+    169.5,
+    182.4
+   ],
+   "tiles": 2
+  },
+  "bridge": {
+   "img": "deco/bridge.png",
+   "w": 328,
+   "h": 234,
+   "pivot": [
+    158.5,
+    220
+   ],
+   "tiles": 2.5
+  },
+  "watertower": {
+   "img": "deco/watertower.png",
+   "w": 247,
+   "h": 314,
+   "pivot": [
+    123.5,
+    295.2
+   ],
+   "tiles": 1.7
+  },
+  "treeline": {
+   "img": "deco/treeline.png",
+   "w": 326,
+   "h": 296,
+   "pivot": [
+    162.5,
+    278.2
+   ],
+   "tiles": 2.4
+  },
+  "cheesechimney": {
+   "img": "deco/cheesechimney.png",
+   "w": 322,
+   "h": 326,
+   "pivot": [
+    157,
+    306.4
+   ],
+   "tiles": 2.1
+  }
+ },
+ "fx": {
+  "flash": [
+   "fx/flash0.png",
+   "fx/flash1.png",
+   "fx/flash2.png",
+   "fx/flash3.png"
+  ],
+  "boom": [
+   "fx/boom0.png",
+   "fx/boom1.png",
+   "fx/boom2.png",
+   "fx/boom3.png"
+  ],
+  "fire": [
+   "fx/fire0.png",
+   "fx/fire1.png",
+   "fx/fire2.png",
+   "fx/fire3.png"
+  ],
+  "smoke": [
+   "fx/smoke0.png",
+   "fx/smoke1.png",
+   "fx/smoke2.png",
+   "fx/smoke3.png"
+  ],
+  "psi": [
+   "fx/psi0.png"
+  ],
+  "shield": [
+   "fx/shield0.png"
+  ],
+  "spark": [
+   "fx/spark0.png"
+  ],
+  "blood": [
+   "fx/blood0.png"
+  ]
+ },
+ "icons": {
+  "shoot": "icons/shoot.png",
+  "aimed": "icons/aimed.png",
+  "suppress": "icons/suppress.png",
+  "grenade": "icons/grenade.png",
+  "overwatch": "icons/overwatch.png",
+  "hunker": "icons/hunker.png",
+  "reload": "icons/reload.png",
+  "firstaid": "icons/firstaid.png",
+  "knife": "icons/knife.png",
+  "flame": "icons/flame.png",
+  "charge": "icons/charge.png",
+  "gnaw": "icons/gnaw.png",
+  "tunnel": "icons/tunnel.png",
+  "scurry": "icons/scurry.png",
+  "ambush": "icons/ambush.png",
+  "warcry": "icons/warcry.png",
+  "cheese": "icons/cheese.png",
+  "mark": "icons/mark.png",
+  "command": "icons/command.png",
+  "radioscan": "icons/radioscan.png",
+  "dominate": "icons/dominate.png",
+  "ward": "icons/ward.png",
+  "mortar": "icons/mortar.png",
+  "heavy": "icons/heavy.png",
+  "aim": "icons/aim.png",
+  "hp": "icons/hp.png",
+  "mob": "icons/mob.png",
+  "sight": "icons/sight.png",
+  "crit": "icons/crit.png",
+  "def": "icons/def.png",
+  "dmg": "icons/dmg.png",
+  "clip": "icons/clip.png",
+  "blast": "icons/blast.png",
+  "medkits": "icons/medkits.png",
+  "revive": "icons/revive.png",
+  "psi": "icons/psi.png",
+  "grenades": "icons/grenade.png",
+  "boom": "icons/blast.png",
+  "heal": "icons/firstaid.png",
+  "closeq": "icons/knife.png",
+  "sentry": "icons/overwatch.png",
+  "ghost": "icons/ambush.png",
+  "charges": "icons/charge.png",
+  "burn": "icons/flame.png",
+  "lightmortar": "icons/mortar.png"
+ }
+}
