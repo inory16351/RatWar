@@ -33,7 +33,7 @@ public class UnitView : MonoBehaviour
     {
         u = unit; u.view = this;
         bool rat = u.r != null;
-        R = ArtLib.RigFor(rat, u.cls, rat ? u.r.gear : 0, u.abil.Contains("flame"));
+        R = ArtLib.RigFor(rat, u.cls, rat ? u.r.gear : 0, u.Weapon == "flamer");
         B = ArtLib.BaseRig(rat, u.cls);
         k = UNIT_H * (u.def.aura > 0 ? 1.05f : 1) / 470f;
         rig = transform.Find("Rig"); rigBase = rig.localPosition;

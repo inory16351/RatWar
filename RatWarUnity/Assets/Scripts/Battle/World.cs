@@ -71,6 +71,8 @@ public static class World
         }
         return o;
     }
+    // 선이 지나는 칸 중 하나라도 조건에 맞나 (연막 등)
+    public static bool LineAny(WorldMap w, int ax, int az, int bx, int bz, Func<Tile, bool> f) => LineTiles(w, ax, az, bx, bz).Any(t => t != null && f(t));
     // 자바스크립트 Math.round (0.5 는 위로)
     public static int JsRound(float v) => Mathf.FloorToInt(v + 0.5f);
 
@@ -102,7 +104,9 @@ public static class World
 
     public static float SightOf(WorldMap w, Unit u) => RULES.sight + u.sight + (TileAt(w, u.x, u.z).h > 0 ? 1 : 0);
     public static bool CanSee(WorldMap w, Unit u, int x, int z) => Dist(u.x, u.z, x, z) <= SightOf(w, u) + 0.01f && Los(w, u.x, u.z, x, z);
-    public static bool CanSee(WorldMap w, Unit u, Unit p) => CanSee(w, u, p.x, p.z);
+    // 연막 속 유닛은 3칸 밖에서 안 보임 (조명탄이 비추면 보임)
+    public static bool CanSee(WorldMap w, Unit u, Unit p) => CanSee(w, u, p.x, p.z)
+        && !(Battle.SmokeAt(p.x, p.z) && Dist(u, p) > 3 && !Battle.flares.Any(f => Dist(p.x, p.z, f.x, f.z) <= GameData.ABILITIES["flare"].radius));
 
     // 대상 (px, pz) 가 from 쪽에서 오는 사격에 대해 받는 엄폐 (0 없음, 1 낮음, 2 높음) + 측면 노출 여부
     public static (int cover, bool flanked) CoverAgainst(WorldMap w, int px, int pz, int fx, int fz)
@@ -149,7 +153,8 @@ public static class World
     }
 
     // 길찾기 (다익스트라, 8방향, 대각선은 모서리 못 자름, 높이 바뀌면 +1)
-    // 땅굴(w.tunnels, 쥐만) 은 입구 ↔ 출구 1걸음. 벽 타기(u.climb) 는 높은 엄폐물 위를 지나가되 멈추지는 못함
+    // 땅굴(w.tunnels, 쥐만) 은 입구 ↔ 출구 — 이동력을 안 씀. 벽 타기(u.climb) 는 높은 엄폐물 위를 지나가되 멈추지는 못함
+    // 갉기(perk gnawer) 는 철조망 칸을 이동력 1 더 써서 지나감 (가면서 끊음)
     public static Reach ReachOf(WorldMap w, Unit u, float maxCost)
     {
         var R = new Reach { w = w };
@@ -175,10 +180,11 @@ public static class World
                 int nx = x + dx, nz = z + dz;
                 var ntile = TileAt(w, nx, nz);
                 bool climbOver = u.climb && !tun && ntile != null && PropOf(ntile) != null && PropOf(ntile).cover == 2 && !(dx != 0 && dz != 0);
-                if (!Walkable(w, nx, nz) && !climbOver) continue;
+                bool gnaw = !tun && ntile != null && ntile.prop == 'X' && u.perks.Contains("gnawer");
+                if (!Walkable(w, nx, nz) && !climbOver && !gnaw) continue;
                 if (tun)
                 {
-                    float tc = c + 1; int tk = Key(nx, nz);
+                    float tc = c + 0.01f; int tk = Key(nx, nz);
                     if (tc <= maxCost + 1e-6f && UnitAt(w, nx, nz) == null && (!R.cost.ContainsKey(tk) || tc < R.cost[tk])) { R.cost[tk] = tc; R.prev[tk] = Key(x, z); open.Add((tc, nx, nz)); }
                     continue;
                 }
@@ -187,7 +193,7 @@ public static class World
                 float corner = dx != 0 && dz != 0 && (!w1 || !w2) ? 0.35f : 0;
                 var o = UnitAt(w, nx, nz);
                 if (o != null && o != u) continue;
-                float nc = c + (dx != 0 && dz != 0 ? RULES.diagCost : 1) + corner + (ntile.h != h0 ? RULES.climbCost : 0) + (climbOver ? 1 : 0);
+                float nc = c + (dx != 0 && dz != 0 ? RULES.diagCost : 1) + corner + (ntile.h != h0 ? RULES.climbCost : 0) + (climbOver ? 1 : 0) + (gnaw ? 1 : 0);
                 if (nc > maxCost + 1e-6f) continue;
                 int k = Key(nx, nz);
                 if (climbOver) R.pass.Add(k);

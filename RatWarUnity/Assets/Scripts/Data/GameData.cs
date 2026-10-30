@@ -13,7 +13,7 @@ public class WeaponDef
 public class AbilityDef
 {
     public string id, name, key = "", target, desc = "";
-    public int ap; public bool end, once, melee, far;
+    public int ap, cd; public bool end, once, melee, far; // cd = 쓰고 나서 내 차례 cd 번 동안 못 씀
     public float range, radius; public int dmgMin, dmgMax, psi, uses, heal;
     public bool HasDmg => dmgMax > 0;
 }
@@ -22,7 +22,7 @@ public class AbilityDef
 public class ClassDef
 {
     public string id, name, weapon, desc = "";
-    public int hp, aim, mob, grenades, medkits, charges, cheese, psi, sight, def, crit, aura, whisker;
+    public int hp, aim, mob, grenades, medkits, charges, psi, sight, def, crit, aura, whisker;
     public float blast;
     public bool flame, climb;
     public string[] abil;
@@ -62,7 +62,12 @@ public static class GameData
         ["shotgun"] = new WeaponDef { name = "산탄총", dmgMin = 4, dmgMax = 7, clip = 2, crit = 20, range = d => d <= 2 ? 30 : d <= 4 ? 15 : d <= 7 ? 0 : -(d - 7) * 8 },
         ["smg"] = new WeaponDef { name = "기관단총", dmgMin = 2, dmgMax = 4, clip = 3, crit = 10, range = d => d <= 3 ? 15 : d <= 6 ? 5 : d <= 9 ? 0 : -(d - 9) * 5 },
         ["hmg"] = new WeaponDef { name = "중기관총", dmgMin = 4, dmgMax = 6, clip = 99, crit = 10, range = d => 15 + (d <= 10 ? 0 : -(d - 10) * 3) },
+        // 화염방사기: 스킬판 '화염방사기 장착'을 찍으면 총 대신 듦. 사격 = 앞쪽 부채꼴 불길 (엄폐 무시), 연료 = 탄창
+        ["flamer"] = new WeaponDef { name = "화염방사기", dmgMin = 3, dmgMax = 4, clip = 3, crit = 0, range = d => d <= 4 ? 15 : -200 },
     };
+    // 화염방사기 수치
+    public const float flamerLen = 4.5f, flamerHalfW = 1.5f, flamerBoomChance = 0.4f, flamerBoomR = 1.5f;
+    public const int flamerBoomMin = 3, flamerBoomMax = 5;
 
     // 능력: ap = 필요한 행동력, end = 쓰면 턴 끝
     public static readonly Dictionary<string, AbilityDef> ABILITIES = Build(new[]
@@ -78,20 +83,26 @@ public static class GameData
         new AbilityDef { id = "mortar", name = "박격포", key = "m", ap = 2, end = true, target = "tile", range = 16, radius = 1.5f, dmgMin = 4, dmgMax = 5, desc = "분대가 보는 곳 어디든. 포탄 공유" },
         new AbilityDef { id = "heavy", name = "중기관총", key = "h", ap = 1, end = true, target = "enemy", desc = "진지의 중기관총 (명중 +15)" },
         // ── 병종 · 스킬판 능력 (쥐 테마) ──
-        new AbilityDef { id = "scurry", name = "잽싼 발", ap = 1, end = false, target = "tile", range = 3, desc = "3칸 안으로 쪼르르. 경계 사격을 안 맞음" },
         new AbilityDef { id = "ambush", name = "쥐구멍 매복", ap = 1, end = true, target = "self", desc = "엄폐물 옆에서 숨음: 쏘기 전까지 고양이에게 안 보임" },
         new AbilityDef { id = "warcry", name = "찍찍 함성", ap = 0, end = false, target = "self", once = true, desc = "4칸 안 아군 이번 턴 명중 +10, 스트레스 −10 (전투당 1번)" },
         new AbilityDef { id = "charge", name = "폭약", ap = 1, end = true, target = "tile", range = 1.5f, desc = "붙은 엄폐물 · 벽 · 트럭까지 날려 버림" },
-        new AbilityDef { id = "gnaw", name = "철조망 갉기", ap = 1, end = false, target = "tile", range = 1.5f, desc = "붙은 철조망을 갉아 끊음" },
-        new AbilityDef { id = "tunnel", name = "땅굴 파기", ap = 2, end = true, target = "tile", range = 7, once = true, desc = "지금 칸 ↔ 고른 칸 땅굴. 아군은 입구에서 출구로 1걸음 (전투당 1번)" },
+        new AbilityDef { id = "tunnel", name = "땅굴 파기", ap = 2, end = true, target = "tile", range = 7, once = true, desc = "지금 칸 ↔ 고른 칸 땅굴. 아군 누구나 입구 ↔ 출구로 지나감 — 땅굴로 가는 길은 이동력을 안 씀 (전투당 1번)" },
         new AbilityDef { id = "flame", name = "화염방사기", ap = 1, end = true, target = "tile", range = 3.2f, radius = 1.1f, dmgMin = 3, dmgMax = 4, uses = 2, desc = "엄폐 무시 불길 + 다음 턴 화상. 낮은 엄폐물도 태움" },
         new AbilityDef { id = "knife", name = "칼", ap = 1, end = true, target = "enemy", melee = true, desc = "붙은 적을 칼로 (명중 +30). 소리 안 남" },
-        new AbilityDef { id = "cheese", name = "치즈 배급", ap = 1, end = false, target = "ally", desc = "붙은 아군 스트레스 −25 · 제압 · 공황 풀림" },
         new AbilityDef { id = "mark", name = "표적 지정", ap = 1, end = false, target = "enemy", desc = "이번 판 동안 그 적에게 아군 명중 +15" },
         new AbilityDef { id = "command", name = "쥐떼 전령", ap = 1, end = true, target = "ally", far = true, desc = "시야 안 아군 하나 행동력 +1" },
-        new AbilityDef { id = "radioscan", name = "무전 탐지", ap = 1, end = false, target = "self", once = true, desc = "맵의 모든 고양이 위치를 이번 턴 동안 드러냄 (전투당 1번)" },
         new AbilityDef { id = "dominate", name = "정신 지배", ap = 2, end = true, target = "enemy", psi = 2, desc = "적 하나를 2턴 동안 아군처럼 조종 (정신력 2)" },
-        new AbilityDef { id = "ward", name = "마법 방어막", ap = 1, end = false, target = "ally", far = true, psi = 1, desc = "아군 하나에 피해 4 막는 방어막 (정신력 1)" },
+        // ── 2026-10-30 병종 액티브 확정안 (docs/SKILLS_TRAITS_PLAN.md 2-0) ──
+        new AbilityDef { id = "barrage", name = "난사", ap = 2, end = true, target = "enemy", cd = 3, range = 7, desc = "고른 적 쪽 부채꼴(길이 7 · 폭 3) 안 적을 하나하나 쏨 (명중 −15). 낮은 엄폐물 부숨 · 탄창을 다 씀" },
+        new AbilityDef { id = "trap", name = "부비트랩", ap = 1, end = true, target = "tile", range = 3, radius = 1, dmgMin = 3, dmgMax = 4, uses = 2, desc = "덫을 놓음. 고양이가 밟으면 터짐 · 고양이에겐 안 보임" },
+        new AbilityDef { id = "smoke", name = "연막탄", ap = 1, end = false, target = "tile", range = 6, radius = 1.5f, cd = 3, desc = "2턴 동안 연막: 연막 안 · 연막을 지나는 사격 명중 −30, 연막 속 유닛은 3칸 밖에서 안 보임" },
+        new AbilityDef { id = "dash", name = "그림자 돌진", ap = 1, end = true, target = "enemy", range = 5, cd = 3, desc = "5칸 안 적에게 달려가 바로 칼. 가는 길 경계 사격은 맞음" },
+        new AbilityDef { id = "painkiller", name = "진통제", ap = 1, end = false, target = "ally", desc = "자신이나 붙은 아군: 이번 판 팔 · 다리 부상 무시, 스트레스 −10 (판 끝나면 +10). 구급상자 1" },
+        new AbilityDef { id = "supply", name = "대량 보급품", ap = 2, end = true, target = "self", radius = 4, heal = 3, cd = 3, desc = "4칸 안 아군 전원 체력 +3. 구급상자 1" },
+        new AbilityDef { id = "flare", name = "조명탄", ap = 1, end = false, target = "tile", range = 10, radius = 4, cd = 3, desc = "2턴 동안 반경 4 를 밝힘 — 안개 속 고양이도 보임" },
+        new AbilityDef { id = "artillery", name = "포격 유도", ap = 1, end = true, target = "tile", range = 16, radius = 2, dmgMin = 4, dmgMax = 5, desc = "다음 아군 차례 시작에 그 자리로 포격 (박격포탄 1). 떨어질 자리는 표시됨" },
+        new AbilityDef { id = "terror", name = "공포의 속삭임", ap = 1, end = true, target = "enemy", psi = 1, desc = "고양이 하나 다음 턴 행동 불가 (정신력 1)" },
+        new AbilityDef { id = "cleanse", name = "정신 정화", ap = 1, end = false, target = "ally", far = true, psi = 1, desc = "아군 하나 스트레스 −30 · 공황 · 광란 · 도주 풀림 (정신력 1)" },
     });
 
     static Dictionary<string, AbilityDef> Build(AbilityDef[] a) => a.ToDictionary(x => x.id);
@@ -195,4 +206,17 @@ public static class RULES
     public const int suppressAim = -30;
     public const float climbCost = 1;
     public const float diagCost = 1.5f;
+
+    // 난이도 (엑스컴식): 쥐 · 고양이 명중 보정 + 쉬울수록 운이 덜 가혹함
+    //   streak = 쥐가 빗나갈 때마다 다음 사격 명중 +streak (맞히면 0, 최대 streakMax)
+    //   chain  = 고양이가 이번 턴 쥐를 맞힐 때마다 다음 고양이 사격 명중 −chain
+    public class Diff { public string name, desc; public int ratAim, catAim, catCrit, streak, streakMax, chain; }
+    public static readonly Diff[] DIFFS =
+    {
+        new Diff { name = "신병", desc = "쥐 명중 +10 · 고양이 명중 −10 · 치명 −10 · 빗나가면 다음 사격 +10 · 고양이 연속 명중 완화", ratAim = 10, catAim = -10, catCrit = -10, streak = 10, streakMax = 30, chain = 10 },
+        new Diff { name = "병장", desc = "기본 · 빗나가면 다음 사격 +5 · 고양이 연속 명중 조금 완화", streak = 5, streakMax = 15, chain = 5 },
+        new Diff { name = "원사", desc = "고양이 명중 +5 · 치명 +5 · 운 보정 없음", catAim = 5, catCrit = 5 },
+        new Diff { name = "참호의 악몽", desc = "고양이 명중 +10 · 치명 +10 · 운 보정 없음", catAim = 10, catCrit = 10 },
+    };
+    public const int defaultDiff = 1;
 }

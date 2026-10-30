@@ -344,6 +344,19 @@
   "ghost": "icons/ambush.png",
   "charges": "icons/charge.png",
   "burn": "icons/flame.png",
-  "lightmortar": "icons/mortar.png"
+  "lightmortar": "icons/mortar.png",
+  "barrage": "icons/barrage.png",
+  "trap": "icons/trap.png",
+  "smoke": "icons/smoke.png",
+  "dash": "icons/dash.png",
+  "painkiller": "icons/painkiller.png",
+  "supply": "icons/supply.png",
+  "flare": "icons/flare.png",
+  "artillery": "icons/artillery.png",
+  "terror": "icons/terror.png",
+  "cleanse": "icons/cleanse.png",
+  "weakspot": "icons/weakspot.png",
+  "flamer": "icons/flamer.png",
+  "gnawer": "icons/gnaw.png"
  }
 }

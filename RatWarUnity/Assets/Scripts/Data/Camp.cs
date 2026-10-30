@@ -16,23 +16,30 @@ public class RatRecord
     public List<string> nodes = new List<string>(), lost = new List<string>(), prosthetic = new List<string>();
     public string afflicted = "", sibling = "", grief = "";
     public bool drafted;
+    // 획득 특성 누적 · 관계 (같이 출전 횟수 · 전우 · 멘토 · 앙숙)
+    public int knifeKills, breaks;
+    public List<Bond> bonds = new List<Bond>();
     // 추모비에만
     public string rank = "", cls = "", died = "", how = "";
     public int battle;
     public RatRecord Clone() => JsonUtility.FromJson<RatRecord>(JsonUtility.ToJson(this));
 }
 
+// 다른 쥐와의 관계. kind: with(같이 출전 n판) · comrade(전우) · mentor(내 멘토) · pupil(내 제자) · feud(앙숙)
+[Serializable]
+public class Bond { public string kind, id; public int n; }
+
 [Serializable]
 public class CampData
 {
-    public int v = 2, supplies = 60, battles, made;
+    public int v = 2, supplies = 60, battles, made, diff = RULES.defaultDiff;
     public List<string> done = new List<string>(), deploy = new List<string>();
     public List<RatRecord> squad = new List<RatRecord>(), fallen = new List<RatRecord>(), recruits = new List<RatRecord>();
 }
 
 public class TraitDef
 {
-    public string name, desc; public bool rare;
+    public string name, desc; public bool rare, acq; // acq = 모집 때는 안 붙음 (전투 · 관계로 생김)
     public Dictionary<string, float> n = new Dictionary<string, float>();      // 능력치 더하기 · 기타 수치
     public Dictionary<string, float> stressBy;                                 // 이유별 스트레스 배율
     public float Get(string k) => n.TryGetValue(k, out var v) ? v : 0;
@@ -41,7 +48,8 @@ public class TraitDef
 public class RatStats
 {
     public string clsId; public ClassDef cls;
-    public int hp, aim, mob, sight, crit, def, dmg, clip, heal, boom, grenades, medkits, charges, cheese, psi, whisker;
+    public int hp, aim, mob, sight, crit, def, dmg, clip, heal, boom, grenades, medkits, charges, psi, whisker;
+    public string weapon;
     public float blast; public bool climb, sibling, shaky;
     public List<string> perks, abil;
 }
@@ -83,13 +91,13 @@ public static class CampRules
     {
         ["brave"] = T("용감함", "스트레스 −30%", ("stress", 0.7f)),
         ["coward"] = T("겁쟁이", "스트레스 +30% · 회피 +5", ("stress", 1.3f), ("def", 5)),
-        ["veteran"] = T("노병", "명중 +5 · 처음 스트레스 25", ("aim", 5), ("startStress", 25)),
+        ["veteran"] = T("노병", "명중 +5 · 처음 스트레스 25 · 경계 사격 감점 절반", ("aim", 5), ("startStress", 25)),
         ["tough"] = T("튼튼함", "체력 +1", ("hp", 1)),
         ["marksman"] = T("사격 재능", "명중 +5", ("aim", 5)),
         ["nimble"] = T("날쌤", "이동 +1", ("mob", 1)),
         ["drinker"] = T("술꾼", "판 끝나면 스트레스 −10 · 명중 −3", ("aim", -3), ("unwind", 10)),
         ["homesick"] = T("향수병", "출전할 때마다 스트레스 +8", ("homesick", 8)),
-        ["pious"] = T("신앙심", "쉴 때 스트레스 두 배로 풀림", ("rest", 2)),
+        ["pious"] = T("신앙심", "쉴 때 스트레스 두 배로 풀림 · 차례 시작에 스트레스 60 넘으면 기도 (−5)", ("rest", 2)),
         ["sibling"] = T("형제", "같이 출전하면 명중 +8. 한쪽이 죽으면…"),
         ["psychic"] = new TraitDef { name = "영매", desc = "정신의 목소리를 들음 — 주술사가 될 수 있음", rare = true },
         // ── 림월드식 성격 ──
@@ -103,15 +111,38 @@ public static class CampRules
         ["pessimist"] = T("비관론자", "판 끝나면 스트레스 +8", ("unwind", -8)),
         ["quick"] = T("빠른 학습", "경험치 1.5배", ("xp", 1.5f)),
         ["slowwit"] = T("굼뜬 머리", "경험치 0.7배", ("xp", 0.7f)),
-        ["lucky"] = T("행운아", "치명 +5 · 회피 +5", ("crit", 5), ("def", 5)),
+        ["lucky"] = T("행운아", "전투당 1번, 죽을 피해를 체력 1로 버팀"),
         ["careful"] = T("꼼꼼함", "팔을 다쳐도 재장전을 실수하지 않음"),
-        ["clumsy"] = T("덤벙댐", "재장전 10% 실패 · 수류탄 하나 더", ("grenades", 1)),
+        ["clumsy"] = T("덤벙댐", "재장전 10% 실패 · 수류탄 하나 더 · 수류탄이 15% 확률로 1칸 빗나감", ("grenades", 1)),
         ["leader"] = T("타고난 지휘관", "3칸 안 아군 명중 +5 · 스트레스 −20%"),
         ["loner"] = T("외톨이", "3칸 안에 아군이 없으면 명중 +10"),
         ["smoker"] = T("골초", "매 턴 스트레스 −3 · 체력 −1", ("smoke", 3), ("hp", -1)),
-        ["glutton"] = T("치즈 귀신", "치즈 배급을 받으면 두 배로 풀림"),
         ["sluggish"] = T("느림보", "이동 −1 · 체력 +1", ("mob", -1), ("hp", 1)),
         ["sharpears"] = T("밝은 귀", "시야 +1", ("sight", 1)),
+        // ── 2026-10-30 확정안 (docs/SKILLS_TRAITS_PLAN.md 3-0) ──
+        ["cautious"] = T("신중함", "이동 안 한 턴 명중 +10, 이동한 턴 −5"),
+        ["desperate"] = T("절박함", "체력 절반 이하면 명중 +10 · 치명 +10"),
+        ["brawler"] = T("근접 광", "4칸 안 명중 +10, 9칸 밖 −10"),
+        ["longshot"] = T("원거리 본능", "9칸 밖 명중 +10, 3칸 안 −10"),
+        ["coverpro"] = T("엄폐 장인", "엄폐 중 회피 +10"),
+        ["reckless"] = T("무모함", "엄폐 없을 때 명중 +10 · 받는 스트레스 −20%"),
+        ["rage"] = T("분노 조절 장애", "맞으면 다음 사격 명중 +15 · 무너지면 광란 확률 두 배"),
+        ["calm"] = T("평온함", "무너져도 공황 · 광란 · 도주 대신 멍함 (행동력 1만 잃음)"),
+        ["catphobia"] = T("고양이 공포증", "3칸 안에 고양이가 있으면 차례마다 스트레스 +5"),
+        ["nightowl"] = T("어둠을 좋아함", "고양이 눈에 안 띌 때 (안개 속 · 매복) 스트레스가 안 쌓임"),
+        ["bigears"] = T("큰 귀", "경계 범위 +1 · 폭발에 휘말리면 다음 차례 행동력 −1"),
+        ["irontooth"] = T("쇠 이빨", "철조망을 갉으며 지나감 (공병처럼)"),
+        // 전투가 만드는 특성 (치료 불가)
+        ["knifer"] = new TraitDef { name = "칼잡이", desc = "칼 명중 +10 · 치명 +10", acq = true },
+        ["shellshock"] = new TraitDef { name = "포탄 충격", desc = "폭발 근처에서 스트레스 두 배", acq = true, stressBy = new Dictionary<string, float> { ["blast"] = 2 } },
+        ["avenger"] = new TraitDef { name = "복수자", desc = "명중 +5 · 처치하면 스트레스 −10", acq = true, n = new Dictionary<string, float> { ["aim"] = 5, ["killRelief"] = 10 } },
+        ["broken"] = new TraitDef { name = "망가진", desc = "무너지는 기준 −15", acq = true, n = new Dictionary<string, float> { ["breakAt"] = -15 } },
+        ["notail"] = new TraitDef { name = "꼬리 잘린 쥐", desc = "이동 −1 · 회피 +5", acq = true, n = new Dictionary<string, float> { ["mob"] = -1, ["def"] = 5 } },
+        // 관계 (상대는 bonds 에. 같이 출전해야 발동)
+        ["comrade"] = new TraitDef { name = "전우애", desc = "전우가 3칸 안이면 명중 +5 · 받는 스트레스 −20%. 전우가 죽으면 크게 흔들림", acq = true },
+        ["mentor"] = new TraitDef { name = "멘토", desc = "제자를 이끔 — 제자가 3칸 안이면 제자 명중 +8 · 경험치 1.5배", acq = true },
+        ["pupil"] = new TraitDef { name = "제자", desc = "멘토가 3칸 안이면 명중 +8 · 같이 출전하면 경험치 1.5배", acq = true },
+        ["feud"] = new TraitDef { name = "앙숙", desc = "앙숙과 3칸 안이면 차례마다 스트레스 +3", acq = true },
     };
     // 같이 가질 수 없는 특성
     static readonly string[][] TRAIT_CLASH =
@@ -119,13 +150,14 @@ public static class CampRules
         new[] { "brave", "coward" }, new[] { "ironwill", "nervous" }, new[] { "optimist", "pessimist" }, new[] { "quick", "slowwit" },
         new[] { "bloodlust", "squeamish" }, new[] { "leader", "loner" }, new[] { "nimble", "sluggish" }, new[] { "careful", "clumsy" },
         new[] { "psychopath", "sibling" }, new[] { "brave", "nervous" }, new[] { "coward", "ironwill" },
+        new[] { "brawler", "longshot" }, new[] { "coverpro", "reckless" }, new[] { "rage", "calm" }, new[] { "catphobia", "bloodlust" },
     };
     public static bool Clashes(string a, string b) => TRAIT_CLASH.Any(p => (p[0] == a && p[1] == b) || (p[0] == b && p[1] == a));
 
     public static class STRESS
     {
         public const int hit = 8, crit = 12, downed = 20, allyDead = 22, siblingDead = 45, gore = 8, suppressed = 6, panicNear = 6;
-        public const int kill = -6, win = -12, cheese = -25, rest = -35, warcry = -10;
+        public const int kill = -6, win = -12, rest = -35, warcry = -10, blast = 6;
         public const int breakAt = 100, after = 70; // 무너지면 이 값으로 내려감
         public const int shaky = 60;                // 이 위로 출전하면 '불안' (명중 −10)
     }
@@ -156,7 +188,7 @@ public static class Camp
         var name = CampRules.NAMES.FirstOrDefault(n => !used.Contains(n) && Rnd < 0.5f) ?? CampRules.NAMES.FirstOrDefault(n => !used.Contains(n)) ?? "신병 " + (c.made + 1);
         var traits = new List<string>();
         if (psychic || Rnd < 0.15f) traits.Add("psychic");
-        var pool = CampRules.TRAITS.Keys.Where(t => !CampRules.TRAITS[t].rare && t != "sibling").ToList();
+        var pool = CampRules.TRAITS.Keys.Where(t => !CampRules.TRAITS[t].rare && !CampRules.TRAITS[t].acq && t != "sibling").ToList();
         int want = (Rnd < 0.35f ? 3 : 2) + (traits.Contains("psychic") ? 1 : 0);
         for (int guard = 0; traits.Count < want && guard < 50; guard++)
         {
@@ -189,9 +221,19 @@ public static class Camp
 
     public static CampData Load()
     {
-        try { if (File.Exists(PathOf)) { var c = JsonUtility.FromJson<CampData>(File.ReadAllText(PathOf)); if (c != null && c.v == 2) return c; } }
+        try { if (File.Exists(PathOf)) { var c = JsonUtility.FromJson<CampData>(File.ReadAllText(PathOf)); if (c != null && c.v == 2) return Migrate(c); } }
         catch (Exception e) { Debug.LogWarning("저장 읽기 실패 " + e.Message); }
         return null;
+    }
+    // 예전 저장: 없어진 특성(치즈 귀신 등) 빼고, 새 필드 채움
+    public static CampData Migrate(CampData c)
+    {
+        foreach (var r in c.squad.Concat(c.fallen).Concat(c.recruits))
+        {
+            r.traits.RemoveAll(t => !CampRules.TRAITS.ContainsKey(t));
+            if (r.bonds == null) r.bonds = new List<Bond>();
+        }
+        return c;
     }
     public static void Save(CampData c) { try { File.WriteAllText(PathOf, JsonUtility.ToJson(c)); } catch (Exception e) { Debug.LogWarning("저장 실패 " + e.Message); } }
     public static void Reset() { try { if (File.Exists(PathOf)) File.Delete(PathOf); } catch { /* 무시 */ } }
@@ -236,6 +278,8 @@ public static class Camp
         int sibling = !string.IsNullOrEmpty(r.sibling) && squadIds != null && squadIds.Contains(r.sibling) ? 8 : 0;
         int shaky = r.stress >= CampRules.STRESS.shaky ? -10 : 0;
         var abil = C.abil.Concat(T.abil).Distinct().ToList();
+        var perks = T.perks.ToList();
+        if (clsId == "engineer" || r.traits.Contains("irontooth")) perks.Add("gnawer");
         // 순서: 사격 먼저, 경계 끝
         abil = abil.Select((a, i) => (a, i)).OrderBy(x => x.a == "shoot" ? 0 : x.a == "overwatch" ? 2 : 1).ThenBy(x => x.i).Select(x => x.a).ToList();
         int ts(string k) => (int)TraitSum(r, k);
@@ -250,9 +294,10 @@ public static class Camp
             crit = C.crit + tt("crit") + ts("crit"), def = C.def + tt("def") + ts("def"),
             dmg = tt("dmg"), clip = tt("clip"), heal = tt("heal"), blast = C.blast + T.Get("blast"), boom = tt("boom"),
             grenades = C.grenades + tt("grenades") + (C.grenades > 0 || T.Get("grenades") > 0 ? ts("grenades") : 0), medkits = C.medkits + tt("medkits"),
-            charges = C.charges + tt("charges"), cheese = C.cheese > 0 ? C.cheese : (abil.Contains("cheese") ? 2 : 0),
+            charges = C.charges + tt("charges"),
             psi = C.psi, climb = C.climb, whisker = C.whisker,
-            perks = T.perks, abil = abil, sibling = sibling > 0, shaky = shaky < 0,
+            weapon = perks.Contains("flamer") ? "flamer" : C.weapon,
+            perks = perks, abil = abil, sibling = sibling > 0, shaky = shaky < 0,
         };
     }
 
@@ -286,14 +331,84 @@ public static class Camp
         r.nodes.Add(k); Save(c); return true;
     }
 
-    public class BattleResult { public string id, broke, how; public bool alive, downed; public int kills, stress; public List<string> hurt, severed; }
-    public class ReportRow { public RatRecord r; public bool dead, promoted, downed; public string how, broke; public int kills; public List<string> hurt = new List<string>(), severed = new List<string>(); }
+    public class BattleResult
+    {
+        public string id, broke, how, hitByFrenzy; public bool alive, downed, legBlast, painkiller; public int kills, stress, knifeKills, nearBlasts;
+        public List<string> hurt, severed;
+    }
+    public class ReportRow { public RatRecord r; public bool dead, promoted, downed; public string how, broke; public int kills; public List<string> hurt = new List<string>(), severed = new List<string>(), gained = new List<string>(); }
+
+    // ── 관계 ──
+    public static Bond BondOf(RatRecord r, string kind, string id) => r?.bonds?.FirstOrDefault(b => b.kind == kind && b.id == id);
+    public static bool Bonded(RatRecord r, string id, string kind) => !string.IsNullOrEmpty(id) && BondOf(r, kind, id) != null;
+    public static IEnumerable<string> Partners(RatRecord r, params string[] kinds) => r?.bonds == null ? Enumerable.Empty<string>() : r.bonds.Where(b => kinds.Contains(b.kind)).Select(b => b.id);
+    static void Bind(RatRecord a, string kind, RatRecord b) { if (BondOf(a, kind, b.id) == null) a.bonds.Add(new Bond { kind = kind, id = b.id }); }
+    static void AddTrait(RatRecord r, string t) { if (!r.traits.Contains(t)) r.traits.Add(t); }
+    // 획득 특성 굴림: 붙으면 보고서에 남김
+    static bool Gain(RatRecord r, string t, float chance, Dictionary<string, ReportRow> rows)
+    {
+        if (r.traits.Contains(t) || UnityEngine.Random.value >= chance) return false;
+        r.traits.Add(t);
+        if (rows.TryGetValue(r.id, out var row)) row.gained.Add(t);
+        return true;
+    }
+
+    // 판 끝: 전투 경험 · 관계로 생기는 특성 (docs/SKILLS_TRAITS_PLAN.md 3-0 확률)
+    static void Acquire(CampData c, List<BattleResult> res, HashSet<string> deadIds, Dictionary<string, ReportRow> rows, Dictionary<string, int> rankBefore)
+    {
+        var alive = new List<(RatRecord r, BattleResult x)>();
+        foreach (var x in res) { var r = c.squad.FirstOrDefault(q => q.id == x.id); if (r != null) alive.Add((r, x)); }
+        foreach (var (r, x) in alive)
+        {
+            int before = r.knifeKills; r.knifeKills += x.knifeKills;
+            for (int k = Mathf.Max(before + 1, 3); k <= r.knifeKills; k++) if (Gain(r, "knifer", 0.6f, rows)) break;
+            if (x.nearBlasts >= 2) Gain(r, "shellshock", 0.35f, rows);
+            if (!string.IsNullOrEmpty(x.broke)) { r.breaks++; if (r.breaks >= 3) Gain(r, "broken", 0.5f, rows); }
+            if (x.legBlast) Gain(r, "notail", 0.15f, rows);
+            if (deadIds.Contains(r.sibling ?? "") || Partners(r, "comrade", "mentor", "pupil").Any(deadIds.Contains)) Gain(r, "avenger", 0.7f, rows);
+            if (x.painkiller) r.stress = Mathf.Min(99, r.stress + 10);
+            var foe = alive.FirstOrDefault(o => o.r.id == x.hitByFrenzy).r;
+            if (foe != null && foe != r && !Bonded(r, foe.id, "feud") && UnityEngine.Random.value < 0.5f)
+            {
+                Bind(r, "feud", foe); Bind(foe, "feud", r); AddTrait(r, "feud"); AddTrait(foe, "feud");
+                if (rows.TryGetValue(r.id, out var ra)) ra.gained.Add("feud");
+                if (rows.TryGetValue(foe.id, out var rb)) rb.gained.Add("feud");
+            }
+        }
+        // 같이 출전한 쌍
+        for (int i = 0; i < alive.Count; i++)
+            for (int j = i + 1; j < alive.Count; j++)
+            {
+                var a = alive[i].r; var b = alive[j].r;
+                var wa = BondOf(a, "with", b.id) ?? new Bond { kind = "with", id = b.id };
+                if (!a.bonds.Contains(wa)) a.bonds.Add(wa);
+                var wb = BondOf(b, "with", a.id) ?? new Bond { kind = "with", id = a.id };
+                if (!b.bonds.Contains(wb)) b.bonds.Add(wb);
+                wa.n++; wb.n = wa.n;
+                // x 가 y 를 kx 로 보고 tx 특성을, y 는 x 를 ky 로 보고 ty 특성을 가짐
+                void Pair(RatRecord x, string kx, string tx, RatRecord y, string ky, string ty)
+                {
+                    Bind(x, kx, y); Bind(y, ky, x); AddTrait(x, tx); AddTrait(y, ty);
+                    if (rows.TryGetValue(x.id, out var rx)) rx.gained.Add(tx);
+                    if (rows.TryGetValue(y.id, out var ry)) ry.gained.Add(ty);
+                }
+                if (wa.n >= 5 && !Bonded(a, b.id, "comrade") && UnityEngine.Random.value < 0.2f) Pair(a, "comrade", "comrade", b, "comrade", "comrade");
+                // 노병 + 이병 3판 → 멘토 / 제자
+                RatRecord mentor = a.traits.Contains("veteran") && rankBefore[b.id] == 0 ? a : b.traits.Contains("veteran") && rankBefore[a.id] == 0 ? b : null;
+                if (mentor != null && wa.n >= 3)
+                {
+                    var pupil = mentor == a ? b : a;
+                    if (!Bonded(pupil, mentor.id, "mentor") && UnityEngine.Random.value < 0.25f) Pair(pupil, "mentor", "pupil", mentor, "pupil", "mentor");
+                }
+            }
+    }
     public class SettleOut { public int reward, drafted; public List<ReportRow> report; }
 
     // ── 판 끝: 결과 반영 ──
     public static SettleOut Settle(CampData c, MissionDef mission, bool win, List<BattleResult> res)
     {
         c.battles++;
+        var rankBefore = c.squad.ToDictionary(q => q.id, RankIdx); // 멘토 · 제자는 출전 전 계급으로
         int reward = win ? mission.reward : Mathf.FloorToInt(mission.reward * 0.2f);
         c.supplies += reward;
         if (win && !c.done.Contains(mission.id)) c.done.Add(mission.id);
@@ -317,7 +432,8 @@ public static class Camp
                 continue;
             }
             int before = RankIdx(r);
-            r.xp += Mathf.RoundToInt((x.kills + 1 + (win ? 1 : 0)) * XpMul(r));
+            float pupilMul = Partners(r, "mentor").Any(deployed.Contains) ? 1.5f : 1;
+            r.xp += Mathf.RoundToInt((x.kills + 1 + (win ? 1 : 0)) * XpMul(r) * pupilMul);
             r.kills += x.kills; r.missions++;
             r.stress = Mathf.Clamp(x.stress + (win ? CampRules.STRESS.win : 0) - (int)TraitSum(r, "unwind"), 0, 99);
             if (!string.IsNullOrEmpty(x.broke)) r.afflicted = x.broke;
@@ -325,6 +441,8 @@ public static class Camp
             if (x.severed != null && x.severed.Count > 0) r.lost = r.lost.Concat(x.severed).Distinct().ToList();
             report.Add(new ReportRow { r = r, promoted = RankIdx(r) > before, kills = x.kills, downed = x.downed, hurt = x.hurt ?? new List<string>(), severed = x.severed ?? new List<string>(), broke = x.broke });
         }
+        var rows = report.Where(x => !x.dead).GroupBy(x => x.r.id).ToDictionary(g => g.Key, g => g.First());
+        Acquire(c, res.Where(x => rows.ContainsKey(x.id)).ToList(), new HashSet<string>(report.Where(x => x.dead).Select(x => x.r.id)), rows, rankBefore);
         // 출전 안 한 쥐는 쉼: 스트레스 풀림, 두 판 쉬면 정신 이상도 나음
         foreach (var r in c.squad)
         {

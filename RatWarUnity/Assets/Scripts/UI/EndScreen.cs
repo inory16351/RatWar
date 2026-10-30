@@ -30,6 +30,7 @@ public class EndScreen : MonoBehaviour
                 if (x.downed) n.Add(UIK.Col("쓰러졌다 살아남음", UIK.NEG));
                 if (x.severed.Count > 0) n.Add(UIK.Col(string.Join(" · ", x.severed.ConvertAll(s => Battle.PART_NAME[s])) + " 잃음 → 의수 · 의족 필요", UIK.NEG));
                 if (!string.IsNullOrEmpty(x.broke)) n.Add(UIK.Col("정신 이상: " + x.broke, UIK.PSY));
+                foreach (var t in x.gained) n.Add(UIK.Col($"새 특성 [{CampRules.TRAITS[t].name}]", UIK.GOLD));
                 n.Add("스트레스 " + (x.r.stress >= CampRules.STRESS.shaky ? UIK.Col(x.r.stress.ToString(), UIK.PSY) : x.r.stress.ToString()));
                 notes = string.Join(" · ", n);
             }

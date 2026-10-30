@@ -29,15 +29,15 @@ public static class SkillsData
     // 병종: 무기 · 기본치 · 기본 능력. 판의 갈래로 정해짐 (from = 갈래 번호, 혼합은 두 개)
     public static readonly Dictionary<string, ClassDef> RAT_CLASSES = new[]
     {
-        new ClassDef { id = "recruit", name = "소총수", hp = 6, aim = 65, mob = 6, weapon = "rifle", grenades = 1, abil = new[] { "shoot", "grenade", "scurry", "overwatch" }, desc = "아직 길이 정해지지 않은 신병. 잽싼 발로 위기를 피함" },
-        new ClassDef { id = "sniper", name = "저격수", from = new[] { 0 }, hp = 5, aim = 72, mob = 6, weapon = "sniper", sight = 2, abil = new[] { "shoot", "ambush", "overwatch" }, desc = "쥐구멍에 숨어 먼 거리 한 발. 가까우면 약함" },
-        new ClassDef { id = "gunner", name = "기관총 사수", from = new[] { 1 }, hp = 7, aim = 60, mob = 5, weapon = "lmg", abil = new[] { "shoot", "suppress", "warcry", "overwatch" }, desc = "연사 · 제압. 찍찍 함성으로 분대 사기를 올림" },
-        new ClassDef { id = "engineer", name = "공병", from = new[] { 2 }, hp = 6, aim = 64, mob = 6, weapon = "rifle", grenades = 2, charges = 2, abil = new[] { "shoot", "grenade", "charge", "gnaw", "overwatch" }, desc = "폭약으로 벽까지 날리고, 철조망을 갉아 끊고, 땅굴을 팜" },
-        new ClassDef { id = "commando", name = "코만도", from = new[] { 3 }, hp = 6, aim = 66, mob = 7, weapon = "smg", grenades = 1, def = 5, climb = true, abil = new[] { "shoot", "knife", "grenade", "overwatch" }, desc = "벽을 타고 넘어 파고들어 칼로 끝냄. 칼은 소리가 안 남" },
-        new ClassDef { id = "medic", name = "의무병", from = new[] { 4 }, hp = 6, aim = 62, mob = 6, weapon = "smg", medkits = 2, cheese = 2, abil = new[] { "shoot", "firstaid", "cheese", "overwatch" }, desc = "동료를 살려 내고 치즈로 정신을 차리게 함" },
-        new ClassDef { id = "scout", name = "정찰병", from = new[] { 5 }, hp = 5, aim = 66, mob = 7, weapon = "rifle", sight = 2, whisker = 3, abil = new[] { "shoot", "mark", "overwatch" }, desc = "수염으로 벽 너머 적을 느끼고 표적을 찍어 줌" },
-        new ClassDef { id = "radio", name = "통신병", from = new[] { 0, 5 }, hp = 6, aim = 63, mob = 6, weapon = "smg", abil = new[] { "shoot", "command", "radioscan", "overwatch" }, desc = "사격 + 정찰: 쥐떼 전령으로 멀리 있는 아군까지 지휘 · 무전 탐지" },
-        new ClassDef { id = "shaman", name = "주술사", from = new[] { 4, 5 }, hp = 5, aim = 60, mob = 6, weapon = "smg", psi = 3, abil = new[] { "shoot", "dominate", "ward", "overwatch" }, desc = "지원 + 정찰: 적의 정신을 붙잡아 조종하고, 아군에게 마법 방어막" },
+        new ClassDef { id = "recruit", name = "소총수", hp = 6, aim = 65, mob = 6, weapon = "rifle", grenades = 1, abil = new[] { "shoot", "grenade", "overwatch" }, desc = "아직 길이 정해지지 않은 신병" },
+        new ClassDef { id = "sniper", name = "저격수", from = new[] { 0 }, hp = 5, aim = 72, mob = 6, weapon = "sniper", sight = 2, abil = new[] { "shoot", "aimed", "ambush", "overwatch" }, desc = "쥐구멍에 숨어 먼 거리 한 발. 가까우면 약함" },
+        new ClassDef { id = "gunner", name = "기관총 사수", from = new[] { 1 }, hp = 7, aim = 60, mob = 5, weapon = "lmg", abil = new[] { "shoot", "suppress", "warcry", "barrage", "overwatch" }, desc = "연사 · 제압 · 난사. 찍찍 함성으로 분대 사기를 올림" },
+        new ClassDef { id = "engineer", name = "공병", from = new[] { 2 }, hp = 6, aim = 64, mob = 6, weapon = "rifle", grenades = 2, charges = 2, abil = new[] { "shoot", "grenade", "charge", "tunnel", "trap", "overwatch" }, desc = "폭약으로 벽까지 날리고, 땅굴을 파고, 덫을 놓음. 철조망은 갉으며 지나감" },
+        new ClassDef { id = "commando", name = "코만도", from = new[] { 3 }, hp = 6, aim = 66, mob = 7, weapon = "smg", grenades = 1, def = 5, climb = true, abil = new[] { "shoot", "knife", "dash", "smoke", "grenade", "overwatch" }, desc = "벽을 타고 넘어 연막 속으로 파고들어 칼로 끝냄. 칼은 소리가 안 남" },
+        new ClassDef { id = "medic", name = "의무병", from = new[] { 4 }, hp = 6, aim = 62, mob = 6, weapon = "smg", medkits = 2, abil = new[] { "shoot", "firstaid", "painkiller", "supply", "overwatch" }, desc = "동료를 살려 내고, 진통제와 보급품으로 버티게 함" },
+        new ClassDef { id = "scout", name = "정찰병", from = new[] { 5 }, hp = 5, aim = 66, mob = 7, weapon = "rifle", sight = 2, whisker = 3, abil = new[] { "shoot", "mark", "flare", "overwatch" }, desc = "수염으로 벽 너머 적을 느끼고, 조명탄으로 밝히고, 표적을 찍어 줌" },
+        new ClassDef { id = "radio", name = "통신병", from = new[] { 0, 5 }, hp = 6, aim = 63, mob = 6, weapon = "smg", abil = new[] { "shoot", "command", "artillery", "overwatch" }, desc = "사격 + 정찰: 쥐떼 전령으로 멀리 있는 아군까지 지휘 · 무전으로 포격 유도" },
+        new ClassDef { id = "shaman", name = "주술사", from = new[] { 4, 5 }, hp = 5, aim = 60, mob = 6, weapon = "smg", psi = 3, abil = new[] { "shoot", "dominate", "terror", "cleanse", "overwatch" }, desc = "지원 + 정찰: 적의 정신을 붙잡거나 겁에 질리게 하고, 아군의 정신을 맑게 함" },
     }.ToDictionary(c => c.id);
 
     // 갈래마다: r1 = 첫 칸, r2 = 둘째 줄 꼭짓점(핵심), r3 = 셋째 줄 꼭짓점(정점), side = 셋째 줄 옆 칸 두 개, small = 경계 칸에 섞이는 작은 값
@@ -46,10 +46,10 @@ public static class SkillsData
     {
         new SectorFx { r1 = new NodeFx().Set("aim", 5), r2 = NodeFx.Of("정조준", abil: "aimed"), r3 = NodeFx.Of("명사수").Set("crit", 15), side = new[] { new NodeFx().Set("aim", 5), new NodeFx().Set("sight", 1) }, small = new NodeFx().Set("aim", 3) },
         new SectorFx { r1 = new NodeFx().Set("hp", 1), r2 = NodeFx.Of("제압 사격", abil: "suppress"), r3 = NodeFx.Of("긴 탄띠").Set("clip", 2), side = new[] { new NodeFx().Set("hp", 1), new NodeFx().Set("dmg", 1) }, small = new NodeFx().Set("hp", 1) },
-        new SectorFx { r1 = new NodeFx().Set("grenades", 1), r2 = NodeFx.Of("땅굴 파기", abil: "tunnel"), r3 = NodeFx.Of("화염방사기 장착", abil: "flame"), side = new[] { NodeFx.Of("고폭 수류탄").Set("blast", 0.5f), NodeFx.Of("폭파 전문").Set("boom", 2).Set("charges", 1) }, small = new NodeFx().Set("grenades", 1) },
+        new SectorFx { r1 = new NodeFx().Set("grenades", 1), r2 = NodeFx.Of("땅굴 파기", abil: "tunnel"), r3 = NodeFx.Of("화염방사기 장착", perk: "flamer"), side = new[] { NodeFx.Of("고폭 수류탄").Set("blast", 0.5f), NodeFx.Of("폭파 전문").Set("boom", 2).Set("charges", 1) }, small = new NodeFx().Set("grenades", 1) },
         new SectorFx { r1 = new NodeFx().Set("mob", 1), r2 = NodeFx.Of("근접 격투", abil: "knife"), r3 = NodeFx.Of("날쌘 발").Set("def", 10).Set("mob", 1), side = new[] { NodeFx.Of("근접 사격", perk: "closeq"), new NodeFx().Set("def", 5) }, small = new NodeFx().Set("def", 3) },
-        new SectorFx { r1 = NodeFx.Of("응급 처치", abil: "firstaid").Set("medkits", 1), r2 = NodeFx.Of("구출", perk: "revive"), r3 = NodeFx.Of("야전 의무").Set("heal", 2), side = new[] { new NodeFx().Set("medkits", 1), new NodeFx().Set("hp", 1) }, small = new NodeFx().Set("hp", 1) },
-        new SectorFx { r1 = new NodeFx().Set("sight", 1), r2 = NodeFx.Of("노련한 경계", perk: "sentry"), r3 = NodeFx.Of("조용한 발걸음", perk: "ghost"), side = new[] { new NodeFx().Set("sight", 1), NodeFx.Of("표적 지정", abil: "mark") }, small = new NodeFx().Set("aim", 2) },
+        new SectorFx { r1 = NodeFx.Of("응급 처치", abil: "firstaid").Set("medkits", 1), r2 = NodeFx.Of("구출", perk: "revive"), r3 = NodeFx.Of("야전 의무").Set("heal", 2), side = new[] { new NodeFx().Set("medkits", 1), NodeFx.Of("구급 가방").Set("medkits", 2) }, small = new NodeFx().Set("hp", 1) },
+        new SectorFx { r1 = new NodeFx().Set("sight", 1), r2 = NodeFx.Of("노련한 경계", perk: "sentry"), r3 = NodeFx.Of("조용한 발걸음", perk: "ghost"), side = new[] { new NodeFx().Set("sight", 1), NodeFx.Of("약점 간파", perk: "weakspot") }, small = new NodeFx().Set("aim", 2) },
     };
     public static readonly Dictionary<string, string> PERK_TEXT = new Dictionary<string, string>
     {
@@ -57,6 +57,9 @@ public static class SkillsData
         ["closeq"] = "4칸 안 명중 +15",
         ["sentry"] = "경계 사격 명중 감점 없음",
         ["ghost"] = "자는 고양이 무리가 3칸 안에서만 깸",
+        ["flamer"] = "무기가 화염방사기로 바뀜: 명중 +15 · 4칸 부채꼴 불길 · 쓰러질 때 40% 폭발 (확정 사망)",
+        ["weakspot"] = "표적 지정한 적: 회피 무시 · 아군 치명 +15",
+        ["gnawer"] = "철조망 칸으로 가면 이동력 1 더 쓰고 갉아 끊으며 지나감",
     };
     public static readonly Dictionary<string, string> STAT_TEXT = new Dictionary<string, string>
     {

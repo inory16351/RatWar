@@ -31,6 +31,7 @@ public class BoardView : MonoBehaviour
     readonly List<GameObject> hiPool = new List<GameObject>(); int hiUsed;
     LineRenderer pathLine;
     readonly List<GameObject> fireGO = new List<GameObject>();
+    readonly List<GameObject> markGO = new List<GameObject>();
     MaterialPropertyBlock mpb;
     bool dirty = true;
     public Tile hoverTile;
@@ -68,7 +69,7 @@ public class BoardView : MonoBehaviour
     public void Build()
     {
         foreach (var r in new[] { groundRoot, propRoot, unitRoot, fxRoot, hiRoot, decoRoot, stainRoot }) Tpl.Clear(r);
-        propGO.Clear(); hiPool.Clear(); fireGO.Clear(); fx.Clear(); pools.Clear(); hiUsed = 0; pathLine = null;
+        propGO.Clear(); hiPool.Clear(); fireGO.Clear(); markGO.Clear(); fx.Clear(); pools.Clear(); hiUsed = 0; pathLine = null;
         var w = W;
         // 바닥 = 구운 그림 한 장 (맵 + 둘레). 언덕 칸은 상자 + 윗면 판(같은 그림의 그 칸 부분)
         baker = new GroundBaker(w, BACK_ROWS, BACK_ROWS + 4, 8);
@@ -863,6 +864,55 @@ public class BoardView : MonoBehaviour
             fireGO.Add(sr.gameObject);
         }
     }
+    // 연막 · 조명탄 · 부비트랩(쥐에게만 보임) · 포격 떨어질 자리
+    SpriteRenderer Mark(Sprite sp, Vector3 p, float size, Color c, int order = 3)
+    {
+        var sr = Tpl.Spawn<SpriteRenderer>("SpriteTpl", fxRoot);
+        sr.transform.position = p; sr.sprite = sp; sr.color = c;
+        sr.sortingOrder = DepthOrder(p.z) + order;
+        float m = sp ? Mathf.Max(sp.bounds.size.x, sp.bounds.size.y) : 1;
+        sr.transform.localScale = Vector3.one * size / Mathf.Max(0.01f, m);
+        markGO.Add(sr.gameObject);
+        return sr;
+    }
+    public void MarksChanged()
+    {
+        foreach (var g in markGO) if (g) Destroy(g);
+        markGO.Clear();
+        var smoke = FX("smoke");
+        if (smoke.Length > 0)
+            foreach (var s in Battle.smokes)
+                Mark(smoke[(s.x * 7 + s.z * 3) % smoke.Length], TilePos(s.x, s.z) + new Vector3(0, 0.45f, 0), 1.6f, new Color(0.82f, 0.8f, 0.76f, 0.78f), 6);
+        foreach (var f in Battle.flares)
+        {
+            Mark(ArtLib.Icon("flare"), TilePos(f.x, f.z) + new Vector3(0, 1.4f, 0), 0.6f, Color.white, 8);
+            var ring = FX("shield");
+            if (ring.Length > 0) { var r = Mark(ring[0], TilePos(f.x, f.z) + Vector3.up * 0.04f, GameData.ABILITIES["flare"].radius * 2, new Color(1f, 0.8f, 0.4f, 0.25f), 1); r.transform.rotation = Quaternion.Euler(90, 0, 0); }
+        }
+        foreach (var t in Battle.traps) Mark(ArtLib.Icon("trap"), TilePos(t.x, t.z) + new Vector3(0, 0.2f, 0), 0.4f, new Color(1, 1, 1, 0.85f), 2);
+        foreach (var t in Battle.strikes)
+        {
+            var ring = FX("shield");
+            if (ring.Length > 0) { var r = Mark(ring[0], TilePos(t.x, t.z) + Vector3.up * 0.05f, GameData.ABILITIES["artillery"].radius * 2, new Color(1f, 0.25f, 0.2f, 0.55f), 1); r.transform.rotation = Quaternion.Euler(90, 0, 0); }
+            Mark(ArtLib.Icon("artillery"), TilePos(t.x, t.z) + new Vector3(0, 0.9f, 0), 0.55f, Color.white, 8);
+        }
+    }
+    public void SmokePuff(int x, int z, float r)
+    {
+        var p = TilePos(x, z);
+        for (int i = 0; i < 12; i++)
+        {
+            var s = Spawn(FX("smoke"), p + new Vector3((Random.value - 0.5f) * r * 1.6f, Random.value * 0.3f, (Random.value - 0.5f) * r * 1.2f), 0.7f + Random.value * 0.5f, 1.6f + Random.value, new Color(0.85f, 0.83f, 0.78f, 0.85f));
+            if (s != null) { s.vel = new Vector3((Random.value - 0.5f) * 0.5f, 0.3f + Random.value * 0.3f, 0); s.size1 = s.size0 * 2f; }
+        }
+    }
+    public void FlareBurst(int x, int z)
+    {
+        var p = TilePos(x, z) + Vector3.up * 1.4f;
+        var f = Spawn(FX("flash"), p, 1.6f, 0.35f, new Color(1f, 0.85f, 0.5f)); if (f != null) f.fadeOut = true;
+        for (int i = 0; i < 6; i++) { var s = Spawn(FX("spark"), p, 0.4f, 0.6f, new Color(1f, 0.7f, 0.3f)); if (s != null) s.vel = new Vector3((Random.value - 0.5f) * 2, Random.value, 0); }
+    }
+
     void UpdateFires()
     {
         var fr = FX("fire"); if (fr.Length == 0) return;

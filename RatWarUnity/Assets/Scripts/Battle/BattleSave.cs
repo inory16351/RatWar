@@ -16,6 +16,7 @@ public class BattleSaveData
     public List<string> alerted = new List<string>();
     public List<int[]> fires = new List<int[]>();        // x, z, 남은 턴
     public List<int[]> tunnels = new List<int[]>();      // ax, az, bx, bz
+    public List<int[]> smokes = new List<int[]>(), flares = new List<int[]>(), traps = new List<int[]>(), strikes = new List<int[]>(); // x, z, 턴 · 주인 id
     public string[] props, grounds;                      // 칸마다 (부서진 엄폐물 · 구덩이 반영)
     public List<Unit> units;
     public List<string[]> log = new List<string[]>();
@@ -42,6 +43,8 @@ public static class BattleSave
             alerted = Battle.alerted.ToList(),
             fires = Battle.fires.Select(f => new[] { f.x, f.z, f.turns }).ToList(),
             tunnels = w.tunnels.Select(t => new[] { t.a.x, t.a.z, t.b.x, t.b.z }).ToList(),
+            smokes = Battle.smokes.Select(f => new[] { f.x, f.z, f.turns }).ToList(), flares = Battle.flares.Select(f => new[] { f.x, f.z, f.turns }).ToList(),
+            traps = Battle.traps.Select(f => new[] { f.x, f.z, f.owner }).ToList(), strikes = Battle.strikes.Select(f => new[] { f.x, f.z, f.owner }).ToList(),
             props = w.tiles.Select(t => t.HasProp ? t.prop.ToString() : "").ToArray(),
             grounds = w.tiles.Select(t => t.ground).ToArray(),
             units = Battle.units,

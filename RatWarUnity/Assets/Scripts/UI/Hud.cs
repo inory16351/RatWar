@@ -267,9 +267,12 @@ public class Hud : MonoBehaviour
 
     static readonly Dictionary<string, string> FLAVOR = new Dictionary<string, string>
     {
-        ["scurry"] = "쥐는 도망칠 줄 안다. 그래서 오래 산다.", ["ambush"] = "고양이는 구멍 안을 보지 못한다.", ["warcry"] = "찍! 찍찍! 찍찍찍!", ["gnaw"] = "이빨은 쇠보다 끈질기다.",
-        ["tunnel"] = "땅 밑은 언제나 쥐의 영토였다.", ["cheese"] = "전쟁 중에도 치즈는 치즈다.", ["command"] = "전령은 작고 빠르고, 셀 수 없이 많다.", ["dominate"] = "눈을 마주치는 순간, 그 고양이는 더 이상 고양이가 아니다.",
-        ["ward"] = "보이지 않는 막이 총알을 삼킨다.", ["knife"] = "총소리는 무리를 깨운다. 칼은 깨우지 않는다.", ["flame"] = "불은 엄폐물을 가리지 않는다.",
+        ["ambush"] = "고양이는 구멍 안을 보지 못한다.", ["warcry"] = "찍! 찍찍! 찍찍찍!",
+        ["tunnel"] = "땅 밑은 언제나 쥐의 영토였다.", ["command"] = "전령은 작고 빠르고, 셀 수 없이 많다.", ["dominate"] = "눈을 마주치는 순간, 그 고양이는 더 이상 고양이가 아니다.",
+        ["knife"] = "총소리는 무리를 깨운다. 칼은 깨우지 않는다.", ["flame"] = "불은 엄폐물을 가리지 않는다.",
+        ["barrage"] = "조준은 사치다. 탄은 많다.", ["trap"] = "고양이는 발밑을 보지 않는다.", ["smoke"] = "안 보이면 못 쏜다.", ["dash"] = "그림자처럼 다가가, 소리 없이.",
+        ["painkiller"] = "아픈 건 나중에.", ["supply"] = "붕대는 모두에게 돌아간다.", ["flare"] = "밤은 고양이 편이 아니다.", ["artillery"] = "좌표 불러라. 포병이 듣고 있다.",
+        ["terror"] = "고양이도 두려움을 안다.", ["cleanse"] = "숨을 쉬어. 아직 살아 있어.",
     };
     // 롤식 툴팁 내용
     public static string AbilityTip(string ab, string why = "", int? count = null)
@@ -278,6 +281,8 @@ public class Hud : MonoBehaviour
         var tags = new List<string> { A.ap > 0 ? $"행동력 {A.ap}" : "행동력 없이", A.end ? "쓰면 턴 끝" : "턴 계속" };
         if (A.psi > 0) tags.Add($"정신력 {A.psi}");
         if (A.once) tags.Add("전투당 1번");
+        if (A.uses > 0 && ab != "flame") tags.Add($"전투당 {A.uses}번");
+        if (A.cd > 0) tags.Add($"쿨타임 {A.cd}턴");
         if (count != null) tags.Add($"남은 횟수 {count}");
         if (A.range > 0) tags.Add($"사거리 {A.range}칸");
         if (A.radius > 0) tags.Add($"범위 {A.radius}칸");

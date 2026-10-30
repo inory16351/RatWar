@@ -26,7 +26,21 @@ public class Lobby : MonoBehaviour
         UIK.OnClick(UIK.B(t, "Header/Reset"), () => { ConfirmReset(); });
         // 기록은 바뀔 때마다 자동 저장되지만, 확인용 버튼
         UIK.OnClick(UIK.B(t, "Header/Save"), () => { Camp.Save(C); Toast(BattleSave.Exists ? "저장했습니다 — 진행 중인 전투는 타이틀의 '이어하기'로" : "저장했습니다"); });
+        // 난이도: 저장 버튼을 복제해 옆에 둠. 누르면 다음 난이도로 (다음 출격부터 적용)
+        var save = UIK.F(t, "Header/Save") as RectTransform;
+        diffBtn = Instantiate(save.gameObject, save.parent).GetComponent<Button>();
+        diffBtn.name = "Diff";
+        var drt = (RectTransform)diffBtn.transform;
+        drt.SetSiblingIndex(save.GetSiblingIndex());
+        if (!save.parent.GetComponent<LayoutGroup>()) drt.anchoredPosition = save.anchoredPosition - new Vector2(save.rect.width + 12, 0);
+        UIK.OnClick(diffBtn, () =>
+        {
+            C.diff = (C.diff + 1) % RULES.DIFFS.Length; Camp.Save(C);
+            Toast($"난이도 {RULES.DIFFS[C.diff].name} — {RULES.DIFFS[C.diff].desc}");
+            Render();
+        });
     }
+    Button diffBtn;
 
     float resetArm;
     void ConfirmReset()
@@ -56,6 +70,9 @@ public class Lobby : MonoBehaviour
         C = Camp.Load() ?? Camp.Fresh();
         Camp.Save(C);
         stats.text = $"보급품 <b>{C.supplies}</b>    전투 {C.battles}    분대 {C.squad.Count}/{SQUAD_MAX}";
+        var D = RULES.DIFFS[Mathf.Clamp(C.diff, 0, RULES.DIFFS.Length - 1)];
+        diffBtn.GetComponentInChildren<Text>(true).text = "난이도: " + D.name;
+        UIK.Tip(diffBtn, $"<b>난이도 {D.name}</b>\n{D.desc}\n누르면 바뀜 · 다음 출격부터 적용");
         foreach (var n in new[] { "ops", "squad", "recruit", "memorial" })
             UIK.B(transform, "Header/Tabs/" + n).GetComponent<Image>().sprite = ArtLib.Sprite(tab == n ? "out/ui/btn_hi.png" : "out/ui/btn.png");
         UIK.Show(ops, tab == "ops"); UIK.Show(squad, tab == "squad"); UIK.Show(recruit, tab == "recruit"); UIK.Show(memorial, tab == "memorial");
@@ -69,7 +86,15 @@ public class Lobby : MonoBehaviour
         return $"스트레스 {UIK.Col($"{r.stress} · {ss.t}", ss.c)}";
     }
     static string TraitText(RatRecord r) => string.Join(" ", r.traits.Select(t => UIK.Col("[" + TRAITS[t].name + "]", TRAITS[t].rare ? UIK.PSY : UIK.GOLD)));
-    static string TraitTip(RatRecord r) => string.Join("\n", r.traits.Select(t => $"<b>{TRAITS[t].name}</b> — {TRAITS[t].desc}"));
+    // 관계 특성은 상대 이름도 (전우 · 멘토 · 제자 · 앙숙)
+    static readonly System.Collections.Generic.Dictionary<string, string> BOND_OF = new System.Collections.Generic.Dictionary<string, string> { ["comrade"] = "comrade", ["mentor"] = "pupil", ["pupil"] = "mentor", ["feud"] = "feud" };
+    string Partners(RatRecord r, string t)
+    {
+        if (!BOND_OF.TryGetValue(t, out var kind)) return "";
+        var names = Camp.Partners(r, kind).Select(id => C.squad.Concat(C.fallen).FirstOrDefault(q => q.id == id)?.name).Where(n => n != null).ToList();
+        return names.Count > 0 ? UIK.Dim($" ({string.Join(", ", names)})") : "";
+    }
+    string TraitTip(RatRecord r) => string.Join("\n", r.traits.Select(t => $"<b>{TRAITS[t].name}</b>{Partners(r, t)} — {TRAITS[t].desc}"));
     static string Status(RatRecord r)
     {
         var s = new System.Collections.Generic.List<string>();

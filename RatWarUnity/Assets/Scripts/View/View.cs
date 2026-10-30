@@ -73,6 +73,9 @@ public static class View
     public static void Debris(int x, int z, char prop) => B.Debris(x, z, prop);
     public static void GroundDirty() => B.MarkDirty();
     public static void FiresChanged() => B.FiresChanged();
+    public static void MarksChanged() => B?.MarksChanged();
+    public static void SmokePuff(int x, int z, float r) => B.SmokePuff(x, z, r);
+    public static void FlareBurst(int x, int z) => B.FlareBurst(x, z);
     public static void Dig(int x, int z) => B.Dig(x, z);
     public static void Slash(Unit a, Unit b) => B.Slash(a, b);
     public static void RatsRun(Unit a, Unit b) => B.RatsRun(a, b);

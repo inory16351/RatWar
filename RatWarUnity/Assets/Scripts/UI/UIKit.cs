@@ -40,7 +40,7 @@ public static class UIK
         Tpl.Clear(slot);
         var cls = Camp.ClassOf(r);
         var st = Camp.Stats(r);
-        var R = ArtLib.RigFor(true, cls, r.gear, st.abil.Contains("flame"));
+        var R = ArtLib.RigFor(true, cls, r.gear, st.weapon == "flamer");
         var Bb = ArtLib.BaseRig(true, cls);
         if (R == null || !R.views.TryGetValue("front", out var V)) return;
         float size = Mathf.Min(slot.rect.width, slot.rect.height);
