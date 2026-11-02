@@ -24,7 +24,7 @@ public class BattleSaveData
 
 public static class BattleSave
 {
-    static string PathOf => Path.Combine(Application.persistentDataPath, "war_battle_v1.json");
+    static string PathOf => SaveSlots.BattlePath(SaveSlots.Cur); // 지금 슬롯
     public static bool Exists => File.Exists(PathOf);
     public static void Delete() { try { if (Exists) File.Delete(PathOf); } catch { /* 무시 */ } }
 

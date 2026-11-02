@@ -76,7 +76,7 @@ public class Cutscene : MonoBehaviour
         caption.text = s.text.Substring(0, (int)typed);
 
         var kb = Keyboard.current; var ms = Mouse.current;
-        if (kb != null && kb.escapeKey.wasPressedThisFrame) { Finish(); return; }
+        if (kb != null && kb.escapeKey.wasPressedThisFrame) { Menus.escUsed = Time.frameCount; Finish(); return; }
         bool adv = (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame)) || (ms != null && ms.leftButton.wasPressedThisFrame);
         if (!adv) return;
         if (typed < s.text.Length) { typed = s.text.Length; t = Mathf.Max(t, FADE); }

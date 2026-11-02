@@ -27,7 +27,8 @@ public static class Sfx
         c.SetData(d, 0);
         return clips[key] = c;
     }
-    static void Play(AudioClip c) { if (src) src.PlayOneShot(c); }
+    public static float vol = 1; // 환경설정 효과음 크기
+    static void Play(AudioClip c) { if (src) src.PlayOneShot(c, vol); }
 
     public static void Shot(string w) => Play(Noise("shot_" + w, w == "sniper" ? 0.35f : w == "shotgun" ? 0.3f : 0.16f, w == "sniper" ? 2600 : 1800, 0.35f));
     public static void Boom() => Play(Noise("boom", 1.2f, 380, 0.9f));
@@ -41,8 +42,11 @@ public static class Music
 {
     static AudioSource src;
     static string cur;
-    public static float vol = 0.45f;
+    public const float BASE = 0.45f;   // 곡 기본 크기 (환경설정 배경음 1.0 일 때)
+    public static float vol = BASE;
     public static void Init(AudioSource s) { src = s; src.loop = true; src.volume = 0; }
+    // 환경설정에서 바꿀 때: 지금 나오는 곡에도 바로
+    public static void Volume(float v) { vol = v; if (src && src.isPlaying && cur != null) src.volume = v; }
 
     public static async void Play(string name)
     {

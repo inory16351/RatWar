@@ -17,7 +17,10 @@ public class WarState
     public List<string> news = new List<string>();       // 지난 턴 소식
     public string over = "";                             // "win" / "lose"
     public int battleHex = -1; public string battleKind = ""; // 지금 출격한 전투
+    public List<Post> posts = new List<Post>();          // 이번 턴 수비대 (침공당한 칸에 보낸 대기 쥐)
+    public List<int> forts = new List<int>();            // 요새화한 내 칸 (잃으면 사라짐)
 }
+[Serializable] public class Post { public int hex; public string rat; }
 
 public class WarKind { public string name, map; public int income; }
 public class WarHex { public string name, kind, fx, special; }
@@ -76,9 +79,11 @@ public static class War
     public static void Ensure(CampData c)
     {
         if (c.war == null) c.war = new WarState();
+        if (c.war.posts == null) c.war.posts = new List<Post>();
+        if (c.war.forts == null) c.war.forts = new List<int>();
         if (c.war.turn > 0 && c.war.own.Count == N) return;
         var w = c.war;
-        w.turn = 1; w.over = ""; w.battleHex = -1; w.battleKind = "";
+        w.turn = 1; w.over = ""; w.battleHex = -1; w.battleKind = ""; w.posts = new List<Post>(); w.forts = new List<int>();
         w.own = Enumerable.Range(0, N).Select(i => D.start.Contains(i) ? "rat" : "cat").ToList();
         w.threats = new List<int>(); w.news = new List<string>();
         // 시작한 다음 사령부가 컷씬을 봤는지만 남김 (새 전쟁이면 다시 봄)
@@ -180,9 +185,53 @@ public static class War
     public static string SpecialId(int hex) => D.hexes[hex].special;
 
     // 출격 전에 고른 칸을 적어 둠 (정산 · 이어하기용)
+    // ── 자동 방어 확률 (직접 싸우지 않은 침공) ──
+    //   기본 = 50% + 붙은 내 땅마다 8% − 턴마다 1.5% + 난이도 보정 → 15~85% 로 자름
+    //   그 위에 수비대(쥐마다 12% + 계급마다 1%) · 요새(+20%) → 최대 95%
+    public const float GARRISON_PER = 0.12f, GARRISON_RANK = 0.01f, FORT_BONUS = 0.20f, HOLD_MAX = 0.95f;
+    public const int GARRISON_MAX = 3, FORT_COST = 45;
+    public const float GARRISON_HURT = 0.25f, GARRISON_DIE = 0.2f; // 뚫리면 쥐마다 25% 로 화 입음, 그중 1/5 은 전사 (나머지는 한 턴 부상)
+    public const int GARRISON_STRESS = 10;
+    public static float BaseHold(CampData c, int hex)
+    {
+        int friends = Neighbors(hex).Count(n => Rat(c, n));
+        return Mathf.Clamp(0.5f + 0.08f * friends - 0.015f * c.war.turn + RULES.DiffOf(c.diff).hold, 0.15f, 0.85f);
+    }
+    public static IEnumerable<RatRecord> Garrison(CampData c, int hex) =>
+        c.war.posts.Where(p => p.hex == hex).Select(p => c.squad.FirstOrDefault(r => r.id == p.rat)).Where(r => r != null);
+    public static float GarrisonBonus(CampData c, int hex) => Garrison(c, hex).Sum(r => GARRISON_PER + GARRISON_RANK * Camp.RankIdx(r));
+    public static float HoldChance(CampData c, int hex) =>
+        Mathf.Min(HOLD_MAX, BaseHold(c, hex) + GarrisonBonus(c, hex) + (c.war.forts.Contains(hex) ? FORT_BONUS : 0));
+
+    // 쥐가 수비대로 나간 칸 (없으면 −1)
+    public static int Posted(CampData c, string ratId) => c?.war?.posts?.FirstOrDefault(p => p.rat == ratId)?.hex ?? -1;
+    // 수비대 넣기 · 빼기 (같은 칸이면 뺌). 출전 명단에서는 빠짐
+    public static bool TogglePost(CampData c, int hex, RatRecord r)
+    {
+        var w = c.war;
+        int at = Posted(c, r.id);
+        w.posts.RemoveAll(p => p.rat == r.id);
+        if (at == hex) { Camp.Save(c); return true; }
+        if (!CanDefend(c, hex) || !Camp.Ready(r) || Garrison(c, hex).Count() >= GARRISON_MAX) { Camp.Save(c); return at >= 0; }
+        w.posts.Add(new Post { hex = hex, rat = r.id });
+        c.deploy.Remove(r.id);
+        Camp.Save(c);
+        return true;
+    }
+    public static bool CanFortify(CampData c, int hex) => Rat(c, hex) && !c.war.forts.Contains(hex) && c.war.over == "";
+    public static bool Fortify(CampData c, int hex)
+    {
+        if (!CanFortify(c, hex) || c.supplies < FORT_COST) return false;
+        c.supplies -= FORT_COST; c.war.forts.Add(hex);
+        Camp.Save(c);
+        return true;
+    }
+    static void Lose(CampData c, int hex) { c.war.own[hex] = "cat"; c.war.forts.Remove(hex); }
+
     public static void Begin(CampData c, int hex, string kind)
     {
         c.war.battleHex = hex; c.war.battleKind = kind;
+        c.war.posts.RemoveAll(p => p.hex == hex || c.deploy.Contains(p.rat)); // 직접 싸우는 칸 · 출전하는 쥐는 수비대에서 빠짐
         Camp.Save(c);
     }
 
@@ -202,7 +251,7 @@ public static class War
         else
         {
             if (win) w.news.Add(UIK.Col($"■ {name} 방어 성공", UIK.OK));
-            else { w.own[hex] = "cat"; w.news.Add(UIK.Col($"▼ {name} 함락", UIK.NEG)); }
+            else { Lose(c, hex); w.news.Add(UIK.Col($"▼ {name} 함락", UIK.NEG)); }
         }
         w.threats.Remove(hex);
         EndTurn(c);
@@ -213,7 +262,7 @@ public static class War
     {
         c.war.news.Clear();
         c.war.news.Add(UIK.Dim("이번 턴은 출격하지 않았다 — 분대가 쉰다"));
-        foreach (var r in c.squad) { r.stress = Mathf.Max(0, r.stress + CampRules.STRESS.rest); r.rested++; if (r.rested >= 2) r.afflicted = ""; }
+        foreach (var r in c.squad.Where(q => Posted(c, q.id) < 0)) { r.stress = Mathf.Max(0, r.stress + CampRules.STRESS.rest); r.rested++; if (r.rested >= 2) r.afflicted = ""; }
         EndTurn(c);
         Camp.Save(c);
     }
@@ -222,18 +271,39 @@ public static class War
     static void EndTurn(CampData c)
     {
         var w = c.war;
+        // 지난 턴 수비대에서 다친 쥐는 한 턴 쉬고 돌아옴
+        foreach (var r in c.squad) if (r.wounded > 0) r.wounded--;
         foreach (var hex in w.threats.ToList())
         {
             if (!Rat(c, hex)) continue;
             // 직접 안 막은 주요 방어전은 그걸로 끝 (다음 턴에 또 오지 않음)
             var sp = SpecialOf(hex);
             if (sp != null && sp.kind == "defend") w.seen.Add(D.hexes[hex].special + ":done");
-            int friends = Neighbors(hex).Count(n => Rat(c, n));
-            float hold = Mathf.Clamp(0.5f + 0.08f * friends - 0.015f * w.turn + RULES.DiffOf(c.diff).hold, 0.15f, 0.85f);
-            if (UnityEngine.Random.value < hold) w.news.Add(UIK.Dim($"■ {D.hexes[hex].name} 수비대가 침공을 막아냈다 (자동)"));
-            else { w.own[hex] = "cat"; w.news.Add(UIK.Col($"▼ {D.hexes[hex].name} 수비대가 무너졌다 (자동)", UIK.NEG)); }
+            var name = D.hexes[hex].name;
+            var gar = Garrison(c, hex).ToList();
+            float hold = HoldChance(c, hex);
+            string pct = $" ({Mathf.RoundToInt(hold * 100)}%)";
+            if (UnityEngine.Random.value < hold)
+            {
+                w.news.Add(gar.Count > 0 ? UIK.Col($"■ {name} 수비대({string.Join(", ", gar.Select(r => r.name))})가 침공을 막아냈다{pct}", UIK.OK)
+                    : UIK.Dim($"■ {name} 수비대가 침공을 막아냈다 (자동){pct}"));
+                foreach (var r in gar) { r.xp++; r.stress = Mathf.Min(99, r.stress + GARRISON_STRESS); r.rested = 0; }
+            }
+            else
+            {
+                Lose(c, hex);
+                w.news.Add(UIK.Col($"▼ {name} 수비대가 무너졌다{(gar.Count > 0 ? "" : " (자동)")}{pct}", UIK.NEG));
+                foreach (var r in gar)
+                {
+                    r.stress = Mathf.Min(99, r.stress + GARRISON_STRESS * 2); r.rested = 0;
+                    if (UnityEngine.Random.value >= GARRISON_HURT) continue;
+                    if (UnityEngine.Random.value < GARRISON_DIE) { Camp.Bury(c, r, name + " 수비", "수비 중 전사"); w.news.Add(UIK.Col($"  ✝ {r.name} 전사", UIK.NEG)); }
+                    else { r.wounded = 1; c.deploy.Remove(r.id); w.news.Add(UIK.Col($"  ✚ {r.name} 부상 — 한 턴 쉼", UIK.NEG)); }
+                }
+            }
         }
         w.threats.Clear();
+        w.posts.Clear();
         w.battleHex = -1; w.battleKind = "";
         // 승패
         int hq = Array.FindIndex(D.hexes, h => h.fx == "hq"), cap = Array.FindIndex(D.hexes, h => h.fx == "capital");

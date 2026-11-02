@@ -133,7 +133,11 @@ public static class Battle
     {
         var m = GameData.MISSIONS.FirstOrDefault(x => x.id == d.missionId) ?? War.FromId(d.camp, d.missionId);
         if (m == null || d.units == null) return false;
-        camp = Camp.Migrate(d.camp); mission = m;
+        // 사령부에 다녀왔으면 그동안 바뀐 기록(모집 · 스킬 · 보급품)을 씀. 같은 전투 · 출전 쥐가 다 있을 때만, 아니면 저장 때 기록
+        var now = Camp.Load();
+        bool same = now?.war != null && d.camp?.war != null && now.war.battleHex == d.camp.war.battleHex && now.war.turn == d.camp.war.turn
+            && d.units.Where(u => u.rosterId != null).All(u => now.squad.Any(q => q.id == u.rosterId));
+        camp = same ? now : Camp.Migrate(d.camp); mission = m;
         world = World.Create(GameData.MissionMap(m));
         for (int i = 0; i < world.tiles.Length && i < d.props.Length; i++)
         {

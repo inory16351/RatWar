@@ -144,7 +144,8 @@ public class Hud : MonoBehaviour
             else if (Battle.turn == "rat" && Battle.mode != "busy") Battle.SelectNext(Battle.sel);
             return;
         }
-        if (kb.escapeKey.wasPressedThisFrame) { Cancel(); return; }
+        // Esc: 조준 중이면 취소만, 아니면 GameRoot 가 일시정지 메뉴를 엶
+        if (kb.escapeKey.wasPressedThisFrame) { if (Battle.mode == "target" || Battle.mode == "tile") { Cancel(); Menus.escUsed = Time.frameCount; } return; }
         if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame) { if (Battle.mode == "target") Confirm(); else Battle.EndRatTurnUI(); return; }
         if (kb.spaceKey.wasPressedThisFrame && Battle.sel != null) { View.Focus(Battle.sel); return; }
         if (Battle.sel == null || Battle.turn != "rat") return;
@@ -160,7 +161,7 @@ public class Hud : MonoBehaviour
         float dt = Time.unscaledDeltaTime;
         // 입력 (UI 위가 아닐 때만 전장 클릭)
         var ms = Mouse.current;
-        if (ms != null && Battle.over == null)
+        if (ms != null && Battle.over == null && !Menus.Blocking)
         {
             var mp = ms.position.ReadValue();
             BoardView.I.hoverTile = GameRoot.PointerOnBoard ? BoardView.I.PickTile(mp) : null;
@@ -337,7 +338,8 @@ public class Hud : MonoBehaviour
             RectTransformUtility.ScreenPointToLocalPointInRectangle(tags, sp, null, out var lp);
             rt.anchoredPosition = lp;
             bool selU = u == Battle.sel && Battle.turn == "rat";
-            UIK.T(rt, "Name").text = selU || u.side == "cat" && u.target ? u.name : "";
+            // 쥐는 늘 이름 (고른 쥐는 굵게), 고양이는 표적만
+            UIK.T(rt, "Name").text = u.side == "rat" ? (selU ? $"<b>{u.name}</b>" : UIK.Col(u.name, UIK.RAT)) : u.target ? u.name : "";
             UIK.T(rt, "Hp").text = u.downed ? UIK.Col("✚ 쓰러짐", UIK.NEG) : UIK.Col(new string('■', Mathf.Max(0, u.hp)), u.side == "rat" ? UIK.RAT : UIK.CAT) + UIK.Dim(new string('□', Mathf.Max(0, u.maxHp - u.hp)))
                 + (u.overwatch ? UIK.Col(" ◉", UIK.RAT) : "") + (u.hunker ? UIK.Col(" ▼", UIK.RAT) : "") + (u.ward > 0 ? UIK.Col(" ⛨", UIK.PSY) : "") + (u.marked ? UIK.Col(" ◎", UIK.GOLD) : "") + (u.suppressedBy != null ? UIK.Col(" 〰", UIK.GOLD) : "");
             var bar = UIK.F(rt, "SBar");

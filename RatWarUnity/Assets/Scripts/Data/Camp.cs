@@ -16,6 +16,7 @@ public class RatRecord
     public List<string> nodes = new List<string>(), lost = new List<string>(), prosthetic = new List<string>();
     public string afflicted = "", sibling = "", grief = "";
     public bool drafted;
+    public int wounded; // 수비대에서 다쳐 쉬는 남은 턴 (0 = 출전 가능)
     // 획득 특성 누적 · 관계 (같이 출전 횟수 · 전우 · 멘토 · 앙숙)
     public int knifeKills, breaks;
     public List<Bond> bonds = new List<Bond>();
@@ -32,7 +33,7 @@ public class Bond { public string kind, id; public int n; }
 [Serializable]
 public class CampData
 {
-    public int v = 2, supplies = 60, battles, made, diff = RULES.defaultDiff;
+    public int v = 2, supplies = 60, battles, made, recruited, diff = RULES.defaultDiff; // recruited = 이번 전쟁에서 모집한 수 (모집 값이 오름)
     public List<string> done = new List<string>(), deploy = new List<string>();
     public List<RatRecord> squad = new List<RatRecord>(), fallen = new List<RatRecord>(), recruits = new List<RatRecord>();
     public WarState war = new WarState();
@@ -173,11 +174,14 @@ public static class CampRules
     }
 
     public const int RECRUIT_COST = 35, REFRESH_COST = 8, LIMB_COST = 50, SQUAD_MAX = 12, DEPLOY_MAX = 6;
+    // 모집 값 = 기본 + 위협 단계마다 + 모집할 때마다 누적 + 지원자 계급마다
+    public const int RECRUIT_PER_TIER = 10, RECRUIT_PER_HIRE = 3, RECRUIT_PER_RANK = 15;
+    public const float VET_PER_TIER = 0.15f; // 위협 2단계부터 단계마다 지원자가 계급을 달고 올 확률 +15%
 }
 
 public static class Camp
 {
-    static string PathOf => System.IO.Path.Combine(Application.persistentDataPath, "war_camp_v2.json");
+    static string PathOf => SaveSlots.CampPath(SaveSlots.Cur); // 지금 슬롯
     static int seq = 1;
     static T Pick<T>(IList<T> a) => a[UnityEngine.Random.Range(0, a.Count)];
     static float Rnd => UnityEngine.Random.value;
@@ -241,7 +245,20 @@ public static class Camp
     }
     public static void Save(CampData c) { try { File.WriteAllText(PathOf, JsonUtility.ToJson(c)); } catch (Exception e) { Debug.LogWarning("저장 실패 " + e.Message); } }
     public static void Reset() { try { if (File.Exists(PathOf)) File.Delete(PathOf); } catch { /* 무시 */ } }
-    public static void RollRecruits(CampData c) => c.recruits = new List<RatRecord> { NewRat(c), NewRat(c), NewRat(c) };
+    public static void RollRecruits(CampData c) => c.recruits = new List<RatRecord> { NewRecruit(c), NewRecruit(c), NewRecruit(c) };
+    // 모집 지원자: 위협 단계가 높을수록 계급을 단 고참이 옴 (단계 t → 일병 ~ 최대 t 계급, 하사까지). 대신 더 비쌈
+    static RatRecord NewRecruit(CampData c)
+    {
+        var r = NewRat(c);
+        int tier = c.war != null && c.war.own.Count == War.N ? War.Threat(c) : 1;
+        if (tier > 1 && Rnd < (tier - 1) * CampRules.VET_PER_TIER) r.xp = CampRules.RANKS[UnityEngine.Random.Range(1, Mathf.Min(tier, 4) + 1)].xp;
+        return r;
+    }
+    public static int RecruitCost(CampData c, RatRecord r)
+    {
+        int tier = c.war != null && c.war.own.Count == War.N ? War.Threat(c) : 1;
+        return CampRules.RECRUIT_COST + (tier - 1) * CampRules.RECRUIT_PER_TIER + c.recruited * CampRules.RECRUIT_PER_HIRE + RankIdx(r) * CampRules.RECRUIT_PER_RANK;
+    }
 
     // ── 한 쥐의 계산된 정보 ──
     public static int RankIdx(RatRecord r) => CampRules.RankOf(r.xp);
@@ -258,7 +275,19 @@ public static class Camp
         }
         return cls;
     }
-    public static bool Ready(RatRecord r) => r.lost == null || r.lost.Count == 0;
+    public static bool Fit(RatRecord r) => r.lost == null || r.lost.Count == 0;   // 팔다리 멀쩡
+    public static bool Ready(RatRecord r) => Fit(r) && r.wounded <= 0;           // 출전 가능 (수비대 부상 아님)
+    // 추모비로 (전투 · 수비대 공통). 형제를 잃은 쥐는 스트레스 +30
+    public static RatRecord Bury(CampData c, RatRecord r, string died, string how, int kills = 0)
+    {
+        c.squad.Remove(r); c.deploy.Remove(r.id);
+        var f = r.Clone();
+        f.rank = CampRules.RANKS[RankIdx(r)].name; f.cls = SkillsData.RAT_CLASSES[ClassOf(r)].name; f.died = died; f.battle = c.battles; f.how = how ?? "전사"; f.kills = r.kills + kills;
+        c.fallen.Add(f);
+        var sib = c.squad.FirstOrDefault(q => q.sibling == r.id);
+        if (sib != null) { sib.stress = Mathf.Min(99, sib.stress + 30); sib.grief = r.name; }
+        return f;
+    }
     public static float TraitSum(RatRecord r, string k) => r == null ? 0 : r.traits.Sum(t => CampRules.TRAITS[t].Get(k));
     public static float StressMul(RatRecord r, string why)
     {
@@ -308,10 +337,12 @@ public static class Camp
     // ── 모집 · 치료 ──
     public static bool Recruit(CampData c, int i)
     {
-        if (c.supplies < CampRules.RECRUIT_COST || c.squad.Count >= CampRules.SQUAD_MAX || i >= c.recruits.Count) return false;
-        c.supplies -= CampRules.RECRUIT_COST;
+        if (i >= c.recruits.Count || c.squad.Count >= CampRules.SQUAD_MAX) return false;
+        int cost = RecruitCost(c, c.recruits[i]);
+        if (c.supplies < cost) return false;
+        c.supplies -= cost; c.recruited++;
         c.squad.Add(c.recruits[i]);
-        c.recruits[i] = NewRat(c);
+        c.recruits[i] = NewRecruit(c);
         Save(c);
         return true;
     }
@@ -427,14 +458,8 @@ public static class Camp
             bool survived = x.alive || (x.downed && win);
             if (!survived)
             {
-                c.squad.Remove(r);
-                var f = r.Clone();
-                f.rank = CampRules.RANKS[RankIdx(r)].name; f.cls = SkillsData.RAT_CLASSES[ClassOf(r)].name; f.died = mission.name; f.battle = c.battles; f.how = x.how ?? "전사"; f.kills = r.kills + x.kills;
-                c.fallen.Add(f);
+                var f = Bury(c, r, mission.name, x.how, x.kills);
                 report.Add(new ReportRow { r = f, dead = true, how = x.how });
-                // 형제를 잃은 쥐
-                var sib = c.squad.FirstOrDefault(q => q.sibling == r.id);
-                if (sib != null) { sib.stress = Mathf.Min(99, sib.stress + 30); sib.grief = r.name; }
                 continue;
             }
             int before = RankIdx(r);
@@ -449,10 +474,10 @@ public static class Camp
         }
         var rows = report.Where(x => !x.dead).GroupBy(x => x.r.id).ToDictionary(g => g.Key, g => g.First());
         Acquire(c, res.Where(x => rows.ContainsKey(x.id)).ToList(), new HashSet<string>(report.Where(x => x.dead).Select(x => x.r.id)), rows, rankBefore);
-        // 출전 안 한 쥐는 쉼: 스트레스 풀림, 두 판 쉬면 정신 이상도 나음
+        // 출전 안 한 쥐는 쉼: 스트레스 풀림, 두 판 쉬면 정신 이상도 나음 (수비대로 나간 쥐는 못 쉼)
         foreach (var r in c.squad)
         {
-            if (deployed.Contains(r.id)) continue;
+            if (deployed.Contains(r.id) || War.Posted(c, r.id) >= 0) continue;
             float rest = TraitSum(r, "rest");
             r.stress = Mathf.Max(0, r.stress + (int)(CampRules.STRESS.rest * (rest != 0 ? rest : 1)));
             r.rested++;
@@ -461,7 +486,7 @@ public static class Camp
         c.deploy = c.deploy.Where(id => c.squad.Any(r => r.id == id)).ToList();
         // 출전할 쥐가 4마리도 안 남으면 징집병이 공짜로 옴 (전멸해도 캠페인은 이어짐)
         int drafted = 0;
-        while (c.squad.Count(Ready) < 4 && c.squad.Count < CampRules.SQUAD_MAX) { var r = NewRat(c); r.drafted = true; c.squad.Add(r); drafted++; }
+        while (c.squad.Count(Fit) < 4 && c.squad.Count < CampRules.SQUAD_MAX) { var r = NewRat(c); r.drafted = true; c.squad.Add(r); drafted++; }
         foreach (var r in c.squad) if (c.deploy.Count < CampRules.DEPLOY_MAX && Ready(r) && !c.deploy.Contains(r.id) && r.drafted) c.deploy.Add(r.id);
         // 전략 지도: 칸 주인 바꾸고 턴 넘김
         if (War.IsWar(mission)) War.AfterBattle(c, mission, win);

@@ -15,7 +15,7 @@ public class GameRoot : MonoBehaviour
 
     public static bool TypingBlocked => false;
     // 마우스가 전장 위 (UI 위가 아님, 전투 중)
-    public static bool PointerOnBoard => I && I.mode == "battle" && Battle.over == null && !(EventSystem.current && EventSystem.current.IsPointerOverGameObject());
+    public static bool PointerOnBoard => I && I.mode == "battle" && Battle.over == null && !Menus.Blocking && !(EventSystem.current && EventSystem.current.IsPointerOverGameObject());
 
     void Awake()
     {
@@ -34,7 +34,26 @@ public class GameRoot : MonoBehaviour
         ApplyFonts();
         Sfx.Init(sfxSource);
         Music.Init(musicSource);
+        SaveSlots.MigrateLegacy();
+        Settings.Apply();
         SetMode("title");
+    }
+    public string Mode => mode;
+
+    // Esc: 다른 Update(컷씬 넘기기 · 조준 취소)가 먼저 쓰게 LateUpdate 에서
+    void LateUpdate()
+    {
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb != null && kb.escapeKey.wasPressedThisFrame) Menus.Esc();
+    }
+
+    // 메인메뉴로 (사령부 Esc · 전투 일시정지에서). 기록은 이미 저장된 상태로 부름
+    public void ToTitle()
+    {
+        Time.timeScale = 1;
+        SetMode("title");
+        foreach (var t in FindObjectsByType<TitleScreen>(FindObjectsInactive.Include, FindObjectsSortMode.None)) t.gameObject.SetActive(true);
+        Music.Play("lobby");
     }
 
     static void GraphicsSettings_Sort()

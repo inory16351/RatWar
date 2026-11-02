@@ -25,7 +25,7 @@ public class Lobby : MonoBehaviour
         }
         UIK.OnClick(UIK.B(t, "Header/Reset"), () => { ConfirmReset(); });
         // 기록은 바뀔 때마다 자동 저장되지만, 확인용 버튼
-        UIK.OnClick(UIK.B(t, "Header/Save"), () => { Camp.Save(C); Toast(BattleSave.Exists ? "저장했습니다 — 진행 중인 전투는 타이틀의 '이어하기'로" : "저장했습니다"); });
+        UIK.OnClick(UIK.B(t, "Header/Save"), () => { Camp.Save(C); Toast(BattleSave.Exists ? "저장했습니다 — 진행 중인 전투는 작전 탭의 '전투 이어하기'로" : "저장했습니다"); });
         // 난이도: 저장 버튼을 복제해 옆에 둠. 표시만 (새 전쟁 때 정하고 전쟁 동안 고정)
         var save = UIK.F(t, "Header/Save") as RectTransform;
         diffBtn = Instantiate(save.gameObject, save.parent).GetComponent<Button>();
@@ -34,8 +34,22 @@ public class Lobby : MonoBehaviour
         drt.SetSiblingIndex(save.GetSiblingIndex());
         if (!save.parent.GetComponent<LayoutGroup>()) drt.anchoredPosition = save.anchoredPosition - new Vector2(save.rect.width + 12, 0);
         UIK.OnClick(diffBtn, () => Toast($"난이도 {RULES.DiffOf(C.diff).name} — 전쟁 중엔 바꿀 수 없음 ('처음부터'로 새 전쟁)"));
+        // 수비대 배치 · 요새화: '이번 턴 쉬기' 버튼을 복제해 왼쪽에 나란히
+        var wait = UIK.F(ops, "WarInfo/Wait") as RectTransform;
+        garBtn = CloneLeft(wait, "Garrison", 1); fortBtn = CloneLeft(wait, "Fortify", 2);
     }
-    Button diffBtn;
+    Button diffBtn, garBtn, fortBtn;
+    bool garrisonMode; // 켜면 대기 쥐를 누를 때 출전 대신 고른 침공 칸의 수비대로
+
+    static Button CloneLeft(RectTransform src, string name, int k)
+    {
+        var b = Instantiate(src.gameObject, src.parent).GetComponent<Button>();
+        b.name = name;
+        var rt = (RectTransform)b.transform;
+        rt.SetSiblingIndex(src.GetSiblingIndex());
+        if (!src.parent.GetComponent<LayoutGroup>()) rt.anchoredPosition = src.anchoredPosition - new Vector2((src.rect.width + 12) * k, 0);
+        return b;
+    }
 
     float resetArm;
     void ConfirmReset()
@@ -44,9 +58,9 @@ public class Lobby : MonoBehaviour
         if (Time.unscaledTime - resetArm > 2.5f) { resetArm = Time.unscaledTime; Toast("한 번 더 누르면 새 전쟁 — 난이도를 고르면 지금 분대 기록은 지워집니다"); return; }
         resetArm = 0;
         // 난이도를 고르고 '전쟁 시작'을 눌러야 실제로 지움 (뒤로 = 취소)
-        DiffPicker.Open(GetComponentInParent<Canvas>().rootCanvas.transform, C.diff, d =>
+        DiffPicker.Open(C.diff, d =>
         {
-            Camp.Reset(); Camp.Save(Camp.Fresh(d)); sel = null; selHex = -1;
+            Camp.Reset(); BattleSave.Delete(); Camp.Save(Camp.Fresh(d)); sel = null; selHex = -1;
             Toast($"새 분대 · 새 전쟁 ({RULES.DiffOf(d).name})"); Render();
         }, null);
     }
@@ -117,7 +131,8 @@ public class Lobby : MonoBehaviour
         // 처음 들어오면 프롤로그, 전쟁이 끝났으면 결말
         if (!w.seen.Contains("prologue")) { w.seen.Add("prologue"); Camp.Save(C); Cutscene.I.Play("라테리아 공화국 · 개전", War.D.prologue, Render); }
         else if (w.over != "" && !w.seen.Contains("ending")) { w.seen.Add("ending"); Camp.Save(C); Cutscene.I.Play(w.over == "win" ? "승리" : "패배", w.over == "win" ? War.D.victory : War.D.defeat, Render); }
-        if (selHex < 0 || ActionOf(selHex) == null) selHex = w.threats.Count > 0 ? w.threats[0] : selHex;
+        // 고른 칸이 없거나 할 일 없는 고양이 땅이면 첫 침공 칸으로 (내 땅은 요새화할 수 있으니 그대로)
+        if (selHex < 0 || ActionOf(selHex) == null && !War.Rat(C, selHex)) selHex = w.threats.Count > 0 ? w.threats[0] : selHex;
         WarMap();
         WarInfo();
         var act = ActionOf(selHex);
@@ -127,7 +142,8 @@ public class Lobby : MonoBehaviour
         {
             string why = w.over == "win" ? UIK.Col("전쟁에서 이겼다. 머리 위 '처음부터'로 새 전쟁을 시작할 수 있다.", UIK.GOLD)
                 : w.over == "lose" ? UIK.Col("전쟁에서 졌다. 머리 위 '처음부터'로 다시 시작.", UIK.NEG)
-                : selHex >= 0 ? HexText(selHex) + "\n" + UIK.Dim("싸울 수 있는 칸: 침공당한 내 땅(빨간 테두리) · 내 땅에 붙은 고양이 땅")
+                : selHex >= 0 ? HexText(selHex) + "\n" + UIK.Dim("싸울 수 있는 칸: 침공당한 내 땅(빨간 테두리) · 내 땅에 붙은 고양이 땅"
+                    + (War.CanFortify(C, selHex) ? $"\n이 칸은 '요새화'(보급품 {War.FORT_COST})로 자동 방어 +{Mathf.RoundToInt(War.FORT_BONUS * 100)}%" : ""))
                 : UIK.Dim("지도에서 칸을 고르세요 — 침공당한 내 땅을 막거나, 붙어 있는 고양이 땅을 공격합니다. 한 턴에 한 번만 싸울 수 있습니다.");
             UIK.T(br, "Head").text = $"<size=30><b>{w.turn}턴</b></size>\n{why}";
         }
@@ -136,10 +152,14 @@ public class Lobby : MonoBehaviour
             string obj = m.obj == "elim" ? "고양이 전멸" : m.obj == "officer" ? "표적 장교 사살" : "깃발 칸에 쥐 한 마리 도달";
             bool sp = War.IsSpecial(C, selHex, act);
             UIK.T(br, "Head").text = $"{(sp ? UIK.Col("◆ 주요 전투  ", UIK.GOLD) : "")}<size=30><b>{m.name}</b></size>    {UIK.Col($"보급품 +{m.reward}", UIK.GOLD)}\n{m.brief}\n{UIK.Col("목표", UIK.GOLD)} {obj} · {UIK.Col("적", UIK.GOLD)} 고양이 {m.cats.Length}{(m.shells > 0 ? $" · {UIK.Col("박격포탄", UIK.GOLD)} {m.shells}" : "")}"
-                + "\n" + UIK.Dim(act == "attack" ? "이기면 이 땅을 얻음 · 출격하지 않은 침공은 수비대가 알아서 막음(운)" : "지면 이 땅을 잃음 · 나머지 침공은 수비대가 알아서 막음(운)");
+                + "\n" + UIK.Dim(act == "attack" ? "이기면 이 땅을 얻음 · 출격하지 않은 침공은 수비대가 막음(확률)" : "지면 이 땅을 잃음 · 나머지 침공은 수비대가 막음(확률)")
+                + (act == "defend" ? "\n" + HoldLine(selHex) : "");
         }
         UIK.T(br, "DeployH").text = $"{UIK.Col("▶ 출전", UIK.OK)} {C.deploy.Count} / {DEPLOY_MAX}   {UIK.Dim("누르면 대기로")}";
-        UIK.T(br, "BenchH").text = $"{UIK.Col("■ 대기", UIK.RAT)} {C.squad.Count - C.deploy.Count}   {UIK.Dim("쉬는 쥐는 다음 판 뒤 스트레스 −35 · 누르면 출전")}";
+        bool posting = garrisonMode && War.CanDefend(C, selHex);
+        UIK.T(br, "BenchH").text = $"{UIK.Col("■ 대기", UIK.RAT)} {C.squad.Count - C.deploy.Count}   "
+            + (posting ? UIK.Col($"누르면 '{War.D.hexes[selHex].name}' 수비대로 (최대 {War.GARRISON_MAX}) · 다시 누르면 뺌", UIK.GOLD)
+               : UIK.Dim(garrisonMode ? "수비대 배치: 지도에서 침공당한 칸(빨간 테두리)을 고르세요" : "쉬는 쥐는 다음 판 뒤 스트레스 −35 · 누르면 출전"));
         var slots = UIK.F(br, "Slots");
         Tpl.Clear(slots);
         for (int i = 0; i < DEPLOY_MAX; i++)
@@ -157,13 +177,35 @@ public class Lobby : MonoBehaviour
             var s = Tpl.Spawn("MiniCard", bench).transform;
             FillMini(s, r, 0);
             var rr = r;
-            UIK.OnClick(s.GetComponent<Button>(), () => { if (!Camp.Ready(rr) || C.deploy.Count >= DEPLOY_MAX) return; C.deploy.Add(rr.id); Camp.Save(C); Render(); });
+            UIK.OnClick(s.GetComponent<Button>(), () =>
+            {
+                int at = War.Posted(C, rr.id);
+                // 수비대 모드: 고른 침공 칸에 넣기 / 빼기. 아니면 수비대에서 빼거나 출전으로
+                if (posting) { if (!War.TogglePost(C, selHex, rr) && Camp.Ready(rr)) Toast($"한 칸에 수비대는 {War.GARRISON_MAX}마리까지"); }
+                else if (at >= 0) War.TogglePost(C, at, rr);
+                else { if (!Camp.Ready(rr) || C.deploy.Count >= DEPLOY_MAX) return; C.deploy.Add(rr.id); Camp.Save(C); }
+                Render();
+            });
         }
         var shaky = C.deploy.Select(id => C.squad.FirstOrDefault(q => q.id == id)).Where(r => r != null && r.stress >= STRESS.shaky).ToList();
         UIK.T(br, "Go/Warn").text = m == null ? UIK.Dim("싸울 칸을 고르면 출격할 수 있습니다") : C.deploy.Count == 0 ? "출전할 쥐를 고르세요" : shaky.Count > 0 ? UIK.Col($"스트레스 높음: {string.Join(", ", shaky.Select(r => r.name))} — 쉬게 하는 것도 방법", UIK.PSY) : UIK.Dim("쉬는 쥐는 스트레스가 풀립니다");
         var go = UIK.B(br, "Go/Btn");
         go.interactable = m != null && C.deploy.Count > 0;
+        go.GetComponentInChildren<Text>(true).text = "출격";
         int hex = selHex;
+        // 전투 중에 '저장 후 사령부로' 나왔으면: 그 전투를 이어하는 것만 됨 (새 출격 = 저장이 지워짐, 쉬기 = 턴이 넘어감)
+        var saved = BattleSave.Exists ? BattleSave.Load() : null;
+        if (saved != null)
+        {
+            var sm = War.FromId(C, saved.missionId) ?? GameData.MISSIONS.FirstOrDefault(x => x.id == saved.missionId);
+            UIK.T(br, "Head").text = $"{UIK.Col("■ 진행 중인 전투", UIK.GOLD)}  <size=30><b>{sm?.name ?? "전투"}</b></size>\n"
+                + UIK.Dim($"{saved.round}라운드에서 저장함 · 모집 · 스킬은 그대로 반영됩니다. 이 전투를 끝내야 다음 턴으로 넘어갑니다.");
+            UIK.T(br, "Go/Warn").text = UIK.Dim("저장한 자리에서 이어서 싸웁니다");
+            go.GetComponentInChildren<Text>(true).text = "전투 이어하기";
+            go.interactable = true;
+            UIK.OnClick(go, () => { if (!GameRoot.I.Resume()) { BattleSave.Delete(); Toast("저장한 전투를 불러오지 못했습니다"); Render(); } });
+            return;
+        }
         UIK.OnClick(go, () =>
         {
             War.Begin(C, hex, act);
@@ -202,7 +244,9 @@ public class Lobby : MonoBehaviour
             string icon = h.fx == "hq" ? "command" : h.fx == "capital" ? "dominate" : h.fx == "hospital" ? "supply" : h.fx == "recruit" ? "warcry" : h.fx == "workshop" ? "trap" : h.fx == "artillery" ? "artillery" : null;
             var im = UIK.I(g, "Icon");
             im.sprite = icon != null ? ArtLib.Icon(icon) : null; im.enabled = im.sprite != null;
-            UIK.T(g, "Label").text = (sp ? UIK.Col("◆", UIK.GOLD) : "") + h.name + (threat ? "\n" + UIK.Col("침공!", UIK.CAT) : "");
+            int nGar = threat ? War.Garrison(C, i).Count() : 0;
+            UIK.T(g, "Label").text = (sp ? UIK.Col("◆", UIK.GOLD) : "") + (C.war.forts.Contains(i) ? UIK.Col("▣", UIK.RAT) : "") + h.name
+                + (threat ? "\n" + UIK.Col($"침공! {Mathf.RoundToInt(War.HoldChance(C, i) * 100)}%", UIK.CAT) + (nGar > 0 ? UIK.Col($" 수비{nGar}", UIK.OK) : "") : "");
             int idx = i;
             var btn = g.GetComponent<Button>();
             UIK.OnClick(btn, () => { selHex = idx; Render(); });
@@ -222,7 +266,8 @@ public class Lobby : MonoBehaviour
         };
         if (h.fx != null) lines.Add(UIK.Col(War.D.fx[h.fx], UIK.GOLD));
         if (sp != null && !C.war.seen.Contains(h.special + ":done")) lines.Add(UIK.Col($"◆ 주요 전투: {sp.name}", UIK.GOLD) + UIK.Dim(sp.kind == "defend" ? $" ({sp.turn}턴부터 고양이가 노림)" : " (공격하면)"));
-        if (C.war.threats.Contains(i)) lines.Add(UIK.Col("고양이가 침공 중! 막지 않으면 수비대가 운에 맡김", UIK.CAT));
+        if (C.war.forts.Contains(i)) lines.Add(UIK.Col($"▣ 요새 — 자동 방어 +{Mathf.RoundToInt(War.FORT_BONUS * 100)}%", UIK.RAT));
+        if (C.war.threats.Contains(i)) lines.Add(UIK.Col("고양이가 침공 중! 직접 막지 않으면 수비대가 확률로 막음", UIK.CAT) + "\n" + HoldLine(i));
         else if (War.CanAttack(C, i)) lines.Add(UIK.Dim("우리 땅과 붙어 있음 — 공격 가능"));
         return string.Join("\n", lines);
     }
@@ -234,10 +279,33 @@ public class Lobby : MonoBehaviour
         UIK.T(info, "Text").text = $"<size=26><b>{w.turn}턴</b></size>   {UIK.Col($"공화국 {War.Count(C, "rat")}칸", UIK.RAT)} · {UIK.Col($"제국 {War.Count(C, "cat")}칸", UIK.CAT)} · {UIK.Col($"수입 +{War.Income(C)}/턴", UIK.GOLD)}\n"
             + (w.news.Count > 0 ? string.Join("\n", w.news) : UIK.Dim("아직 소식이 없다"));
         var wait = UIK.B(info, "Wait");
-        wait.interactable = w.over == "";
+        wait.interactable = w.over == "" && !BattleSave.Exists;
         UIK.T(wait.transform, "Text").text = "이번 턴 쉬기";
         UIK.Tip(wait, "출격하지 않고 턴을 넘김 · 분대 전원 스트레스 −35\n침공은 모두 수비대가 운에 맡겨 막음");
-        UIK.OnClick(wait, () => { War.Wait(C); selHex = -1; Toast($"{w.turn}턴 — 고양이가 움직였다"); Render(); });
+        UIK.OnClick(wait, () => { War.Wait(C); selHex = -1; garrisonMode = false; Toast($"{w.turn}턴 — 고양이가 움직였다"); Render(); });
+        // 수비대 배치 모드
+        garBtn.interactable = w.over == "" && w.threats.Count > 0 && !BattleSave.Exists;
+        UIK.T(garBtn.transform, "Text").text = garrisonMode ? "수비대 배치 끝" : $"수비대 배치 ({w.posts.Count})";
+        UIK.Tip(garBtn, $"대기 쥐를 침공당한 칸에 보내 자동 방어를 올림\n쥐마다 +{Mathf.RoundToInt(War.GARRISON_PER * 100)}% (계급마다 +1%) · 한 칸 최대 {War.GARRISON_MAX}마리\n"
+            + $"막으면 경험 +1 · 스트레스 +{War.GARRISON_STRESS}\n뚫리면 마리마다 {Mathf.RoundToInt(War.GARRISON_HURT * 100)}% 로 부상(한 턴 쉼), 드물게 전사 · 수비대는 쉬지 못함");
+        UIK.OnClick(garBtn, () => { garrisonMode = !garrisonMode; if (garrisonMode && !War.CanDefend(C, selHex) && w.threats.Count > 0) selHex = w.threats[0]; Render(); });
+        // 요새화: 고른 내 칸
+        bool canFort = selHex >= 0 && War.CanFortify(C, selHex);
+        fortBtn.interactable = canFort && C.supplies >= War.FORT_COST && !BattleSave.Exists;
+        UIK.T(fortBtn.transform, "Text").text = $"요새화 ({War.FORT_COST})";
+        UIK.Tip(fortBtn, $"고른 내 칸을 요새로 — 자동 방어 +{Mathf.RoundToInt(War.FORT_BONUS * 100)}% (영구, 그 칸을 잃으면 사라짐)\n보급품 {War.FORT_COST}"
+            + (selHex >= 0 && C.war.forts.Contains(selHex) ? "\n" + UIK.Dim("이미 요새") : !canFort ? "\n" + UIK.Dim("지도에서 내 땅(파랑)을 고르세요") : ""));
+        UIK.OnClick(fortBtn, () => { int h = selHex; if (h >= 0 && War.Fortify(C, h)) { Toast($"{War.D.hexes[h].name} 요새화"); Render(); } });
+    }
+
+    // 자동 방어 확률 풀이: 기본 + 수비대 + 요새
+    string HoldLine(int hex)
+    {
+        int P(float f) => Mathf.RoundToInt(f * 100);
+        var gar = War.Garrison(C, hex).ToList();
+        string parts = $"기본 {P(War.BaseHold(C, hex))}%" + (gar.Count > 0 ? $" + 수비대 {P(War.GarrisonBonus(C, hex))}%" : "") + (C.war.forts.Contains(hex) ? $" + 요새 {P(War.FORT_BONUS)}%" : "");
+        return UIK.Col($"자동 방어 {P(War.HoldChance(C, hex))}%", UIK.GOLD) + UIK.Dim($" ({parts})")
+            + (gar.Count > 0 ? "\n" + UIK.Col("수비대: " + string.Join(", ", gar.Select(r => r.name)), UIK.OK) : "");
     }
     void FillMini(Transform s, RatRecord r, int num)
     {
@@ -245,8 +313,11 @@ public class Lobby : MonoBehaviour
         if (r == null) { Tpl.Clear(slot); UIK.T(s, "Text").text = UIK.Dim($"{num}\n빈자리"); s.GetComponent<Image>().color = new Color(1, 1, 1, 0.45f); return; }
         var st = Camp.Stats(r);
         UIK.Portrait(slot, r);
-        UIK.T(s, "Text").text = $"<b>{r.name}</b>\n{UIK.Dim(RANKS[Camp.RankIdx(r)].name + " · " + st.cls.name)}\n{StressLine(r)}" + (Camp.Ready(r) ? "" : "\n" + UIK.Col("의수 · 의족 필요", UIK.NEG));
-        s.GetComponent<Image>().color = !Camp.Ready(r) ? new Color(0.6f, 0.5f, 0.5f) : r.stress >= STRESS.shaky ? new Color(0.9f, 0.82f, 1f) : Color.white;
+        int post = War.Posted(C, r.id);
+        UIK.T(s, "Text").text = $"<b>{r.name}</b>\n{UIK.Dim(RANKS[Camp.RankIdx(r)].name + " · " + st.cls.name)}\n{StressLine(r)}"
+            + (!Camp.Fit(r) ? "\n" + UIK.Col("의수 · 의족 필요", UIK.NEG) : r.wounded > 0 ? "\n" + UIK.Col("부상 — 한 턴 쉼", UIK.NEG)
+               : post >= 0 ? "\n" + UIK.Col("수비대 · " + War.D.hexes[post].name, UIK.OK) : "");
+        s.GetComponent<Image>().color = !Camp.Ready(r) ? new Color(0.6f, 0.5f, 0.5f) : post >= 0 ? new Color(0.75f, 0.95f, 0.78f) : r.stress >= STRESS.shaky ? new Color(0.9f, 0.82f, 1f) : Color.white;
         UIK.Tip(s.GetComponent<Button>(), $"<b>{r.name}</b> — {r.story}\n{TraitTip(r)}");
     }
 
@@ -351,7 +422,10 @@ public class Lobby : MonoBehaviour
     // ── 모집 ──
     void Recruit()
     {
-        UIK.T(recruit, "Head").text = $"보급품 {RECRUIT_COST}로 지원자를 받습니다. 분대 최대 {SQUAD_MAX}마리. 지금 {C.squad.Count}마리.";
+        int tier = War.Threat(C);
+        UIK.T(recruit, "Head").text = $"지원자를 받습니다. 분대 최대 {SQUAD_MAX}마리. 지금 {C.squad.Count}마리.\n"
+            + UIK.Dim($"모집 값 = {RECRUIT_COST} + 위협 단계 {tier} ({(tier - 1) * RECRUIT_PER_TIER}) + 지금까지 모집 {C.recruited}번 ({C.recruited * RECRUIT_PER_HIRE}) + 계급마다 {RECRUIT_PER_RANK}")
+            + (tier > 1 ? "\n" + UIK.Col($"전쟁이 거칠어져 계급을 단 고참이 지원할 확률 {Mathf.RoundToInt((tier - 1) * VET_PER_TIER * 100)}%", UIK.GOLD) : "");
         var refresh = UIK.B(recruit, "Refresh");
         refresh.interactable = C.supplies >= REFRESH_COST;
         UIK.T(refresh.transform, "Text").text = $"다른 지원자 (보급품 {REFRESH_COST})";
@@ -363,10 +437,11 @@ public class Lobby : MonoBehaviour
             var r = C.recruits[i]; int idx = i;
             var c = Tpl.Spawn("CandCard", box).transform;
             UIK.Portrait((RectTransform)UIK.F(c, "Portrait"), r, full: true);
-            UIK.T(c, "Text").text = $"<size=28><b>{r.name}</b></size>\n{UIK.Dim(r.home + " 출신")}\n<i>“{r.story}”</i>\n{TraitText(r)}\n{UIK.Dim(string.Join(" / ", r.traits.Select(t => TRAITS[t].desc)))}";
+            int rk = Camp.RankIdx(r), cost = Camp.RecruitCost(C, r);
+            UIK.T(c, "Text").text = $"<size=28><b>{(rk > 0 ? UIK.Col(RANKS[rk].name + " ", UIK.GOLD) : "")}{r.name}</b></size>\n{UIK.Dim(r.home + " 출신")}{(rk > 0 ? UIK.Col($" · 고참 (스킬 {Camp.Points(r)}점)", UIK.GOLD) : "")}\n<i>“{r.story}”</i>\n{TraitText(r)}\n{UIK.Dim(string.Join(" / ", r.traits.Select(t => TRAITS[t].desc)))}";
             var b = UIK.B(c, "Btn");
-            b.interactable = C.supplies >= RECRUIT_COST && C.squad.Count < SQUAD_MAX;
-            UIK.T(b.transform, "Text").text = $"모집 (보급품 {RECRUIT_COST})";
+            b.interactable = C.supplies >= cost && C.squad.Count < SQUAD_MAX;
+            UIK.T(b.transform, "Text").text = $"모집 (보급품 {cost})";
             UIK.OnClick(b, () => { if (Camp.Recruit(C, idx)) { Toast($"{r.name} 입대"); Render(); } });
         }
     }

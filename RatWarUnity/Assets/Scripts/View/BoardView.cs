@@ -415,6 +415,7 @@ public class BoardView : MonoBehaviour
         return g;
     }
 
+    static readonly Color C_NOGO = new Color(0.9f, 0.12f, 0.08f, 0.3f), C_NOGO_HOVER = new Color(1f, 0.2f, 0.15f, 0.55f); // 못 가는 칸 · 그 위에 마우스
     static readonly Color C_MOVE = new Color(0.56f, 0.82f, 1f, 0.17f), C_DASH = new Color(1f, 0.81f, 0.29f, 0.12f), C_HOVER = new Color(1, 1, 1, 0.4f);
     static readonly Color C_TILE = new Color(1f, 0.55f, 0.3f, 0.3f), C_AOE = new Color(1f, 0.35f, 0.25f, 0.45f), C_GOAL = new Color(1f, 0.81f, 0.29f, 0.5f), C_TGT = new Color(1f, 0.42f, 0.36f, 0.6f);
     World.Reach cachedReach; int reachVer = -1; Unit reachUnit;
@@ -425,7 +426,7 @@ public class BoardView : MonoBehaviour
         var w = W; var u = Battle.sel;
         if (w.goal != null) foreach (var t in w.tiles) if (World.Dist(t.x, t.z, w.goal.x, w.goal.z) <= w.goal.r) Hi(TilePos(t.x, t.z), C_GOAL);
         bool myTurn = Battle.turn == "rat" && Battle.over == null && u != null;
-        List<Pt> path = null;
+        List<Pt> path = null; bool noGoHover = false;
         if (myTurn && Battle.mode == "move" && u.ap > 0)
         {
             if (reachVer != Battle.version || reachUnit != u) { cachedReach = World.ReachOf(w, u, u.mob * u.ap); reachVer = Battle.version; reachUnit = u; }
@@ -436,6 +437,16 @@ public class BoardView : MonoBehaviour
                 Hi(TilePos(x, z), kv.Value <= u.mob ? C_MOVE : C_DASH);
             }
             if (hoverTile != null && cachedReach.Cost(hoverTile.x, hoverTile.z) is float hc && hc > 0) path = cachedReach.Path(hoverTile.x, hoverTile.z);
+            // 못 가는 칸: 이동 거리 안인데 막힌 칸(벽 · 소품 · 다른 병사 · 돌아가야 해서 모자람)은 붉게
+            float far = u.mob * u.ap;
+            var stops = new HashSet<int>(cachedReach.Stops.Select(kv => kv.Key));
+            foreach (var t in w.tiles)
+            {
+                int k = t.z * w.W + t.x;
+                if (k == u.z * w.W + u.x || stops.Contains(k)) continue;
+                if (World.Dist(t.x, t.z, u.x, u.z) <= far && World.UnitAt(w, t.x, t.z) == null) Hi(TilePos(t.x, t.z), C_NOGO, 0.86f);
+            }
+            if (hoverTile != null && !CanMoveTo(hoverTile) && World.UnitAt(w, hoverTile.x, hoverTile.z) == null) noGoHover = true;
         }
         if (myTurn && Battle.mode == "tile" && Battle.ability != null)
         {
@@ -445,7 +456,7 @@ public class BoardView : MonoBehaviour
                 foreach (var t in w.tiles) if (World.Dist(t.x, t.z, hoverTile.x, hoverTile.z) <= A.radius + u.blast) Hi(TilePos(t.x, t.z), C_AOE);
         }
         if (myTurn && Battle.mode == "target") { var tg = Hud.I ? Hud.I.CurrentTarget : null; if (tg != null) Hi(Foot(tg.px, tg.pz), C_TGT, 1.1f); }
-        if (hoverTile != null && Battle.turn == "rat") Hi(TilePos(hoverTile.x, hoverTile.z), C_HOVER, 0.98f);
+        if (hoverTile != null && Battle.turn == "rat") Hi(TilePos(hoverTile.x, hoverTile.z), noGoHover ? C_NOGO_HOVER : C_HOVER, 0.98f);
         if (u != null && Battle.turn == "rat") Hi(Foot(u.px, u.pz), new Color(1f, 0.81f, 0.29f, 0.55f), 0.7f);
         for (int i = hiUsed; i < hiPool.Count; i++) hiPool[i].SetActive(false);
         // 경로 선
