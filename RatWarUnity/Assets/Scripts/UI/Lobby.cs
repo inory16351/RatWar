@@ -358,7 +358,7 @@ public class Lobby : MonoBehaviour
         UIK.OnClick(limb, () => { if (Camp.FitLimb(C, r)) Render(); });
         UIK.T(d, "Stats").text = string.Join("   ", new[] { ("체력", st.hp.ToString()), ("명중", st.aim.ToString()), ("이동", st.mob.ToString()), ("시야", "+" + st.sight), ("치명", "+" + st.crit), ("회피", st.def.ToString()), ("무기", GameData.WEAPONS[st.cls.weapon].name) }.Select(p => $"{UIK.Dim(p.Item1)} <b>{p.Item2}</b>"))
             + "\n" + string.Join("  ", st.abil.Select(a => UIK.Col("◆" + GameData.ABILITIES[a].name, UIK.INK)));
-        UIK.T(d, "HexHead").text = $"<b>스킬 벌집판</b> {UIK.Dim($"— 남은 점수 {Camp.Points(r)} · 많이 찍은 갈래가 병종이 됨")}{(r.traits.Contains("psychic") ? UIK.Col(" · 영매: 지원+정찰 = 주술사", UIK.PSY) : "")}";
+        UIK.T(d, "HexHead").text = $"<b>스킬 벌집판</b> {UIK.Dim($"— 남은 점수 {Camp.Points(r)} · 많이 찍은 갈래가 병종이 됨")}";
         HexBoard((RectTransform)UIK.F(d, "Hex"), r, UIK.T(d, "HexTip"));
     }
 
@@ -382,27 +382,32 @@ public class Lobby : MonoBehaviour
         {
             var cell = kv.Value; string key = kv.Key;
             bool owned = cell.ring == 0 || r.nodes.Contains(key);
-            bool can = Camp.Points(r) > 0 && SkillsData.CanTake(r.nodes, key);
+            bool reach = !owned && SkillsData.CanTake(r.nodes, key);
+            bool can = reach && Camp.Points(r) > 0;
             var g = Tpl.Spawn("HexCell", box).transform;
             var rt = (RectTransform)g; rt.anchoredPosition = Pos(cell.q, cell.r); rt.sizeDelta = new Vector2(S * 2, S * 2);
             var hex = g.GetComponent<UIHex>();
             Color col = cell.sec.Length > 0 ? SkillsData.SECTORS[cell.sec[0]].col : UIK.INK;
-            hex.color = owned ? col : can ? new Color(col.r * 0.6f, col.g * 0.6f, col.b * 0.6f, 0.95f) : new Color(0.16f, 0.14f, 0.12f, 0.92f);
-            hex.edge = can ? UIK.GOLD : owned ? new Color(0.1f, 0.08f, 0.06f, 0.9f) : new Color(col.r, col.g, col.b, 0.35f);
+            // 찍음 = 갈래 색 꽉 채움 + 흰 굵은 테두리 + ✓ / 찍을 수 있음 = 어두운 갈래 색 + 금색 깜빡 테두리 / 못 찍음 = 거의 검정
+            hex.color = owned ? col : can ? Color.Lerp(new Color(0.12f, 0.1f, 0.08f, 0.95f), col, 0.22f) : new Color(0.1f, 0.09f, 0.08f, 0.85f);
+            hex.edge = owned ? new Color(1f, 0.97f, 0.88f, 1f) : can ? UIK.GOLD : reach ? new Color(UIK.GOLD.r, UIK.GOLD.g, UIK.GOLD.b, 0.35f) : new Color(col.r, col.g, col.b, 0.18f);
+            hex.width = owned ? 5 : can ? 4 : 2;
+            hex.pulse = can;
+            hex.badge = owned && cell.ring > 0 ? UIK.OK : Color.clear;
             hex.SetVerticesDirty();
             string iconKey = cell.ring == 0 ? null : cell.fx.abil ?? cell.fx.perk ?? cell.fx.n.Keys.FirstOrDefault(k => ArtLib.Icon(k) != null);
             var icon = UIK.I(g, "Icon");
             icon.sprite = iconKey != null ? ArtLib.Icon(iconKey) : null;
             icon.enabled = icon.sprite != null;
-            icon.color = owned ? Color.white : can ? new Color(1, 1, 1, 0.85f) : new Color(1, 1, 1, 0.3f);
+            icon.color = owned ? Color.white : can ? new Color(1, 1, 1, 0.8f) : new Color(0.5f, 0.5f, 0.5f, 0.25f);
             UIK.T(g, "Label").text = cell.ring == 0 ? SkillsData.RAT_CLASSES[cls].name : "";
             string sec = string.Join(" + ", cell.sec.Select(s => SkillsData.SECTORS[s].name));
             string desc = cell.ring == 0 ? $"현재 병종: {SkillsData.RAT_CLASSES[cls].name}" : $"{sec} — {SkillsData.FxText(cell.fx)}";
             string head = cell.ring == 0 ? "<b>신병</b>" : $"<b>{cell.fx.name ?? sec}</b>  {UIK.Dim($"{sec} 갈래 · {cell.ring}번째 고리")}";
             string body = cell.fx.abil != null ? Hud.AbilityTip(cell.fx.abil) : desc;
             var src = g.GetComponent<TipSource>() ?? g.gameObject.AddComponent<TipSource>();
-            src.text = (cell.fx.abil != null ? "" : head + "\n") + body + "\n" + (owned ? UIK.Col("✓ 찍음", UIK.OK) : can ? UIK.Col("클릭해서 찍기", UIK.GOLD) : UIK.Dim("이웃한 칸을 먼저 찍어야 함"));
-            src.onEnter = () => tipText.text = desc + (can ? " (클릭해서 찍기)" : owned ? " ✓" : "");
+            src.text = (cell.fx.abil != null ? "" : head + "\n") + body + "\n" + (owned ? UIK.Col("✓ 찍음", UIK.OK) : can ? UIK.Col("클릭해서 찍기", UIK.GOLD) : reach ? UIK.Dim("스킬 점수가 없음") : UIK.Dim("이웃한 칸을 먼저 찍어야 함"));
+            src.onEnter = () => tipText.text = desc + (owned ? " " + UIK.Col("✓ 찍음", UIK.OK) : can ? " " + UIK.Col("(클릭해서 찍기)", UIK.GOLD) : reach ? UIK.Dim(" (점수 없음)") : UIK.Dim(" (못 찍음)"));
             var btn = g.GetComponent<Button>();
             btn.interactable = can;
             UIK.OnClick(btn, () =>
@@ -416,7 +421,7 @@ public class Lobby : MonoBehaviour
                 }
             });
         }
-        tipText.text = UIK.Dim("칸에 마우스를 올리면 효과");
+        tipText.text = UIK.Col("■ 찍음(✓)", UIK.OK) + "  " + UIK.Col("■ 찍을 수 있음(깜빡)", UIK.GOLD) + "  " + UIK.Dim("■ 못 찍음 — 칸에 마우스를 올리면 효과");
     }
 
     // ── 모집 ──

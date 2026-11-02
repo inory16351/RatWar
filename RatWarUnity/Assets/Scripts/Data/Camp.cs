@@ -60,8 +60,9 @@ public static class CampRules
 {
     public static readonly (string name, int xp, int aim, int hp)[] RANKS =
     {
-        ("이병", 0, 0, 0), ("일병", 2, 3, 0), ("상병", 5, 5, 1), ("병장", 9, 7, 1),
-        ("하사", 14, 9, 2), ("중사", 20, 11, 2), ("상사", 27, 13, 3), ("원사", 35, 15, 3),
+        // 다음 계급까지 2 · 3 · 5 · 6 · 8 · 10 · 12 — 전투 한 번에 보통 2~5
+        ("이병", 0, 0, 0), ("일병", 2, 3, 0), ("상병", 5, 5, 1), ("병장", 10, 7, 1),
+        ("하사", 16, 9, 2), ("중사", 24, 11, 2), ("상사", 34, 13, 3), ("원사", 46, 15, 3),
     };
     public static int RankOf(int xp) { int r = 0; for (int i = 0; i < RANKS.Length; i++) if (xp >= RANKS[i].xp) r = i; return r; }
 
@@ -101,7 +102,7 @@ public static class CampRules
         ["homesick"] = T("향수병", "출전할 때마다 스트레스 +8", ("homesick", 8)),
         ["pious"] = T("신앙심", "쉴 때 스트레스 두 배로 풀림 · 차례 시작에 스트레스 60 넘으면 기도 (−5)", ("rest", 2)),
         ["sibling"] = T("형제", "같이 출전하면 명중 +8. 한쪽이 죽으면…"),
-        ["psychic"] = new TraitDef { name = "영매", desc = "정신의 목소리를 들음 — 주술사가 될 수 있음", rare = true },
+        ["psychic"] = new TraitDef { name = "영매", desc = "가끔 다른 쥐들 눈엔 안 보이는 것을 본다", rare = true },
         // ── 림월드식 성격 ──
         ["bloodlust"] = T("피에 굶주림", "처치하면 스트레스 −15 · 피 · 절단을 봐도 아무렇지 않음", ("killRelief", 15)).By(("gore", 0)),
         ["squeamish"] = T("비위 약함", "피 · 절단을 보면 스트레스 두 배").By(("gore", 2), ("dead", 1.3f)),
