@@ -1,4 +1,4 @@
-# 쥐들의 전쟁 — 유니티판 핸드오프 (2026-10-27)
+# Band of Mice (옛 이름 쥐들의 전쟁) — 유니티판 핸드오프 (2026-10-27)
 
 웹판(`C:\Project\nkk_another\war`, 원본 핸드오프 `war/HANDOFF.md`)을 Unity 6 URP 로 옮긴 저장소.
 규칙 · 수치 · 고양이 AI 는 웹판 `web/*.js` 를 그대로 C# 로 옮김 → **규칙을 바꿀 땐 웹판과 어긋나는지 먼저 확인**.
@@ -32,11 +32,25 @@
 | `Scripts/Battle/` | `Battle`(턴 · 명중 · 능력 · 스트레스 · AI · 목표, async `Awaitable`) · `World`(칸 · 시야 · 엄폐 · 길찾기) · `Unit` · `BattleSave` |
 | `Scripts/View/` | `BoardView`(바닥 굽기 · 소품 · 배경 · 효과 · 유혈) · `UnitView`(리그 조립 · 포즈 · 정렬) · `RigPose`(웹 `rig.js pose`) · `CameraRig` · `GroundBaker` · `FogCloud` · `ArtLib` · `View`(전투 → 화면 창구) |
 | `Scripts/UI/` | `Hud` · `Lobby`(작전 탭 = 전략 지도 `Ops/WarMap` · `Ops/WarInfo` + 오른쪽 브리핑) · `Cutscene`(`Canvas/Cutscene`, 그림 = `Resources/Art/out/cut/<시트>_<1~4>.jpg`) · `TitleScreen` · `EndScreen` · `Tooltip` · `UIKit` |
-| `Scripts/Core/` | `GameRoot`(화면 흐름 · 글꼴 · 이어하기) · `Tpl`(틀 복사) · `Audio` |
+| `Scripts/Core/` | `GameRoot`(화면 흐름 · 글꼴 · 이어하기) · `Tpl`(틀 복사) · `Audio` · `Loc`(글자 테이블) |
 | `Shaders/SpriteFog.shader` | 모든 판때기 셰이더: 시야 안개(`_FowTex` · `_MistTex` · `_FowRect` · `_FowOn`) · `_FowDark` |
 | `Resources/Art/` | `rigs/<종>[_병종]/rig.json + parts/<시점>/` · `out/`(소품 · 경치 · fx · 배경 · ui, 목록 `manifest.json` · `assets.json`) · `audio/` |
 | `Editor/ArtImporter.cs` | `Resources/Art` 그림 가져오기 규칙 (스프라이트 · 9분할 · 지형 반복) |
 | `tools/maps/build_maps.js` | 맵 · 임무 JSON 생성 + 검사 → `Resources/Data/` |
+
+## 글자 테이블 · 번역 (2026-11-03)
+- 화면 글자는 전부 키: `Resources/Tables/<언어>/<묶음>.json` (`ko en ja zh ru fr de es`, 묶음 = battle · camp · campaign · epilogue · game · hud · scene · ui). 코드는 `Loc.T("키")` · `Loc.F("키", 값…)`
+- 자리 `{0}` · 숫자 모양 `{0:0.#}` · 한국어 조사 `{0:은}` `{0:으로}` `{0:이라}` 등 (받침 보고 고름, 다른 언어에선 빠짐)
+- 정의 값(특성 · 계급 · 병종 · 능력 · 무기 · 임무 · 지도 이름 등)은 키로 저장 → 보여 줄 때 `Loc.T(...)`. 쥐 기록의 이름 · 고향 · 사연도 키(`r.Name` · `r.Home` · `r.Story`), 예전 저장은 한국어 그대로 보임
+- 장면에 박힌 고정 글자는 `LocText`(키 + 붙일 때의 부모 이름). 코드가 덮어쓰는 글자엔 붙이지 않음
+- 없는 키 → 한국어 → 키 그대로. 처음 켤 땐 운영체제 언어. 중국어 · 일본어 · 러시아어 글리프는 OS 글꼴로 대체(글꼴 메타의 fontNames)
+- 다듬기 · 번역 · 검수: `python -I tools/loc_pipe.py polish | translate <언어…> | review <언어…>` (agy CLI: 번역 클로드, 다듬기 · 검수 제미나이). 키 · 자리 · 태그가 원문과 다르면 다시 시키고 그래도 틀리면 그 묶음은 건너뜀
+- 새 글자를 넣으면 ko 테이블에 키 추가 → `translate` 로 다른 언어 채움 (이미 있는 키도 다시 번역하므로 필요하면 손으로)
+- 숨은 병종 조합(통신병 · 주술사 등) 조건은 화면에 쓰지 않음
+
+## 에필로그 · 타이틀
+- 전쟁이 끝나면 승리/패배 컷씬 뒤 `Epilogue.Build` → 살아남은 쥐마다 '그 뒤의 이야기' (사연 · 고향 · 잃은 팔다리 · 형제 · 전우 · 앙숙 · 스트레스 · 계급 · 처치 수로 문장을 고름) → 전사자 이름 → 마지막 한마디. 쥐 장면은 검은 바탕 + 왼쪽 초상(`Cutscene/Portrait`)
+- 타이틀: `Resources/Art/out/ui/title_bg.png`(키 아트) + `logo.png`(마젠타 빼서 씀). 요청서 `art_requests/title/`
 
 ## 그리는 순서 (중요)
 - 전장 판때기는 바닥 깊이 검사를 끔(`ZTest Always`, 병사가 땅에 박히던 것 때문) → **앞뒤는 `sortingOrder` 로만**

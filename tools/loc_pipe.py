@@ -223,7 +223,24 @@ def write(jobs, langs, ko):
         print(lang, "keys", n, "/", sum(len(t) for t in ko.values()))
 
 
+def check_lang(langs):
+    ko = load("ko")
+    for lang in langs:
+        cur, bad = load(lang), 0
+        for name, table in ko.items():
+            tr = cur.get(name, {})
+            miss = [k for k in table if k not in tr]
+            if miss:
+                bad += len(miss)
+                print(lang, name, "missing", len(miss), miss[:5])
+            errs = check({k: v for k, v in table.items() if k in tr}, {k: strip_josa(v) for k, v in tr.items() if k in table}, False)
+            for e in errs:
+                bad += 1
+                print(lang, name, e)
+        print(lang, "OK" if bad == 0 else "%d problems" % bad)
+
+
 if __name__ == "__main__":
     os.makedirs(WORK, exist_ok=True)
     mode, langs = sys.argv[1], sys.argv[2:] or list(LANG)
-    {"polish": lambda: polish(), "translate": lambda: translate(langs), "review": lambda: review(langs)}[mode]()
+    {"polish": lambda: polish(), "translate": lambda: translate(langs), "review": lambda: review(langs), "check": lambda: check_lang(langs)}[mode]()
