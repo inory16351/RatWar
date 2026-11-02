@@ -206,9 +206,10 @@ public static class Camp
         };
     }
 
-    public static CampData Fresh()
+    // 새 전쟁: 난이도는 여기서 정해지고 전쟁 동안 고정 (시작 보급품도 난이도 따라)
+    public static CampData Fresh(int diff = RULES.defaultDiff)
     {
-        var c = new CampData();
+        var c = new CampData { diff = diff, supplies = RULES.DiffOf(diff).supplies };
         for (int i = 0; i < 6; i++) c.squad.Add(NewRat(c, i == 5));
         // 처음 분대에 형제 한 쌍
         foreach (var i in new[] { 1, 2 })

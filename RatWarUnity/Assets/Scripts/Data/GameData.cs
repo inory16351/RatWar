@@ -218,13 +218,24 @@ public static class RULES
     // 난이도 (엑스컴식): 쥐 · 고양이 명중 보정 + 쉬울수록 운이 덜 가혹함
     //   streak = 쥐가 빗나갈 때마다 다음 사격 명중 +streak (맞히면 0, 최대 streakMax)
     //   chain  = 고양이가 이번 턴 쥐를 맞힐 때마다 다음 고양이 사격 명중 −chain
-    public class Diff { public string name, desc; public int ratAim, catAim, catCrit, streak, streakMax, chain; }
+    // 전쟁(아웃게임) 쪽 — 새 전쟁 시작 때 고르고 그 전쟁 동안 고정:
+    //   threatStep = 위협 단계 하나 오르는 데 드는 진척 (클수록 고양이가 느리게 세짐) · supplies = 시작 보급품
+    //   income = 턴 수입 배율 · invade = 한 턴 침공 수 보정 (+ 는 8턴부터) · hold = 자동 방어 성공률 보정
+    public class Diff
+    {
+        public string name, tag, desc; public int ratAim, catAim, catCrit, streak, streakMax, chain;
+        public float threatStep = 3, income = 1, hold; public int supplies = 60, invade;
+    }
     public static readonly Diff[] DIFFS =
     {
-        new Diff { name = "신병", desc = "쥐 명중 +10 · 고양이 명중 −10 · 치명 −10 · 빗나가면 다음 사격 +10 · 고양이 연속 명중 완화", ratAim = 10, catAim = -10, catCrit = -10, streak = 10, streakMax = 30, chain = 10 },
-        new Diff { name = "병장", desc = "기본 · 빗나가면 다음 사격 +5 · 고양이 연속 명중 조금 완화", streak = 5, streakMax = 15, chain = 5 },
-        new Diff { name = "원사", desc = "고양이 명중 +5 · 치명 +5 · 운 보정 없음", catAim = 5, catCrit = 5 },
-        new Diff { name = "참호의 악몽", desc = "고양이 명중 +10 · 치명 +10 · 운 보정 없음", catAim = 10, catCrit = 10 },
+        new Diff { name = "신병", tag = "처음 지휘하는 사령관", desc = "쥐 명중 +10 · 고양이 명중 −10 · 치명 −10 · 빗나가면 다음 사격 +10 · 고양이 연속 명중 완화", ratAim = 10, catAim = -10, catCrit = -10, streak = 10, streakMax = 30, chain = 10,
+            threatStep = 4, supplies = 90, income = 1.25f, invade = -1, hold = 0.10f },
+        new Diff { name = "병장", tag = "기본 전쟁", desc = "기본 · 빗나가면 다음 사격 +5 · 고양이 연속 명중 조금 완화", streak = 5, streakMax = 15, chain = 5 },
+        new Diff { name = "원사", tag = "노련한 지휘관용", desc = "고양이 명중 +5 · 치명 +5 · 운 보정 없음", catAim = 5, catCrit = 5,
+            threatStep = 2.5f, supplies = 50, income = 0.9f, hold = -0.05f },
+        new Diff { name = "참호의 악몽", tag = "살아 돌아오는 쥐가 드물다", desc = "고양이 명중 +10 · 치명 +10 · 운 보정 없음", catAim = 10, catCrit = 10,
+            threatStep = 2, supplies = 40, income = 0.75f, invade = 1, hold = -0.10f },
     };
+    public static Diff DiffOf(int i) => DIFFS[UnityEngine.Mathf.Clamp(i, 0, DIFFS.Length - 1)];
     public const int defaultDiff = 1;
 }

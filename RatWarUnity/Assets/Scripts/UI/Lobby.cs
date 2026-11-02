@@ -26,19 +26,14 @@ public class Lobby : MonoBehaviour
         UIK.OnClick(UIK.B(t, "Header/Reset"), () => { ConfirmReset(); });
         // 기록은 바뀔 때마다 자동 저장되지만, 확인용 버튼
         UIK.OnClick(UIK.B(t, "Header/Save"), () => { Camp.Save(C); Toast(BattleSave.Exists ? "저장했습니다 — 진행 중인 전투는 타이틀의 '이어하기'로" : "저장했습니다"); });
-        // 난이도: 저장 버튼을 복제해 옆에 둠. 누르면 다음 난이도로 (다음 출격부터 적용)
+        // 난이도: 저장 버튼을 복제해 옆에 둠. 표시만 (새 전쟁 때 정하고 전쟁 동안 고정)
         var save = UIK.F(t, "Header/Save") as RectTransform;
         diffBtn = Instantiate(save.gameObject, save.parent).GetComponent<Button>();
         diffBtn.name = "Diff";
         var drt = (RectTransform)diffBtn.transform;
         drt.SetSiblingIndex(save.GetSiblingIndex());
         if (!save.parent.GetComponent<LayoutGroup>()) drt.anchoredPosition = save.anchoredPosition - new Vector2(save.rect.width + 12, 0);
-        UIK.OnClick(diffBtn, () =>
-        {
-            C.diff = (C.diff + 1) % RULES.DIFFS.Length; Camp.Save(C);
-            Toast($"난이도 {RULES.DIFFS[C.diff].name} — {RULES.DIFFS[C.diff].desc}");
-            Render();
-        });
+        UIK.OnClick(diffBtn, () => Toast($"난이도 {RULES.DiffOf(C.diff).name} — 전쟁 중엔 바꿀 수 없음 ('처음부터'로 새 전쟁)"));
     }
     Button diffBtn;
 
@@ -46,8 +41,14 @@ public class Lobby : MonoBehaviour
     void ConfirmReset()
     {
         // 두 번 누르면 지움 (웹은 confirm 창)
-        if (Time.unscaledTime - resetArm > 2.5f) { resetArm = Time.unscaledTime; Toast("한 번 더 누르면 분대 기록을 지우고 처음부터 시작합니다"); return; }
-        Camp.Reset(); sel = null; selHex = -1; Toast("새 분대 · 새 전쟁으로 시작"); Render();
+        if (Time.unscaledTime - resetArm > 2.5f) { resetArm = Time.unscaledTime; Toast("한 번 더 누르면 새 전쟁 — 난이도를 고르면 지금 분대 기록은 지워집니다"); return; }
+        resetArm = 0;
+        // 난이도를 고르고 '전쟁 시작'을 눌러야 실제로 지움 (뒤로 = 취소)
+        DiffPicker.Open(GetComponentInParent<Canvas>().rootCanvas.transform, C.diff, d =>
+        {
+            Camp.Reset(); Camp.Save(Camp.Fresh(d)); sel = null; selHex = -1;
+            Toast($"새 분대 · 새 전쟁 ({RULES.DiffOf(d).name})"); Render();
+        }, null);
     }
 
     public void Show()
@@ -72,7 +73,7 @@ public class Lobby : MonoBehaviour
         stats.text = $"보급품 <b>{C.supplies}</b>    전투 {C.battles}    분대 {C.squad.Count}/{SQUAD_MAX}";
         var D = RULES.DIFFS[Mathf.Clamp(C.diff, 0, RULES.DIFFS.Length - 1)];
         diffBtn.GetComponentInChildren<Text>(true).text = "난이도: " + D.name;
-        UIK.Tip(diffBtn, $"<b>난이도 {D.name}</b>\n{D.desc}\n누르면 바뀜 · 다음 출격부터 적용");
+        UIK.Tip(diffBtn, $"<b>난이도 {D.name}</b>\n{D.desc}\n위협 단계 {D.threatStep:0.#}턴마다 · 수입 ×{D.income:0.##}\n전쟁 시작 때 정함 · 바꿀 수 없음");
         foreach (var n in new[] { "ops", "squad", "recruit", "memorial" })
             UIK.B(transform, "Header/Tabs/" + n).GetComponent<Image>().sprite = ArtLib.Sprite(tab == n ? "out/ui/btn_hi.png" : "out/ui/btn.png");
         UIK.Show(ops, tab == "ops"); UIK.Show(squad, tab == "squad"); UIK.Show(recruit, tab == "recruit"); UIK.Show(memorial, tab == "memorial");

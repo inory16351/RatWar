@@ -121,12 +121,12 @@ public static class War
         };
     }
     // ── 위협 단계 (1~5): 턴이 지날수록 + 처음보다 땅을 많이 먹을수록 고양이가 세짐. 수도 전투는 +1 ──
-    //   진척 = (턴 − 1) + 늘어난 내 땅, 3마다 한 단계
+    //   진척 = (턴 − 1) + 늘어난 내 땅, 난이도 threatStep 마다 한 단계 (병장 3)
     public static int Threat(CampData c, int hex = -1)
     {
         int gained = Mathf.Max(0, Count(c, "rat") - D.start.Length);
         float prog = (c.war.turn - 1) + gained;
-        int t = 1 + Mathf.FloorToInt(prog / 3);
+        int t = 1 + Mathf.FloorToInt(prog / RULES.DiffOf(c.diff).threatStep);
         if (hex >= 0 && D.hexes[hex].kind == "capital") t++;
         return Mathf.Clamp(t, 1, 5);
     }
@@ -229,7 +229,7 @@ public static class War
             var sp = SpecialOf(hex);
             if (sp != null && sp.kind == "defend") w.seen.Add(D.hexes[hex].special + ":done");
             int friends = Neighbors(hex).Count(n => Rat(c, n));
-            float hold = Mathf.Clamp(0.5f + 0.08f * friends - 0.015f * w.turn - 0.04f * c.diff, 0.15f, 0.85f);
+            float hold = Mathf.Clamp(0.5f + 0.08f * friends - 0.015f * w.turn + RULES.DiffOf(c.diff).hold, 0.15f, 0.85f);
             if (UnityEngine.Random.value < hold) w.news.Add(UIK.Dim($"■ {D.hexes[hex].name} 수비대가 침공을 막아냈다 (자동)"));
             else { w.own[hex] = "cat"; w.news.Add(UIK.Col($"▼ {D.hexes[hex].name} 수비대가 무너졌다 (자동)", UIK.NEG)); }
         }
@@ -240,7 +240,7 @@ public static class War
         if (cap >= 0 && Rat(c, cap)) { w.over = "win"; w.news.Add(UIK.Col("펠린부르크 함락 — 전쟁에서 이겼다!", UIK.GOLD)); return; }
         if (hq >= 0 && !Rat(c, hq) || Count(c, "rat") == 0) { w.over = "lose"; w.news.Add(UIK.Col("하수구 사령부 함락 — 전쟁에서 졌다", UIK.NEG)); return; }
         // 수입 · 땅 효과
-        int inc = Income(c);
+        int inc = Mathf.RoundToInt(Income(c) * RULES.DiffOf(c.diff).income);
         c.supplies += inc;
         w.news.Add(UIK.Col($"보급품 +{inc} (땅 {Count(c, "rat")}칸)", UIK.GOLD));
         if (Holds(c, "hospital")) foreach (var r in c.squad) r.stress = Mathf.Max(0, r.stress - 10);
@@ -262,6 +262,8 @@ public static class War
             if (hex >= 0 && Rat(c, hex) && !w.threats.Contains(hex)) w.threats.Add(hex);
         }
         int want = w.turn <= 2 ? 1 : w.turn < 8 ? (UnityEngine.Random.value < 0.5f ? 2 : 1) : (UnityEngine.Random.value < 0.4f ? 3 : 2);
+        int inv = RULES.DiffOf(c.diff).invade; // 난이도: 쉬우면 −1 (최소 1), 어려우면 8턴부터 +1
+        want = Mathf.Max(1, want + (inv < 0 || w.turn >= 8 ? inv : 0));
         var front = Enumerable.Range(0, N).Where(i => Rat(c, i) && !w.threats.Contains(i) && Neighbors(i).Any(n => !Rat(c, n))).ToList();
         while (w.threats.Count < want && front.Count > 0)
         {
