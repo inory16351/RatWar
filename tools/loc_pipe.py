@@ -10,8 +10,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TABLES = os.path.join(ROOT, "RatWarUnity", "Assets", "Resources", "Tables")
 WORK = os.path.join(tempfile.gettempdir(), "ratwar_loc")
-GEMINI, CLAUDE = "gemini-4-argon-high", "claude-sonnet-5-5-high"
-CHUNK, JOBS = 40, 8
+GEMINI, CLAUDE = os.environ.get("LOC_GEMINI", "gemini-4-argon-high"), "claude-sonnet-5-5-high"  # 할당량이 다 되면 LOC_GEMINI=gemini-3.8-flash-high
+CHUNK, JOBS = 40, int(os.environ.get("LOC_JOBS", "8"))
 LANG = {"en": "English", "ja": "Japanese", "zh": "Simplified Chinese", "ru": "Russian", "fr": "French", "de": "German", "es": "Spanish (Spain)"}
 JOSA = "은|는|이|가|을|를|과|와|으로|로|이라|라|아|야"
 lock = threading.Lock()
@@ -111,6 +111,8 @@ def run_chunk(tag, model, src, prompt, extra_files, ko_target):
                 print("ok  ", tag, flush=True)
             return dst
         note = "\n\nPREVIOUS ATTEMPT HAD ERRORS, fix them:\n" + "\n".join(errs[:20])
+    if os.path.exists(out):
+        os.remove(out)  # 실패한 묶음은 다음에 다시
     with lock:
         print("FAIL", tag, errs[:3] or note[:200], flush=True)
     return None
@@ -205,6 +207,8 @@ Write the corrected full translation to out.json (same keys). Then reply DONE.""
                 for i, part in chunks(table):
                     trp = {k: tr.get(k, "") for k in part}
                     tag = "rv_%s_%s_%d" % (lang, name[:-5], i)
+                    if os.path.exists(os.path.join(WORK, tag, "out.json")):
+                        continue  # 이미 검수한 묶음
                     jobs.append((lang, name, ex.submit(run_chunk, tag, GEMINI, part, prompt, {"in.json": part, "tr.json": trp}, False)))
     write(jobs, langs, ko)
 
