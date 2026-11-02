@@ -84,7 +84,7 @@ def check(src, dst, ko_target):
 def agy(model, workdir, prompt):
     r = subprocess.run(["agy", "--model", model, "--mode", "accept-edits", "--print-timeout", "600s", "-p=" + prompt],
                        cwd=workdir, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900)
-    return r.stdout[-400:]
+    return r.stdout
 
 
 def run_chunk(tag, model, src, prompt, extra_files, ko_target):
@@ -97,9 +97,15 @@ def run_chunk(tag, model, src, prompt, extra_files, ko_target):
     for attempt in range(3):
         if os.path.exists(out):
             os.remove(out)
-        agy(model, wd, prompt + note)
+        # 파일 쓰기 대신 글로 받음 (도구 권한 없이): 입력 파일을 프롬프트에 붙이고 출력된 JSON 을 out.json 으로
+        inline = "\n\nFILES (inline — you have no file access, do not use tools):\n" + "".join(
+            "=== %s ===\n%s\n" % (n, json.dumps(obj, ensure_ascii=False, indent=1)) for n, obj in extra_files.items())
+        inline += "\nOUTPUT: print ONLY the resulting JSON object (what out.json would contain). No code fences, no other text."
+        text = agy(model, wd, prompt + note + inline)
         try:
-            dst = json.load(open(out, encoding="utf-8"))
+            body = text[text.index("{"):text.rindex("}") + 1]
+            dst = json.loads(body)
+            json.dump(dst, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
         except Exception as e:
             note = "\n\nPREVIOUS ATTEMPT FAILED: out.json was missing or not valid JSON (%s). Write valid JSON to out.json." % e
             continue
