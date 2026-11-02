@@ -126,7 +126,7 @@ public static class Battle
     // 저장한 전투 이어하기 (BattleSave). 실행 중에만 쓰는 참조(병과 표 · 쥐 기록 · 제압 상대)를 다시 이어 붙임
     public static bool Restore(BattleSaveData d)
     {
-        var m = GameData.MISSIONS.FirstOrDefault(x => x.id == d.missionId);
+        var m = GameData.MISSIONS.FirstOrDefault(x => x.id == d.missionId) ?? War.FromId(d.camp, d.missionId);
         if (m == null || d.units == null) return false;
         camp = Camp.Migrate(d.camp); mission = m;
         world = World.Create(GameData.MissionMap(m));

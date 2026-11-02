@@ -35,6 +35,7 @@ public class CampData
     public int v = 2, supplies = 60, battles, made, diff = RULES.defaultDiff;
     public List<string> done = new List<string>(), deploy = new List<string>();
     public List<RatRecord> squad = new List<RatRecord>(), fallen = new List<RatRecord>(), recruits = new List<RatRecord>();
+    public WarState war = new WarState();
 }
 
 public class TraitDef
@@ -216,6 +217,7 @@ public static class Camp
         c.squad[2].home = c.squad[1].home;
         c.deploy = c.squad.Take(CampRules.DEPLOY_MAX).Select(r => r.id).ToList();
         RollRecruits(c);
+        War.Ensure(c);
         return c;
     }
 
@@ -233,11 +235,12 @@ public static class Camp
             r.traits.RemoveAll(t => !CampRules.TRAITS.ContainsKey(t));
             if (r.bonds == null) r.bonds = new List<Bond>();
         }
+        War.Ensure(c); // 예전 저장 = 전략 지도 새로 시작
         return c;
     }
     public static void Save(CampData c) { try { File.WriteAllText(PathOf, JsonUtility.ToJson(c)); } catch (Exception e) { Debug.LogWarning("저장 실패 " + e.Message); } }
     public static void Reset() { try { if (File.Exists(PathOf)) File.Delete(PathOf); } catch { /* 무시 */ } }
-    static void RollRecruits(CampData c) => c.recruits = new List<RatRecord> { NewRat(c), NewRat(c), NewRat(c) };
+    public static void RollRecruits(CampData c) => c.recruits = new List<RatRecord> { NewRat(c), NewRat(c), NewRat(c) };
 
     // ── 한 쥐의 계산된 정보 ──
     public static int RankIdx(RatRecord r) => CampRules.RankOf(r.xp);
@@ -316,10 +319,12 @@ public static class Camp
         if (c.supplies < CampRules.REFRESH_COST) return false;
         c.supplies -= CampRules.REFRESH_COST; RollRecruits(c); Save(c); return true;
     }
+    // 의수 · 의족 값 (전략 지도에서 공방을 쥐고 있으면 절반)
+    public static int LimbCost(CampData c) => War.Holds(c, "workshop") ? CampRules.LIMB_COST / 2 : CampRules.LIMB_COST;
     public static bool FitLimb(CampData c, RatRecord r)
     {
-        if (c.supplies < CampRules.LIMB_COST || r.lost.Count == 0) return false;
-        c.supplies -= CampRules.LIMB_COST;
+        if (c.supplies < LimbCost(c) || r.lost.Count == 0) return false;
+        c.supplies -= LimbCost(c);
         r.prosthetic = r.prosthetic.Concat(r.lost).Distinct().ToList();
         r.lost.Clear();
         Save(c);
@@ -411,7 +416,7 @@ public static class Camp
         var rankBefore = c.squad.ToDictionary(q => q.id, RankIdx); // 멘토 · 제자는 출전 전 계급으로
         int reward = win ? mission.reward : Mathf.FloorToInt(mission.reward * 0.2f);
         c.supplies += reward;
-        if (win && !c.done.Contains(mission.id)) c.done.Add(mission.id);
+        if (win && !c.done.Contains(mission.id) && !War.IsWar(mission)) c.done.Add(mission.id);
         var report = new List<ReportRow>();
         var deployed = new HashSet<string>(res.Select(x => x.id));
         foreach (var x in res)
@@ -457,6 +462,8 @@ public static class Camp
         int drafted = 0;
         while (c.squad.Count(Ready) < 4 && c.squad.Count < CampRules.SQUAD_MAX) { var r = NewRat(c); r.drafted = true; c.squad.Add(r); drafted++; }
         foreach (var r in c.squad) if (c.deploy.Count < CampRules.DEPLOY_MAX && Ready(r) && !c.deploy.Contains(r.id) && r.drafted) c.deploy.Add(r.id);
+        // 전략 지도: 칸 주인 바꾸고 턴 넘김
+        if (War.IsWar(mission)) War.AfterBattle(c, mission, win);
         Save(c);
         return new SettleOut { reward = reward, report = report, drafted = drafted };
     }

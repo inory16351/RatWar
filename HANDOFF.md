@@ -18,7 +18,9 @@
 | 시점 | 진짜 원근 카메라(FOV 40), 줌 = 돌리, 가까울수록 더 숙임(26°→12°). 회전 없음, 늘 쥐(앞, −Z)에서 고양이(뒤, +Z)를 봄 |
 | 원근감 | 웹처럼 배경 층(하늘 · 먼 마을 · 언덕 · 들판 · 구름 · 폭격기) + 양옆 날개 층(`WingFar/Mid/Near`) + 맵 바깥 경치 |
 | 안개 | 웹 방식: 안 보이는 칸 = 바닥 어둡게 + 채도 50% 빼기 + 흐르는 연무 두 겹이 **바닥 · 물체 모두에**. 맵 바깥은 늘 안개. 회색 덮개 아님 |
-| 맵 | 임무마다 크기 다름(S · M · L), 막(장)별로 늘어나는 선형 캠페인 → `docs/LEVEL_DESIGN.md` |
+| 맵 | 임무마다 크기 다름(S · M · L). 전투 맵은 전략 지도 칸의 지형을 따라감 → `docs/LEVEL_DESIGN.md` |
+| 캠페인 | **전략 지도 땅따먹기** (2026-11-02): 육각 40칸, 라테리아 공화국(쥐) vs 펠리니아 제국(고양이). 매 턴 고양이 침공 → 한 곳만 직접 싸움(방어 또는 붙은 땅 공격), 나머지 침공은 자동 판정. 땅 = 턴 수입 + 특수 효과. 2차 대전 모티브 주요 전투 7개는 컷씬(그림 슬라이드 + 자막). 고양이 수도 점령 = 승리, 하수구 사령부 함락 = 패배 |
+| 큰 그림체 | 컷씬 · 지도 · 배경은 키 아트(`docs/concept_deck/img/key_art.png`)처럼 플랫 매트. 세밀한 지브리풍은 퇴짜. 생성은 코덱스 CLI (`tools/gen_art.ps1`) |
 | 하단 HUD | 분대 카드는 작게, 행동 버튼은 그 옆 넓은 패널 |
 | 흔들림 | 짧고 약하게 (지수 감쇠 ~0.35초, 진폭 0.015) |
 | 유혈 | 웹처럼 "유혈낭자": 방울 · 바닥 자국 · 번지는 웅덩이 · 날아가 바닥에 남는 부위 · 잘린 자리 뿜기 · 단면 |
@@ -26,10 +28,10 @@
 ## 구조 (`RatWarUnity/Assets/`)
 | 위치 | 내용 |
 |---|---|
-| `Scripts/Data/` | `GameData`(무기 · 능력 · 병종 · 소품 기호 · 규칙, 맵 · 임무는 `Resources/Data/*.json`) · `SkillsData`(육각 스킬판) · `Camp`(사령부 기록 · 정산) |
+| `Scripts/Data/` | `GameData`(무기 · 능력 · 병종 · 소품 기호 · 규칙, 맵 · 임무는 `Resources/Data/*.json`) · `SkillsData`(육각 스킬판) · `Camp`(사령부 기록 · 정산) · `War`(전략 지도: 칸 주인 · 침공 · 자동 판정 · 칸→임무 생성, 데이터 `Resources/Data/campaign.json`, 상태는 `CampData.war`) |
 | `Scripts/Battle/` | `Battle`(턴 · 명중 · 능력 · 스트레스 · AI · 목표, async `Awaitable`) · `World`(칸 · 시야 · 엄폐 · 길찾기) · `Unit` · `BattleSave` |
 | `Scripts/View/` | `BoardView`(바닥 굽기 · 소품 · 배경 · 효과 · 유혈) · `UnitView`(리그 조립 · 포즈 · 정렬) · `RigPose`(웹 `rig.js pose`) · `CameraRig` · `GroundBaker` · `FogCloud` · `ArtLib` · `View`(전투 → 화면 창구) |
-| `Scripts/UI/` | `Hud` · `Lobby` · `TitleScreen` · `EndScreen` · `Tooltip` · `UIKit` |
+| `Scripts/UI/` | `Hud` · `Lobby`(작전 탭 = 전략 지도 `Ops/WarMap` · `Ops/WarInfo` + 오른쪽 브리핑) · `Cutscene`(`Canvas/Cutscene`, 그림 = `Resources/Art/out/cut/<시트>_<1~4>.jpg`) · `TitleScreen` · `EndScreen` · `Tooltip` · `UIKit` |
 | `Scripts/Core/` | `GameRoot`(화면 흐름 · 글꼴 · 이어하기) · `Tpl`(틀 복사) · `Audio` |
 | `Shaders/SpriteFog.shader` | 모든 판때기 셰이더: 시야 안개(`_FowTex` · `_MistTex` · `_FowRect` · `_FowOn`) · `_FowDark` |
 | `Resources/Art/` | `rigs/<종>[_병종]/rig.json + parts/<시점>/` · `out/`(소품 · 경치 · fx · 배경 · ui, 목록 `manifest.json` · `assets.json`) · `audio/` |

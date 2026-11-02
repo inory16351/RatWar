@@ -7,7 +7,7 @@ using static CampRules;
 public class Lobby : MonoBehaviour
 {
     public static Lobby I;
-    string tab = "ops", sel; MissionDef pick;
+    string tab = "ops", sel;
     CampData C;
     Transform ops, squad, recruit, memorial;
     Text stats, toast; float toastT;
@@ -47,7 +47,7 @@ public class Lobby : MonoBehaviour
     {
         // 두 번 누르면 지움 (웹은 confirm 창)
         if (Time.unscaledTime - resetArm > 2.5f) { resetArm = Time.unscaledTime; Toast("한 번 더 누르면 분대 기록을 지우고 처음부터 시작합니다"); return; }
-        Camp.Reset(); sel = null; pick = null; Toast("새 분대로 시작"); Render();
+        Camp.Reset(); sel = null; selHex = -1; Toast("새 분대 · 새 전쟁으로 시작"); Render();
     }
 
     public void Show()
@@ -105,27 +105,38 @@ public class Lobby : MonoBehaviour
         return string.Join(" · ", s);
     }
 
-    // ── 작전: 임무 목록 · 브리핑 · 출전 6자리 · 대기 ──
+    // ── 작전: 전략 지도(땅따먹기) · 고른 칸 브리핑 · 출전 6자리 · 대기 ──
+    int selHex = -1;
+    // 고른 칸에서 할 수 있는 일: 침공 막기 · 공격 · 없음
+    string ActionOf(int i) => i < 0 || C.war.over != "" ? null : War.CanDefend(C, i) ? "defend" : War.CanAttack(C, i) ? "attack" : null;
+
     void Ops()
     {
-        var open = Camp.Unlocked(C); var cur = Camp.Current(C);
-        if (pick == null || !open.Contains(pick)) pick = cur;
-        var m = pick;
-        var list = UIK.F(ops, "Missions");
-        Tpl.Clear(list);
-        foreach (var x in GameData.MISSIONS)
-        {
-            bool done = C.done.Contains(x.id), locked = !open.Contains(x);
-            var b = Tpl.Spawn("MissionBtn", list).transform;
-            UIK.T(b, "Title").text = x.name;
-            UIK.T(b, "Sub").text = locked ? "[잠김] 이전 작전을 끝내야 열림" : done ? UIK.Col("✓ 완료 · 다시 출격 가능", UIK.OK) : x == cur ? UIK.Col("▶ 현재 작전", UIK.GOLD) : "";
-            b.GetComponent<Image>().sprite = ArtLib.Sprite(x == m ? "out/ui/btn_hi.png" : locked ? "out/ui/btn_off.png" : "out/ui/btn.png");
-            var btn = b.GetComponent<Button>(); btn.interactable = !locked;
-            var mm = x; UIK.OnClick(btn, () => { pick = mm; Render(); });
-        }
+        var w = C.war;
+        // 처음 들어오면 프롤로그, 전쟁이 끝났으면 결말
+        if (!w.seen.Contains("prologue")) { w.seen.Add("prologue"); Camp.Save(C); Cutscene.I.Play("라테리아 공화국 · 개전", War.D.prologue, Render); }
+        else if (w.over != "" && !w.seen.Contains("ending")) { w.seen.Add("ending"); Camp.Save(C); Cutscene.I.Play(w.over == "win" ? "승리" : "패배", w.over == "win" ? War.D.victory : War.D.defeat, Render); }
+        if (selHex < 0 || ActionOf(selHex) == null) selHex = w.threats.Count > 0 ? w.threats[0] : selHex;
+        WarMap();
+        WarInfo();
+        var act = ActionOf(selHex);
+        var m = act != null ? War.Mission(C, selHex, act) : null;
         var br = UIK.F(ops, "Brief");
-        string obj = m.obj == "elim" ? "고양이 전멸" : m.obj == "officer" ? "표적 장교 사살" : "깃발 칸에 쥐 한 마리 도달";
-        UIK.T(br, "Head").text = $"<size=34><b>{m.name}</b></size>    {UIK.Col($"보급품 +{m.reward}", UIK.GOLD)}\n{m.brief}\n{UIK.Col("목표", UIK.GOLD)} {obj} · {UIK.Col("적", UIK.GOLD)} 고양이 {m.cats.Length}{(m.shells > 0 ? $" · {UIK.Col("박격포탄", UIK.GOLD)} {m.shells}" : "")}";
+        if (m == null)
+        {
+            string why = w.over == "win" ? UIK.Col("전쟁에서 이겼다. 머리 위 '처음부터'로 새 전쟁을 시작할 수 있다.", UIK.GOLD)
+                : w.over == "lose" ? UIK.Col("전쟁에서 졌다. 머리 위 '처음부터'로 다시 시작.", UIK.NEG)
+                : selHex >= 0 ? HexText(selHex) + "\n" + UIK.Dim("싸울 수 있는 칸: 침공당한 내 땅(빨간 테두리) · 내 땅에 붙은 고양이 땅")
+                : UIK.Dim("지도에서 칸을 고르세요 — 침공당한 내 땅을 막거나, 붙어 있는 고양이 땅을 공격합니다. 한 턴에 한 번만 싸울 수 있습니다.");
+            UIK.T(br, "Head").text = $"<size=30><b>{w.turn}턴</b></size>\n{why}";
+        }
+        else
+        {
+            string obj = m.obj == "elim" ? "고양이 전멸" : m.obj == "officer" ? "표적 장교 사살" : "깃발 칸에 쥐 한 마리 도달";
+            bool sp = War.IsSpecial(C, selHex, act);
+            UIK.T(br, "Head").text = $"{(sp ? UIK.Col("◆ 주요 전투  ", UIK.GOLD) : "")}<size=30><b>{m.name}</b></size>    {UIK.Col($"보급품 +{m.reward}", UIK.GOLD)}\n{m.brief}\n{UIK.Col("목표", UIK.GOLD)} {obj} · {UIK.Col("적", UIK.GOLD)} 고양이 {m.cats.Length}{(m.shells > 0 ? $" · {UIK.Col("박격포탄", UIK.GOLD)} {m.shells}" : "")}"
+                + "\n" + UIK.Dim(act == "attack" ? "이기면 이 땅을 얻음 · 출격하지 않은 침공은 수비대가 알아서 막음(운)" : "지면 이 땅을 잃음 · 나머지 침공은 수비대가 알아서 막음(운)");
+        }
         UIK.T(br, "DeployH").text = $"{UIK.Col("▶ 출전", UIK.OK)} {C.deploy.Count} / {DEPLOY_MAX}   {UIK.Dim("누르면 대기로")}";
         UIK.T(br, "BenchH").text = $"{UIK.Col("■ 대기", UIK.RAT)} {C.squad.Count - C.deploy.Count}   {UIK.Dim("쉬는 쥐는 다음 판 뒤 스트레스 −35 · 누르면 출전")}";
         var slots = UIK.F(br, "Slots");
@@ -148,10 +159,84 @@ public class Lobby : MonoBehaviour
             UIK.OnClick(s.GetComponent<Button>(), () => { if (!Camp.Ready(rr) || C.deploy.Count >= DEPLOY_MAX) return; C.deploy.Add(rr.id); Camp.Save(C); Render(); });
         }
         var shaky = C.deploy.Select(id => C.squad.FirstOrDefault(q => q.id == id)).Where(r => r != null && r.stress >= STRESS.shaky).ToList();
-        UIK.T(br, "Go/Warn").text = C.deploy.Count == 0 ? "출전할 쥐를 고르세요" : shaky.Count > 0 ? UIK.Col($"스트레스 높음: {string.Join(", ", shaky.Select(r => r.name))} — 쉬게 하는 것도 방법", UIK.PSY) : UIK.Dim("쉬는 쥐는 스트레스가 풀립니다");
+        UIK.T(br, "Go/Warn").text = m == null ? UIK.Dim("싸울 칸을 고르면 출격할 수 있습니다") : C.deploy.Count == 0 ? "출전할 쥐를 고르세요" : shaky.Count > 0 ? UIK.Col($"스트레스 높음: {string.Join(", ", shaky.Select(r => r.name))} — 쉬게 하는 것도 방법", UIK.PSY) : UIK.Dim("쉬는 쥐는 스트레스가 풀립니다");
         var go = UIK.B(br, "Go/Btn");
-        go.interactable = C.deploy.Count > 0;
-        UIK.OnClick(go, () => GameRoot.I.Deploy(m, C.deploy.ToList()));
+        go.interactable = m != null && C.deploy.Count > 0;
+        int hex = selHex;
+        UIK.OnClick(go, () =>
+        {
+            War.Begin(C, hex, act);
+            var deploy = C.deploy.ToList();
+            void Launch() => GameRoot.I.Deploy(m, deploy);
+            // 주요 전투는 처음 한 번 컷씬
+            string sid = War.SpecialId(hex);
+            if (War.IsSpecial(C, hex, act) && !C.war.seen.Contains(sid)) { C.war.seen.Add(sid); Camp.Save(C); Cutscene.I.Play(m.name, War.D.specials[sid].slides, Launch); }
+            else Launch();
+        });
+    }
+
+    // 전략 지도: 그림 위에 육각 칸 40개 (내 땅 파랑 · 고양이 땅 빨강 · 침공 = 빨간 테두리 · 고른 칸 = 금색)
+    void WarMap()
+    {
+        var map = (RectTransform)UIK.F(ops, "WarMap");
+        var box = (RectTransform)UIK.F(map, "Hexes");
+        Tpl.Clear(box);
+        float W = map.rect.width, H = map.rect.height;
+        float size = War.D.dx / 1.5f * 2 * W; // 육각 너비 = 2R
+        for (int i = 0; i < War.N; i++)
+        {
+            var h = War.D.hexes[i];
+            bool rat = War.Rat(C, i), threat = C.war.threats.Contains(i), can = ActionOf(i) != null, sp = War.IsSpecial(C, i, rat ? "defend" : "attack");
+            var g = Tpl.Spawn("WarHex", box).transform;
+            g.name = "Hex" + i;
+            var rt = (RectTransform)g;
+            var p = War.Pos(i);
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+            rt.anchoredPosition = new Vector2(p.x * W, -p.y * H);
+            rt.sizeDelta = new Vector2(size, size);
+            var hex = g.GetComponent<UIHex>();
+            hex.color = rat ? new Color(0.25f, 0.55f, 0.95f, 0.26f) : new Color(0.85f, 0.2f, 0.15f, can ? 0.22f : 0.12f);
+            hex.edge = i == selHex ? UIK.GOLD : threat ? new Color(1, 0.25f, 0.15f, 0.95f) : can ? new Color(1, 0.9f, 0.7f, 0.85f) : new Color(0.1f, 0.07f, 0.05f, 0.55f);
+            hex.SetVerticesDirty();
+            string icon = h.fx == "hq" ? "command" : h.fx == "capital" ? "dominate" : h.fx == "hospital" ? "supply" : h.fx == "recruit" ? "warcry" : h.fx == "workshop" ? "trap" : h.fx == "artillery" ? "artillery" : null;
+            var im = UIK.I(g, "Icon");
+            im.sprite = icon != null ? ArtLib.Icon(icon) : null; im.enabled = im.sprite != null;
+            UIK.T(g, "Label").text = (sp ? UIK.Col("◆", UIK.GOLD) : "") + h.name + (threat ? "\n" + UIK.Col("침공!", UIK.CAT) : "");
+            int idx = i;
+            var btn = g.GetComponent<Button>();
+            UIK.OnClick(btn, () => { selHex = idx; Render(); });
+            UIK.Tip(btn, HexText(i));
+        }
+    }
+
+    string HexText(int i)
+    {
+        var h = War.D.hexes[i]; var K = War.KindOf(i);
+        bool rat = War.Rat(C, i);
+        var sp = War.SpecialOf(i);
+        var lines = new System.Collections.Generic.List<string>
+        {
+            $"<b>{h.name}</b>  {UIK.Dim(K.name)}  {(rat ? UIK.Col("공화국 땅", UIK.RAT) : UIK.Col("제국 땅", UIK.CAT))}",
+            $"수입 보급품 {K.income}/턴"
+        };
+        if (h.fx != null) lines.Add(UIK.Col(War.D.fx[h.fx], UIK.GOLD));
+        if (sp != null && !C.war.seen.Contains(h.special + ":done")) lines.Add(UIK.Col($"◆ 주요 전투: {sp.name}", UIK.GOLD) + UIK.Dim(sp.kind == "defend" ? $" ({sp.turn}턴부터 고양이가 노림)" : " (공격하면)"));
+        if (C.war.threats.Contains(i)) lines.Add(UIK.Col("고양이가 침공 중! 막지 않으면 수비대가 운에 맡김", UIK.CAT));
+        else if (War.CanAttack(C, i)) lines.Add(UIK.Dim("우리 땅과 붙어 있음 — 공격 가능"));
+        return string.Join("\n", lines);
+    }
+
+    // 지도 아래: 턴 · 땅 · 수입 · 지난 턴 소식 + '이번 턴 쉬기'
+    void WarInfo()
+    {
+        var w = C.war; var info = UIK.F(ops, "WarInfo");
+        UIK.T(info, "Text").text = $"<size=26><b>{w.turn}턴</b></size>   {UIK.Col($"공화국 {War.Count(C, "rat")}칸", UIK.RAT)} · {UIK.Col($"제국 {War.Count(C, "cat")}칸", UIK.CAT)} · {UIK.Col($"수입 +{War.Income(C)}/턴", UIK.GOLD)}\n"
+            + (w.news.Count > 0 ? string.Join("\n", w.news) : UIK.Dim("아직 소식이 없다"));
+        var wait = UIK.B(info, "Wait");
+        wait.interactable = w.over == "";
+        UIK.T(wait.transform, "Text").text = "이번 턴 쉬기";
+        UIK.Tip(wait, "출격하지 않고 턴을 넘김 · 분대 전원 스트레스 −35\n침공은 모두 수비대가 운에 맡겨 막음");
+        UIK.OnClick(wait, () => { War.Wait(C); selHex = -1; Toast($"{w.turn}턴 — 고양이가 움직였다"); Render(); });
     }
     void FillMini(Transform s, RatRecord r, int num)
     {
@@ -196,8 +281,8 @@ public class Lobby : MonoBehaviour
         UIK.Tip(UIK.T(d, "Info"), TraitTip(r));
         var limb = UIK.B(d, "Limb");
         UIK.Show(limb.transform, r.lost.Count > 0);
-        limb.interactable = C.supplies >= LIMB_COST;
-        UIK.T(limb.transform, "Text").text = $"의수 · 의족 달기 (보급품 {LIMB_COST})";
+        limb.interactable = C.supplies >= Camp.LimbCost(C);
+        UIK.T(limb.transform, "Text").text = $"의수 · 의족 달기 (보급품 {Camp.LimbCost(C)})";
         UIK.OnClick(limb, () => { if (Camp.FitLimb(C, r)) Render(); });
         UIK.T(d, "Stats").text = string.Join("   ", new[] { ("체력", st.hp.ToString()), ("명중", st.aim.ToString()), ("이동", st.mob.ToString()), ("시야", "+" + st.sight), ("치명", "+" + st.crit), ("회피", st.def.ToString()), ("무기", GameData.WEAPONS[st.cls.weapon].name) }.Select(p => $"{UIK.Dim(p.Item1)} <b>{p.Item2}</b>"))
             + "\n" + string.Join("  ", st.abil.Select(a => UIK.Col("◆" + GameData.ABILITIES[a].name, UIK.INK)));

@@ -472,6 +472,24 @@ public class BoardView : MonoBehaviour
         var g = cr.GroundAt(screen, 0);
         return World.TileAt(w, Mathf.RoundToInt(g.x), w.D - 1 - Mathf.RoundToInt(g.z));
     }
+    // 지금 고른 쥐가 그 칸으로 갈 수 있나 (이동 칸 표시와 같은 계산)
+    public bool CanMoveTo(Tile t)
+    {
+        var u = Battle.sel;
+        if (t == null || u == null || Battle.mode != "move" || u.ap <= 0) return false;
+        if (reachVer != Battle.version || reachUnit != u) { cachedReach = World.ReachOf(W, u, u.mob * u.ap); reachVer = Battle.version; reachUnit = u; }
+        return cachedReach.Cost(t.x, t.z) is float c && c > 0;
+    }
+    // 클릭 대상: 가리킨 칸에 선 유닛이 먼저. 그다음 그림(몸통) — 단, 쥐 그림이 갈 수 있는 뒤 칸을 가리면 칸이 이김
+    // (키 큰 쥐가 뒤 칸을 덮어서 이동 클릭이 다른 쥐 선택으로 먹히던 것)
+    public Unit PickUnit(Vector2 screen, Tile tile)
+    {
+        var onTile = tile != null ? World.UnitAt(W, tile.x, tile.z) : null;
+        if (onTile != null && onTile.view && onTile.view.gameObject.activeSelf) return onTile;
+        var hit = UnitAtScreen(screen);
+        if (hit != null && hit.side == "rat" && CanMoveTo(tile)) return null;
+        return hit;
+    }
     public Unit UnitAtScreen(Vector2 screen)
     {
         var cam = CameraRig.I.cam; Unit best = null; float bd = 1e9f;

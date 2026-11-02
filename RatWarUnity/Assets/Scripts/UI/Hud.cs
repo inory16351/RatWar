@@ -112,7 +112,7 @@ public class Hud : MonoBehaviour
         if (Battle.over != null || Battle.turn != "rat" || Battle.mode == "busy") return;
         var u = Battle.sel;
         var tile = BoardView.I.PickTile(screen);
-        var hitU = BoardView.I.UnitAtScreen(screen);
+        var hitU = BoardView.I.PickUnit(screen, tile);
         if (Battle.mode == "target")
         {
             if (hitU != null && targets.Contains(hitU)) { if (CurrentTarget == hitU) Confirm(); else { Battle.targetIdx = targets.IndexOf(hitU); Battle.version++; } }
@@ -299,7 +299,8 @@ public class Hud : MonoBehaviour
         if (Battle.mode == "target") b = CurrentTarget;
         else if (a != null && Battle.turn == "rat" && Battle.mode == "move" && ms != null && GameRoot.PointerOnBoard)
         {
-            var h = BoardView.I.UnitAtScreen(ms.position.ReadValue());
+            var mp = ms.position.ReadValue();
+            var h = BoardView.I.PickUnit(mp, BoardView.I.PickTile(mp));
             if (h != null && h.side == "cat" && Battle.VisibleEnemies(a).Contains(h)) b = h;
         }
         if (a == null || b == null || Battle.over != null) { UIK.Show(tipRt, false); return; }
