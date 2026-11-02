@@ -24,7 +24,8 @@ public class WarState
 
 public class WarKind { public string name, map; public int income; }
 public class WarHex { public string name, kind, fx, special; }
-public class Slide { public string img, text; }
+// 컷씬 한 장. text 는 테이블 키여도 됨. rat 이 있으면 그림 대신 검은 바탕에 초상 (에필로그)
+public class Slide { public string img, text, title, sub; [Newtonsoft.Json.JsonIgnore] public RatRecord rat; }
 public class WarSpecial
 {
     public string name, kind, tpl, obj, brief; public int turn, cats, reward, shells; public bool mirror;

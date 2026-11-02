@@ -98,7 +98,7 @@ public static class Menus
         Action lang = () =>
         {
             T("Settings", "Box/Lang/Value").text = Settings.LANGS[Settings.Lang];
-            T("Settings", "Box/Note").text = Settings.Lang == 0 ? "" : "아직 한국어만 있습니다 — 설정만 저장됨";
+            T("Settings", "Box/Note").text = "";
         };
         UIK.OnClick(B("Settings", "Box/Lang/Prev"), () => { Settings.Lang--; lang(); });
         UIK.OnClick(B("Settings", "Box/Lang/Next"), () => { Settings.Lang++; lang(); });
