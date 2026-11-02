@@ -116,5 +116,7 @@ public static class ArtLib
         if (cls == "engineer" && hasFlame && Rig("rat_engineer_flame") != null) return Rig("rat_engineer_flame");
         return (gear > 0 ? Rig($"{kind}_{cls}_v{gear}") : null) ?? b;
     }
-    public static RigData BaseRig(bool rat, string cls) { string kind = rat ? "rat" : "cat"; return Rig(kind + "_" + cls) ?? Rig(kind); }
+    public static RigData BaseRig(bool rat, string cls) { string kind = rat ? "rat" : "cat"; return Rig(kind + "_" + cls) ?? (!rat && RIG_ALIAS.TryGetValue(cls, out var a) ? Rig(a) : null) ?? Rig(kind); }
+    // 전용 리그가 아직 없는 고양이 병과 → 비슷한 리그 빌려 씀 (돌격병 · 척탄병은 기본 cat)
+    static readonly Dictionary<string, string> RIG_ALIAS = new Dictionary<string, string> { ["catheavy"] = "cat_mgcat" };
 }

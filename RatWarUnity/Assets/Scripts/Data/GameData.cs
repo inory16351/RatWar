@@ -24,7 +24,8 @@ public class ClassDef
     public string id, name, weapon, desc = "";
     public int hp, aim, mob, grenades, medkits, charges, psi, sight, def, crit, aura, whisker;
     public float blast;
-    public bool flame, climb;
+    public bool flame, climb, vehicle; // vehicle = 전차 (리그 대신 차체 그림, 엄폐 · 부위 부상 없음)
+    public int armor;                  // 장갑: 폭발 아닌 피해를 이만큼 줄임 (최소 1)
     public string[] abil;
     public int[] from = new int[0];
 }
@@ -36,7 +37,7 @@ public class PropDef
 
 public class HillDef { public float cx, cz, rx, rz; }
 public class MapDef { public string[] rows; public HillDef[] hills; public int[][] spawn; }
-public class CatSpawn { public string cls, head, pod; public int x, z; public bool target; }
+public class CatSpawn { public string cls, head, pod; public int x, z; public bool target, elite; }
 public class GoalDef { public int x, z; public float r; }
 
 public class MissionDef
@@ -102,6 +103,8 @@ public static class GameData
         new AbilityDef { id = "flare", name = "조명탄", ap = 1, end = false, target = "tile", range = 10, radius = 4, cd = 3, desc = "2턴 동안 반경 4 를 밝힘 — 안개 속 고양이도 보임" },
         new AbilityDef { id = "artillery", name = "포격 유도", ap = 1, end = true, target = "tile", range = 16, radius = 2, dmgMin = 4, dmgMax = 5, desc = "다음 아군 차례 시작에 그 자리로 포격 (박격포탄 1). 떨어질 자리는 표시됨" },
         new AbilityDef { id = "terror", name = "공포의 속삭임", ap = 1, end = true, target = "enemy", psi = 1, desc = "고양이 하나 다음 턴 행동 불가 (정신력 1)" },
+        // ── 고양이 전용 ──
+        new AbilityDef { id = "cannon", name = "전차포", ap = 1, end = true, target = "tile", range = 12, radius = 1.5f, dmgMin = 4, dmgMax = 5, cd = 2, desc = "포탄 한 발: 높은 엄폐물까지 부숨" },
         new AbilityDef { id = "cleanse", name = "정신 정화", ap = 1, end = false, target = "ally", far = true, psi = 1, desc = "아군 하나 스트레스 −30 · 공황 · 광란 · 도주 풀림 (정신력 1)" },
     });
 
@@ -115,6 +118,11 @@ public static class GameData
         new ClassDef { id = "officer", name = "고양이 장교", hp = 8, aim = 65, mob = 6, weapon = "smg", aura = 10, abil = new[] { "shoot", "overwatch", "hunker" } },
         new ClassDef { id = "catsniper", name = "고양이 저격병", hp = 4, aim = 72, mob = 5, weapon = "sniper", sight = 2, abil = new[] { "shoot", "overwatch", "hunker" } },
         new ClassDef { id = "catflame", name = "고양이 화염병", hp = 6, aim = 55, mob = 6, weapon = "smg", flame = true, abil = new[] { "shoot", "flame", "hunker" } },
+        // ── 2026-11-02 진행도 병과 (War.CatMix 가 위협 단계에 따라 섞음) ──
+        new ClassDef { id = "catassault", name = "고양이 돌격병", hp = 6, aim = 58, mob = 7, weapon = "shotgun", abil = new[] { "shoot", "overwatch", "hunker" } },
+        new ClassDef { id = "catgren", name = "고양이 척탄병", hp = 6, aim = 55, mob = 6, weapon = "smg", grenades = 3, abil = new[] { "shoot", "grenade", "overwatch", "hunker" } },
+        new ClassDef { id = "catheavy", name = "중장갑 고양이", hp = 10, aim = 55, mob = 4, weapon = "lmg", def = 15, abil = new[] { "shoot", "suppress", "overwatch" } },
+        new ClassDef { id = "cattank", name = "고양이 전차", hp = 16, aim = 60, mob = 5, weapon = "lmg", vehicle = true, armor = 2, abil = new[] { "shoot", "cannon", "overwatch" } },
     }.ToDictionary(c => c.id);
 
     // 맵 · 임무는 데이터: Resources/Data/maps.json · missions.json (tools/maps/build_maps.js 가 만들고 검사함)
@@ -147,7 +155,7 @@ public static class GameData
             rows = m.mirror ? b.rows.Select(r => new string(r.Reverse().ToArray())).ToArray() : b.rows,
             hills = b.hills.Select(h => new HillDef { cx = m.mirror ? W - 1 - h.cx : h.cx, cz = h.cz, rx = h.rx, rz = h.rz }).ToArray(),
             spawn = b.spawn.Select(s => new[] { fx(s[0]), s[1] }).ToArray(),
-            cats = m.cats.Select(c => new CatSpawn { cls = c.cls, head = c.head, pod = c.pod, target = c.target, x = fx(c.x), z = c.z }).ToArray(),
+            cats = m.cats.Select(c => new CatSpawn { cls = c.cls, head = c.head, pod = c.pod, target = c.target, elite = c.elite, x = fx(c.x), z = c.z }).ToArray(),
             mortarShells = m.shells,
         };
     }

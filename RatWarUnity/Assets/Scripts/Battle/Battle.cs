@@ -73,6 +73,7 @@ public static class Battle
             stress = r != null ? r.stress : 0, r = r, rosterId = r?.id, xp = r != null ? r.xp : 0,
             fdz = side == "rat" ? -1 : 1, faceIdx = faceIdx,
         };
+        if (st == null) u.defB = def.def; // 고양이 병과 회피 (중장갑)
         u.ammo = u.clip; u.baseMob = u.mob;
         foreach (var a in u.abil) if (AB[a].uses > 0 && a != "flame") u.left[a] = AB[a].uses;
         return u;
@@ -85,6 +86,9 @@ public static class Battle
 
     // 고양이 얼굴: 정해 둔 머리 이름 → 개체 얼굴 번호 (얼룩 · 턱시도 · 뚱보 주황 · 샴 · 흉터 흰 수컷)
     static readonly Dictionary<string, int> CAT_FACE = new Dictionary<string, int> { ["mackerel"] = 0, ["tuxedo"] = 1, ["chonk"] = 2, ["loaf"] = 2, ["boss_ryan"] = 3, ["boss_turret"] = 4, ["boss_dictator"] = 4 };
+
+    // 정예 고양이 (위협 단계가 높을수록 자주): 체력 · 명중 보너스
+    public const int ELITE_HP = 2, ELITE_AIM = 10;
 
     // 전투 시작: m = MISSIONS 하나, deploy = 출전할 쥐 id (최대 6)
     public static void StartBattle(MissionDef m, List<string> deploy)
@@ -112,6 +116,7 @@ public static class Battle
         foreach (var c in def.cats)
         {
             var u = MakeUnit("cat", c.cls, c.x, c.z, pod: c.pod, target: c.target, faceIdx: CAT_FACE.TryGetValue(c.head ?? "", out var f) ? f : -1);
+            if (c.elite) { u.maxHp += ELITE_HP; u.hp += ELITE_HP; u.aim += ELITE_AIM; u.name = "정예 " + u.name; }
             if (c.target) u.name = "표적 · " + u.name;
             units.Add(u);
         }
@@ -228,7 +233,7 @@ public static class Battle
         float d = World.Dist(x, z, b.x, b.z);
         var parts = new List<(string, int)> { ("조준", a.aim), ("거리", wp.range(World.JsRound(d))) };
         bool flamer = !heavy && !knife && a.Weapon == "flamer";
-        var cv = knife || flamer ? (0, false) : World.CoverAgainst(w, b.x, b.z, x, z);
+        var cv = knife || flamer || b.def.vehicle ? (0, false) : World.CoverAgainst(w, b.x, b.z, x, z); // 전차는 엄폐 못 함
         if (flamer) parts.Add(("불길 (엄폐 무시)", 0));
         if (cv.Item1 > 0) parts.Add((cv.Item1 == 2 ? "높은 엄폐" : "낮은 엄폐", -RULES.coverDef[cv.Item1]));
         if (b.hunker && cv.Item1 > 0) parts.Add(("엎드림", -RULES.hunkerDef));
@@ -295,6 +300,7 @@ public static class Battle
         if (weak) crit += 15;
         if (flamer) crit = 0;
         if (a.side == "cat") crit = Mathf.Max(0, crit + D.catCrit);
+        if (b.def.vehicle) crit = 0; // 장갑엔 급소가 없음
         return new HitInfo { hit = hit, crit = Mathf.Min(100, crit), parts = parts, cover = cv.Item1, flanked = cv.Item2, wp = wp };
     }
 
@@ -744,6 +750,12 @@ public static class Battle
             u.used.Add("lucky"); dmg = Mathf.Max(0, u.hp - 1); part = "torso";
             View.Popup(u, "행운!", "#ffcf4a"); Say($"{u.name} 아슬아슬하게 살았다 (행운아)", "good");
         }
+        // 전차: 폭발 아닌 피해는 장갑만큼 깎임 (최소 1), 부위 부상 없음
+        if (u.def.vehicle)
+        {
+            part = "torso";
+            if (u.def.armor > 0 && kind != "explosion" && dmg > 0) { int a0 = dmg; dmg = Mathf.Max(1, dmg - u.def.armor); if (dmg < a0) View.Popup(u, $"장갑 −{a0 - dmg}", "#c8ccd4"); }
+        }
         if (u.side == "rat" && part == "leg" && (crit || kind == "explosion")) u.legBlast = true;
         if (u.side == "rat" && kind == "explosion" && R01 < 0.3f) u.legBlast = true;
         if (Camp.Has(u.r, "rage") && dmg > 0) u.rageAim = true;
@@ -752,7 +764,7 @@ public static class Battle
         if (u.side == "cat" && !u.active && !quiet) alerted.Add(u.pod);
         u.face = "hit"; u.faceT = 1.0f;
         u.st.hit = 1;
-        View.Blood(u, crit || part == "head" ? 14 : 8);
+        if (!u.def.vehicle) View.Blood(u, crit || part == "head" ? 14 : 8);
         string where = part != null && part != "torso" ? PART_NAME[part] + " " : "";
         View.Popup(u, where + (crit ? "치명타! " : "") + "−" + dmg, crit || part == "head" ? "#ffcf4a" : "#ff6b5b");
         Sfx.Hit();
@@ -815,7 +827,7 @@ public static class Battle
         if (u.side == "rat") Witness(u, STRESS.allyDead, "dead");
         else if (from != null) AddStress(from, STRESS.kill - (int)Camp.TraitSum(from.r, "killRelief"));
         u.deathHow = headshot ? "머리에 총탄" : kind == "explosion" ? "폭발" : kind == "fire" ? "불길" : from != null && from.side == "rat" ? "아군의 총에" : "총탄";
-        Say(u.side == "rat" ? $"{u.name} 전사…" : $"{u.name} 사살", u.side == "rat" ? "bad" : "good");
+        Say(u.side == "rat" ? $"{u.name} 전사…" : $"{u.name} {(u.def.vehicle ? "격파!" : "사살")}", u.side == "rat" ? "bad" : "good");
         // 쓰러지는 방향: 쏜 쪽 반대. 옆모습으로 돌려서 리그로 쓰러뜨림
         if (from != null) FaceToward(u, from.x, from.z);
         u.forceSide = true;
@@ -825,6 +837,7 @@ public static class Battle
         else if (kind == "explosion") gore = R01 < 0.6f ? "burst" : "sever";
         else if (crit && R01 < 0.65f) gore = R01 < 0.5f ? "decap" : "sever";
         else if (kind == "shotgun" && R01 < 0.4f) gore = "sever";
+        if (u.def.vehicle) { gore = null; u.deathHow = "격파"; View.Explosion(u.x, u.z, 1.2f); Sfx.Boom(); } // 전차: 피 대신 폭발 → 잔해
         u.gore = gore;
         if (gore != null && u.side == "rat") Witness(u, STRESS.gore, "gore");
         Sfx.Death();
@@ -1276,6 +1289,7 @@ public static class Battle
             var es = VisibleEnemies(u).Where(e => !A.melee || World.Dist(e, u) < 1.6f);
             if (ab == "dash") es = es.Where(e => World.Dist(e, u) <= A.range + 1.5f && DashSpot(u, e) != null);
             if (ab == "barrage") es = es.Where(e => World.Dist(e, u) <= A.range);
+            if (ab == "dominate") es = es.Where(e => !e.def.vehicle); // 전차는 정신 지배 안 됨 (안에 여럿)
             if ((ab == "shoot" || ab == "overwatch") && u.Weapon == "flamer") es = es.Where(e => World.Dist(e, u) <= GameData.flamerLen);
             return es.ToList();
         }
@@ -1323,7 +1337,7 @@ public static class Battle
         s += bestShot * 0.45f;
         s -= exposed * 22;
         // 너무 붙거나 너무 멀지 않게
-        float want = c.def.flame ? 2.8f : c.Weapon == "sniper" ? 10 : c.Weapon == "smg" ? 4.5f : 7;
+        float want = c.def.flame ? 2.8f : c.Weapon == "sniper" ? 10 : c.Weapon == "smg" ? 4.5f : c.Weapon == "shotgun" ? 2.5f : 7;
         s -= Mathf.Abs(nearest - want) * 3;
         var pr = World.PropOf(World.TileAt(w, x, z));
         if (pr != null && pr.emplacement == "mortar" && shells > 0) s += 45;
@@ -1369,6 +1383,12 @@ public static class Battle
                 if (tgt != null) { shells--; Say($"{c.name} 박격포 사격!", "warn"); await ThrowGrenade(c, tgt.Value.x, tgt.Value.z, true); continue; }
             }
             if (emp != null && emp.emplacement == "hmg" && shots.Count > 0) { await Shoot(c, shots[0].r, heavy: true); continue; }
+            // 1.5) 전차포: 쥐가 보이면 (엄폐한 쥐 우선) 포탄 — 쓰고 나면 2턴 쉼
+            if (c.abil.Contains("cannon") && !c.cd.ContainsKey("cannon"))
+            {
+                var tgt = ClusterTarget(c, AB["cannon"].range, 1);
+                if (tgt != null) { await TankCannon(c, tgt.Value.x, tgt.Value.z); continue; }
+            }
             // 2) 지금 자리에서 좋은 사격이면 그대로 쏨
             bool flankedHere = shots.Any(s => World.CoverAgainst(w, c.x, c.z, s.r.x, s.r.z).flanked);
             if (shots.Count > 0 && shots[0].h.hit >= 55 && !flankedHere) { await CatAttack(c, shots); continue; }
@@ -1384,7 +1404,7 @@ public static class Battle
             // 3) 수류탄: 두 마리 이상 모였으면
             if (c.grenades > 0)
             {
-                var g = ClusterTarget(c, 9, 2);
+                var g = ClusterTarget(c, 9, c.def.grenades >= 3 ? 1 : 2); // 척탄병은 한 마리에게도 던짐
                 if (g != null) { Say($"{c.name} 수류탄!", "warn"); await ThrowGrenade(c, g.Value.x, g.Value.z); continue; }
             }
             // 4) 더 나은 자리로 이동 후 사격
@@ -1410,6 +1430,22 @@ public static class Battle
             await Sleep(120);
         }
         UpdateVision();
+    }
+
+    static async Awaitable TankCannon(Unit c, int x, int z)
+    {
+        var ab = AB["cannon"];
+        c.cd["cannon"] = ab.cd + 1; // 고양이 차례 시작에 하나 줄어드니 +1
+        c.ap = 0;
+        FaceToward(c, x, z);
+        Say($"{c.name} 전차포 발사!", "warn");
+        View.FocusPair(c, x, z);
+        c.face = "attack"; c.faceT = 1.4f;
+        await Sleep(350);
+        Sfx.Mortar();
+        c.st.recoil = 1;
+        await View.Shell(c, x, z, 450);
+        await Explode(x, z, ab.radius, ab.dmgMin, ab.dmgMax, c, high: true);
     }
 
     static async Awaitable CatFlame(Unit c, int x, int z)

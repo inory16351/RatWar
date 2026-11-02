@@ -33,12 +33,67 @@ public class UnitView : MonoBehaviour
     {
         u = unit; u.view = this;
         bool rat = u.r != null;
+        rig = transform.Find("Rig"); rigBase = rig.localPosition;
+        if (u.def.vehicle && BuildVehicle()) { Update(); return; }
         R = ArtLib.RigFor(rat, u.cls, rat ? u.r.gear : 0, u.Weapon == "flamer");
         B = ArtLib.BaseRig(rat, u.cls);
-        k = UNIT_H * (u.def.aura > 0 ? 1.05f : 1) / 470f;
-        rig = transform.Find("Rig"); rigBase = rig.localPosition;
+        k = UNIT_H * (u.def.aura > 0 ? 1.05f : !rat && u.def.def > 0 ? 1.12f : 1) / 470f; // 중장갑은 덩치 크게
         foreach (var vn in new[] { "front", "side", "back" }) if (R.views.ContainsKey(vn)) sets[vn] = Build(vn);
         Update();
+    }
+
+    // ── 전차: 리그 대신 시점별 차체 그림 한 장 (Art/out/cat/tank_<시점>, 격파되면 tank_wreck_<시점>) ──
+    public const float TANK_W = 3.6f; // 옆모습 차체 너비 (칸)
+    readonly Dictionary<string, SpriteRenderer> hull = new Dictionary<string, SpriteRenderer>();
+    bool vehicle;
+    bool BuildVehicle()
+    {
+        if (!ArtLib.Sprite("out/cat/tank_side.png")) return false; // 그림 없으면 고양이 리그로
+        vehicle = true;
+        rig.gameObject.SetActive(false);
+        float scale = 0;
+        foreach (var w in new[] { "", "wreck_" })
+            foreach (var vn in new[] { "front", "side", "back" })
+            {
+                var s = ArtLib.Sprite($"out/cat/tank_{w}{vn}.png");
+                if (!s) continue;
+                var sr = Tpl.Spawn<SpriteRenderer>("SpriteTpl", transform);
+                sr.sprite = s;
+                var sz = s.bounds.size;
+                if (scale == 0) scale = TANK_W / ArtLib.Sprite("out/cat/tank_side.png").bounds.size.x; // 시점마다 같은 배율 (앞모습이 옆보다 좁게)
+                sr.transform.localScale = new Vector3(scale, scale, 1);
+                sr.transform.localPosition = new Vector3(0, sz.y * scale / 2 - s.bounds.center.y * scale, 0);
+                hull[w + vn] = sr; all.Add(sr);
+            }
+        return true;
+    }
+    void UpdateVehicle()
+    {
+        transform.position = BoardView.Foot(u.px, u.pz);
+        if (!sg) sg = GetComponent<UnityEngine.Rendering.SortingGroup>();
+        sg.sortingOrder = BoardView.DepthOrder(transform.position.z) + 3 + (Mathf.RoundToInt(u.px) & 1); // 잔해도 서 있는 덩어리라 소품 위
+        u.st.recoil = Mathf.Max(0, u.st.recoil - Time.deltaTime * 7);
+        u.st.hit = Mathf.Max(0, u.st.hit - Time.deltaTime * 3.5f);
+        // 전차는 쓰러지지 않으니 시점은 방향대로 (Die 가 forceSide 를 켜도 무시)
+        float dx = u.fdx, dz = u.fdz;
+        string vn = Mathf.Abs(dx) >= Mathf.Abs(dz) * 0.75f ? "side" : dz > 0 ? "front" : "back";
+        bool flip = vn == "side" && dx < 0;
+        curView = vn; curFlip = flip;
+        string want = (u.st.death != null && u.st.death > 0.3f ? "wreck_" : "") + vn;
+        if (!hull.ContainsKey(want)) want = hull.ContainsKey(vn) ? vn : "side";
+        foreach (var kv in hull)
+        {
+            bool on = kv.Key == want;
+            kv.Value.gameObject.SetActive(on);
+            if (!on) continue;
+            var t = kv.Value.transform; var sc = t.localScale;
+            t.localScale = new Vector3(Mathf.Abs(sc.x) * (flip ? -1 : 1), sc.y, 1);
+            // 쏠 때 뒤로 살짝 밀림 · 맞으면 흔들림 · 시동 걸린 떨림
+            float shake = u.alive ? Mathf.Sin(Time.time * 40 + u.st.seed) * 0.008f + u.st.hit * Mathf.Sin(Time.time * 70) * 0.04f : 0;
+            var p = t.localPosition; t.localPosition = new Vector3((flip ? 1 : -1) * u.st.recoil * 0.08f + shake, p.y, 0);
+        }
+        var col = u.tint; if (u.hidden) col.a = 0.55f;
+        foreach (var sr in all) if (sr) sr.color = col;
     }
 
     Sprite HeadSprite(RigData r, string vn)
@@ -147,6 +202,7 @@ public class UnitView : MonoBehaviour
     void Update()
     {
         if (u == null) return;
+        if (vehicle) { UpdateVehicle(); return; }
         float dt = Time.deltaTime, t = Time.time;
         var st = u.st;
         // 동작 상태 감쇠 (웹 view.js 루프)
@@ -222,9 +278,14 @@ public class UnitView : MonoBehaviour
             if (lift > 0 && lift < 1.2f) rig.localPosition = rigBase + Vector3.up * lift;
         }
         // 색: 지배당함 · 매복(반투명)
-        var col = u.tint; if (u.hidden) col.a = 0.55f;
+        var col = u.tint * Look; if (u.hidden) col.a = 0.55f;
         foreach (var sr in all) if (sr) sr.color = BaseCol(sr) * col;
     }
+
+    // 병과 · 정예 색: 중장갑 = 쇳빛, 정예 = 붉은 기 (아직 전용 리그가 없는 병과도 한눈에 구분)
+    Color Look => u.side != "cat" && u.controlled == 0 ? Color.white
+        : u.cls == "catheavy" ? new Color(0.78f, 0.84f, 0.95f)
+        : u.name != null && u.name.Contains("정예") ? new Color(1f, 0.86f, 0.82f) : Color.white;
 
     // 의수 · 의족 색을 지키면서 틴트 곱하기
     readonly Dictionary<SpriteRenderer, Color> baseCol = new Dictionary<SpriteRenderer, Color>();

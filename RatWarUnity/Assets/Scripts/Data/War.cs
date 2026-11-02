@@ -103,11 +103,13 @@ public static class War
         var pool = tpl.cats.OrderBy(x => obj == "officer" && x.target ? 0 : 1).ToList();
         var cats = pool.Take(Mathf.Min(nCats, pool.Count)).Select(x => new CatSpawn { cls = x.cls, head = x.head, pod = x.pod, x = x.x, z = x.z, target = obj == "officer" && x.target }).ToArray();
         if (obj == "officer" && !cats.Any(x => x.target)) obj = "elim";
+        int tier = Threat(c, hex);
+        CatMix(cats, tier, special, K.map != "sewer", h.kind == "capital", new System.Random(turn * 7919 + hex * 131 + (kind == "attack" ? 1 : 2)));
         int reward = special ? sp.reward : (kind == "attack" ? 30 + turn * 4 : 25 + turn * 3) + K.income * 2;
         string verb = kind == "attack" ? "공격" : "방어";
-        string brief = special ? sp.brief
+        string brief = (special ? sp.brief
             : kind == "attack" ? $"{K.name} '{h.name}'을(를) 고양이에게서 빼앗는다. 이기면 이 땅이 우리 것이 된다."
-            : $"고양이가 우리 {K.name} '{h.name}'을(를) 침공했다. 지면 이 땅을 잃는다.";
+            : $"고양이가 우리 {K.name} '{h.name}'을(를) 침공했다. 지면 이 땅을 잃는다.") + "\n" + ThreatText(cats, tier);
         return new MissionDef
         {
             id = MissionId(c, hex, kind),
@@ -118,6 +120,53 @@ public static class War
             act = tpl.act, goal = tpl.goal, cats = cats,
         };
     }
+    // ── 위협 단계 (1~5): 턴이 지날수록 + 처음보다 땅을 많이 먹을수록 고양이가 세짐. 수도 전투는 +1 ──
+    //   진척 = (턴 − 1) + 늘어난 내 땅, 3마다 한 단계
+    public static int Threat(CampData c, int hex = -1)
+    {
+        int gained = Mathf.Max(0, Count(c, "rat") - D.start.Length);
+        float prog = (c.war.turn - 1) + gained;
+        int t = 1 + Mathf.FloorToInt(prog / 3);
+        if (hex >= 0 && D.hexes[hex].kind == "capital") t++;
+        return Mathf.Clamp(t, 1, 5);
+    }
+    // 단계별 나오는 병과 · 가중치 (뒤 단계는 앞 단계 것을 다 가짐)
+    static readonly (string cls, int tier, int w, int max)[] CAT_POOL =
+    {
+        ("trooper", 1, 6, 99), ("mgcat", 2, 3, 3), ("catsniper", 3, 2, 2), ("catassault", 3, 3, 3),
+        ("catflame", 4, 2, 2), ("catgren", 4, 2, 2), ("officer", 5, 1, 1), ("catheavy", 5, 2, 2),
+    };
+    public static readonly string[] TIER_NAME = { "", "선봉대", "정규군", "증원군", "기갑 사단", "근위 정예" };
+    public const float ELITE_PER_TIER = 0.12f; // 3단계부터 단계마다 정예 확률 +12%
+    // 템플릿 배치 자리(위치 · 무리)는 그대로, 병과만 단계에 맞게 다시 굴림. 주요 전투는 소총병 절반만 바꿈 (짜 둔 구성 유지)
+    static void CatMix(CatSpawn[] cats, int tier, bool special, bool tanks, bool capital, System.Random rng)
+    {
+        var count = new Dictionary<string, int>();
+        foreach (var x in cats) count[x.cls] = count.TryGetValue(x.cls, out var n) ? n + 1 : 1;
+        int Has(string k) => count.TryGetValue(k, out var n) ? n : 0;
+        // 전차: 4단계 30% 1대 · 5단계 1대 (수도 2대). 하수구엔 못 들어옴. 뒤쪽(z 작은) 무리 자리에
+        int nTank = !tanks ? 0 : tier >= 5 ? (capital ? 2 : 1) : tier == 4 && rng.NextDouble() < 0.3 ? 1 : 0;
+        foreach (var x in cats.Where(x => !x.target).OrderBy(x => x.z).Take(nTank)) { count[x.cls]--; x.cls = "cattank"; }
+        var opts = CAT_POOL.Where(p => p.tier <= tier).ToArray();
+        foreach (var x in cats)
+        {
+            if (x.target || x.cls == "cattank" || x.cls == "officer" && (special || tier >= 5)) continue; // 장교는 5단계부터 (주요 전투는 짜 둔 대로)
+            if (special && (x.cls != "trooper" || rng.NextDouble() < 0.5)) continue;
+            var ok = opts.Where(p => Has(p.cls) < p.max || p.cls == x.cls).ToArray();
+            int roll = rng.Next(ok.Sum(p => p.w));
+            var pick = ok.First(p => (roll -= p.w) < 0).cls;
+            count[x.cls]--; x.cls = pick; count[pick] = Has(pick) + 1;
+        }
+        float elite = Mathf.Max(0, tier - 2) * ELITE_PER_TIER;
+        foreach (var x in cats) x.elite = x.cls != "cattank" && rng.NextDouble() < elite;
+    }
+    static string ThreatText(CatSpawn[] cats, int tier)
+    {
+        var kinds = cats.GroupBy(x => x.cls).OrderByDescending(g => g.Count()).Select(g => $"{GameData.CLASSES[g.Key].name} {g.Count()}");
+        int el = cats.Count(x => x.elite);
+        return UIK.Col($"위협 {tier}단계 · {TIER_NAME[tier]}", UIK.CAT) + UIK.Dim($" — {string.Join(" · ", kinds)}{(el > 0 ? $" (정예 {el})" : "")}");
+    }
+
     // 이어하기: 저장한 전투의 임무 id → 같은 임무 다시
     public static MissionDef FromId(CampData c, string id)
     {
