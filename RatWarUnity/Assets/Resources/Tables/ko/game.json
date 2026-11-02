@@ -6,7 +6,6 @@
   "game.weapon.smg.name": "기관단총",
   "game.weapon.hmg.name": "중기관총",
   "game.weapon.flamer.name": "화염방사기",
-
   "game.abil.shoot.name": "사격",
   "game.abil.aimed.name": "정조준",
   "game.abil.aimed.desc": "명중 +20, 피해 +1 (이동하지 않았을 때만)",
@@ -65,7 +64,6 @@
   "game.abil.cannon.desc": "포탄 한 발. 높은 엄폐물까지 부숨",
   "game.abil.cleanse.name": "정신 정화",
   "game.abil.cleanse.desc": "아군 하나의 스트레스 −30, 공황 · 광란 · 도주 상태를 풂 (정신력 1)",
-
   "game.class.trooper.name": "고양이 소총병",
   "game.class.mgcat.name": "고양이 기관총병",
   "game.class.officer.name": "고양이 장교",
@@ -75,7 +73,6 @@
   "game.class.catgren.name": "고양이 척탄병",
   "game.class.catheavy.name": "중장갑 고양이",
   "game.class.cattank.name": "고양이 전차",
-
   "game.class.recruit.name": "소총수",
   "game.class.recruit.desc": "아직 길이 정해지지 않은 신병",
   "game.class.sniper.name": "저격수",
@@ -94,7 +91,6 @@
   "game.class.radio.desc": "쥐떼 전령으로 멀리 있는 아군까지 지휘하고, 무전으로 포격을 부름",
   "game.class.shaman.name": "주술사",
   "game.class.shaman.desc": "적의 정신을 사로잡거나 공포에 빠뜨리고, 아군의 마음을 다잡아 줌",
-
   "game.prop.sandbag": "모래주머니",
   "game.prop.crate": "보급 상자",
   "game.prop.brickwall": "벽돌 벽",
@@ -120,7 +116,6 @@
   "game.prop.stump": "큰 그루터기",
   "game.prop.chapel": "성당 벽 조각",
   "game.prop.billboard": "광고 기둥",
-
   "game.diff.easy.name": "신병",
   "game.diff.easy.tag": "처음 지휘하는 사령관용",
   "game.diff.easy.desc": "쥐 명중 +10 · 고양이 명중 −10 · 고양이 치명 −10 · 빗나가면 다음 사격 명중 +10 · 고양이 연속 명중 완화",
@@ -133,14 +128,12 @@
   "game.diff.nightmare.name": "참호의 악몽",
   "game.diff.nightmare.tag": "살아 돌아오는 쥐가 드물다",
   "game.diff.nightmare.desc": "고양이 명중 +10 · 고양이 치명 +10 · 운 보정 없음",
-
   "game.sector.shoot": "사격",
   "game.sector.fire": "화력",
   "game.sector.demo": "폭파",
   "game.sector.move": "기동",
   "game.sector.support": "지원",
   "game.sector.recon": "정찰",
-
   "game.skill.center": "신병",
   "game.node.aimed": "정조준",
   "game.node.marksman": "명사수",
@@ -160,15 +153,13 @@
   "game.node.sentry": "노련한 경계",
   "game.node.ghost": "조용한 발걸음",
   "game.node.weakspot": "약점 간파",
-
   "game.perk.revive": "응급 처치로 쓰러진 아군을 일으켜 세움 (체력 2)",
-  "game.perk.closeq": "4칸 안 사격 명중 +15",
+  "game.perk.closeq": "4칸 이내 사격 명중 +15",
   "game.perk.sentry": "경계 사격 명중 감소 없음",
   "game.perk.ghost": "잠든 고양이 무리가 3칸 안까지 다가가야 깸",
   "game.perk.flamer": "무기가 화염방사기로 바뀜. 명중 +15 · 4칸 부채꼴 불길 · 쓰러질 때 40% 확률로 폭발 (즉사)",
   "game.perk.weakspot": "표적으로 지정한 적은 회피 무시, 아군 치명 +15",
   "game.perk.gnawer": "철조망 칸에 들어가면 이동력을 1 더 쓰고 갉아 끊으며 지나감",
-
   "game.stat.hp": "체력",
   "game.stat.aim": "명중",
   "game.stat.mob": "이동",
@@ -185,10 +176,8 @@
   "game.stat.burn": "화상 피해",
   "game.stat.charges": "폭약",
   "game.stat.psi": "정신력",
-
   "game.fx.abil": "능력: {0}",
   "game.fx.stat": "{0} +{1}",
-
   "game.mission.m1.name": "1-1 · 하수구 출구",
   "game.mission.m1.brief": "하수구를 빠져나가 마을 외곽의 고양이 초소를 쓸어버려라. 첫 출격이다. 엄폐물에서 엄폐물로 움직여라.",
   "game.mission.m2.name": "1-2 · 언덕 위의 박격포",

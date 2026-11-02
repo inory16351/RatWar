@@ -6,13 +6,10 @@
   "ui.common.win": "승리",
   "ui.common.lose": "패배",
   "ui.common.from": "{0} 출신",
-
   "ui.title.quit_ask": "게임을 종료할까요?",
   "ui.title.continue_info": "슬롯 {0} · {1}",
-
-  "ui.menu.to_title_ask": "메인메뉴로 나갈까요?\n<size=20>사령부 기록은 자동으로 저장되어 있습니다</size>",
+  "ui.menu.to_title_ask": "메인 메뉴로 나갈까요?\n<size=20>사령부 기록은 자동으로 저장됩니다</size>",
   "ui.menu.leave": "나가기",
-
   "ui.slots.title_new": "새로 하기: 슬롯 고르기",
   "ui.slots.load": "불러오기",
   "ui.slots.when": "마지막 저장 {0}",
@@ -26,23 +23,20 @@
   "ui.slots.empty": "빈 슬롯",
   "ui.slots.summary": "{0} · {1}턴 · 땅 {2}칸 · 분대 {3} · 보급품 {4}",
   "ui.slots.in_battle": "전투 중",
-
   "ui.pause.can_save": "전투는 지금 상태 그대로 저장됩니다",
   "ui.pause.cant_save": "고양이 차례이거나 행동 중일 때는 저장할 수 없습니다\n아군 차례에 다시 열어 주세요",
-
   "ui.diff.start": "{0:으로} 전쟁 시작",
   "ui.diff.battle": "전투",
   "ui.diff.war": "전쟁",
   "ui.diff.threat": "위협 단계: {0:0.#}턴마다",
   "ui.diff.supplies": "시작 보급품 {0}",
   "ui.diff.income": "턴 수입 ×{0:0.##}",
-  "ui.diff.invade.less": "한 턴 침공 −1",
+  "ui.diff.invade.less": "턴당 침공 −1",
   "ui.diff.invade.more": "8턴부터 침공 +1",
   "ui.diff.invade.base": "침공 기본",
   "ui.diff.hold": "자동 방어 {0}{1:0}%",
-
   "ui.lobby.saved": "저장했습니다",
-  "ui.lobby.saved_battle": "저장했습니다. 진행 중인 전투는 작전 탭의 '전투 이어하기'로 이어갈 수 있습니다",
+  "ui.lobby.saved_battle": "저장했습니다. 진행 중인 전투는 작전 탭의 '전투 이어하기'에서 계속할 수 있습니다",
   "ui.lobby.diff.btn": "난이도: {0}",
   "ui.lobby.diff.toast": "난이도 {0}. 전쟁 중에는 바꿀 수 없습니다 (새 전쟁은 '처음부터')",
   "ui.lobby.diff.tip": "<b>난이도 {0}</b>\n{1}\n위협 단계 {2:0.#}턴마다 · 수입 ×{3:0.##}\n전쟁을 시작할 때 정하며, 도중에 바꿀 수 없음",
@@ -57,7 +51,6 @@
   "ui.lobby.shaky": "불안 (명중 −10)",
   "ui.lobby.grief": "{0:을} 잃었다",
   "ui.lobby.cut.prologue": "라테리아 공화국 · 개전",
-
   "ui.ops.turn": "{0}턴",
   "ui.ops.won": "전쟁에서 이겼다. 위쪽 '처음부터'로 새 전쟁을 시작할 수 있다.",
   "ui.ops.lost": "전쟁에서 졌다. 위쪽 '처음부터'로 다시 시작할 수 있다.",
@@ -93,20 +86,17 @@
   "ui.ops.saved.warn": "저장한 자리에서 이어서 싸웁니다",
   "ui.ops.saved.btn": "전투 이어하기",
   "ui.ops.saved.fail": "저장한 전투를 불러오지 못했습니다",
-
   "ui.map.invade": "침공! {0}%",
   "ui.map.garrison": "수비 {0}",
-
   "ui.hex.rat": "공화국 땅",
   "ui.hex.cat": "제국 땅",
-  "ui.hex.income": "수입 보급품 {0}/턴",
+  "ui.hex.income": "보급품 수입 {0}/턴",
   "ui.hex.special": "◆ 주요 전투: {0}",
   "ui.hex.special_turn": "({0}턴부터 고양이가 노림)",
   "ui.hex.special_attack": "(공격하면)",
   "ui.hex.fort": "▣ 요새: 자동 방어 +{0}%",
-  "ui.hex.threat": "고양이가 침공 중! 직접 막지 않으면 수비대가 확률로 막음",
+  "ui.hex.threat": "고양이가 침공 중! 직접 막지 않으면 수비대가 확률에 따라 막음",
   "ui.hex.attackable": "우리 땅과 붙어 있어 공격할 수 있음",
-
   "ui.info.rat": "공화국 {0}칸",
   "ui.info.cat": "제국 {0}칸",
   "ui.info.income": "수입 +{0}/턴",
@@ -116,31 +106,26 @@
   "ui.info.wait_toast": "{0}턴. 고양이가 움직였다",
   "ui.info.garrison": "수비대 배치 ({0})",
   "ui.info.garrison_end": "수비대 배치 끝",
-  "ui.info.garrison_tip": "대기 중인 쥐를 침공당한 칸에 보내 자동 방어를 올림\n쥐마다 +{0}% (계급마다 +1%) · 한 칸에 최대 {1}마리\n막으면 경험 +1 · 스트레스 +{2}\n뚫리면 마리마다 {3}% 확률로 부상(한 턴 쉼), 드물게 전사 · 수비대는 쉬지 못함",
+  "ui.info.garrison_tip": "대기 중인 쥐를 침공당한 칸에 보내 자동 방어를 올림\n쥐마다 +{0}% (계급마다 +1%) · 한 칸에 최대 {1}마리\n막으면 경험 +1 · 스트레스 +{2}\n뚫리면 각각 {3}% 확률로 부상(한 턴 쉼), 드물게 전사 · 수비대는 쉬지 못함",
   "ui.info.fort": "요새화 ({0})",
   "ui.info.fort_tip": "고른 내 칸을 요새로 만듦. 자동 방어 +{0}% (영구, 그 칸을 잃으면 사라짐)\n보급품 {1}",
   "ui.info.fort_already": "이미 요새",
   "ui.info.fort_pick": "지도에서 내 땅(파랑)을 고르세요",
   "ui.info.fort_toast": "{0} 요새화",
-
   "ui.hold.auto": "자동 방어 {0}%",
   "ui.hold.base": "기본 {0}%",
   "ui.hold.garrison": "수비대 {0}%",
   "ui.hold.fort": "요새 {0}%",
   "ui.hold.list": "수비대: {0}",
-
   "ui.mini.empty": "{0}\n빈자리",
   "ui.mini.limb": "의수 · 의족 필요",
   "ui.mini.wounded": "부상 (한 턴 쉼)",
   "ui.mini.posted": "수비대 · {0}",
-
   "ui.squad.points": "스킬 {0}점",
-
   "ui.detail.sub": "{0} 출신 · 출전 {1} · 처치 {2} · 경험 {3}",
   "ui.detail.limb": "의수 · 의족 달기 (보급품 {0})",
   "ui.detail.hex_head": "스킬 벌집판",
   "ui.detail.hex_sub": "남은 점수 {0} · 많이 찍은 갈래에 따라 병종이 정해짐",
-
   "ui.stat.hp": "체력",
   "ui.stat.aim": "명중",
   "ui.stat.mob": "이동",
@@ -148,7 +133,6 @@
   "ui.stat.crit": "치명",
   "ui.stat.def": "회피",
   "ui.stat.weapon": "무기",
-
   "ui.board.center": "신병",
   "ui.board.cur_class": "현재 병종: {0}",
   "ui.board.ring": "{0} 갈래 · {1}번째 고리",
@@ -160,18 +144,16 @@
   "ui.board.locked_short": "못 찍음",
   "ui.board.class_set": "{0}, {1:으로} 길이 정해졌다!",
   "ui.board.legend.owned": "■ 찍음(✓)",
-  "ui.board.legend.can": "■ 찍을 수 있음(깜빡)",
+  "ui.board.legend.can": "■ 찍을 수 있음(깜빡임)",
   "ui.board.legend.locked": "■ 못 찍음 · 칸에 마우스를 올리면 효과가 보임",
-
   "ui.recruit.head": "지원자를 받습니다. 분대는 최대 {0}마리, 지금 {1}마리.",
-  "ui.recruit.cost": "모집 값 = {0} + 위협 단계 {1} ({2}) + 지금까지 모집 {3}번 ({4}) + 계급마다 {5}",
-  "ui.recruit.vet": "전쟁이 거칠어져 계급을 단 고참이 지원할 확률 {0}%",
+  "ui.recruit.cost": "모집 비용 = {0} + 위협 단계 {1} ({2}) + 지금까지 모집 {3}번 ({4}) + 계급당 {5}",
+  "ui.recruit.vet": "전쟁이 치열해져 계급을 단 고참이 지원할 확률 {0}%",
   "ui.recruit.vet_tag": "고참 (스킬 {0}점)",
   "ui.recruit.refresh": "다른 지원자 (보급품 {0})",
   "ui.recruit.btn": "모집 (보급품 {0})",
   "ui.recruit.joined": "{0} 입대",
-
-  "ui.memorial.empty": "아직 이름이 새겨지지 않았다.",
+  "ui.memorial.empty": "아직 새겨진 이름이 없다.",
   "ui.memorial.head": "추모비",
-  "ui.memorial.line": "{0} — {1} · 출전 {2} · 처치 {3}"
+  "ui.memorial.line": "{0}, {1} · 출전 {2} · 처치 {3}"
 }
