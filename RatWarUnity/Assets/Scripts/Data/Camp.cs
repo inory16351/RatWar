@@ -24,6 +24,10 @@ public class RatRecord
     public string rank = "", cls = "", died = "", how = "";
     public int battle;
     public RatRecord Clone() => JsonUtility.FromJson<RatRecord>(JsonUtility.ToJson(this));
+    // 화면에 쓸 글자. 저장값은 테이블 키 (예전 기록은 한국어 문장 그대로 → Loc.T 가 그대로 돌려줌)
+    public string Name => Loc.T(name);
+    public string Home => Loc.T(home);
+    public string Story => Loc.T(story);
 }
 
 // 다른 쥐와의 관계. kind: with(같이 출전 n판) · comrade(전우) · mentor(내 멘토) · pupil(내 제자) · feud(앙숙)
@@ -61,92 +65,86 @@ public static class CampRules
     public static readonly (string name, int xp, int aim, int hp)[] RANKS =
     {
         // 다음 계급까지 2 · 3 · 5 · 6 · 8 · 10 · 12 — 전투 한 번에 보통 2~5
-        ("이병", 0, 0, 0), ("일병", 2, 3, 0), ("상병", 5, 5, 1), ("병장", 10, 7, 1),
-        ("하사", 16, 9, 2), ("중사", 24, 11, 2), ("상사", 34, 13, 3), ("원사", 46, 15, 3),
+        ("camp.rank.0", 0, 0, 0), ("camp.rank.1", 2, 3, 0), ("camp.rank.2", 5, 5, 1), ("camp.rank.3", 10, 7, 1),
+        ("camp.rank.4", 16, 9, 2), ("camp.rank.5", 24, 11, 2), ("camp.rank.6", 34, 13, 3), ("camp.rank.7", 46, 15, 3),
     };
     public static int RankOf(int xp) { int r = 0; for (int i = 0; i < RANKS.Length; i++) if (xp >= RANKS[i].xp) r = i; return r; }
 
     public const int RAT_FACES = 7;
-    public static readonly string[] FURS = { "갈색", "검은 털", "흰 털", "잿빛", "붉은 털", "누런 털" };
-    public static readonly string[] NAMES = { "쥬드", "미르코", "레나", "토비", "아벨", "사샤", "니코", "이다", "파벨", "루카", "엘사", "보리스", "야나", "오토", "미샤", "한스", "마리", "코스챠", "일리야", "베라", "폴", "안나", "그레타", "빅토르", "루드비크", "조피아", "타냐", "에밀", "유리", "카밀" };
-    public static readonly string[] HOMES = { "방앗간 마을", "항구 창고", "치즈 공장 뒷골목", "밀밭 둑", "성당 지하", "기차역 하수구", "빵집 다락", "포도밭 돌담", "광산촌", "강가 물레방아" };
-    public static readonly string[] STORIES =
-    {
-        "딸에게 매일 편지를 쓴다. 아직 한 통도 못 부쳤다.",
-        "전쟁 전엔 빵을 구웠다. 지금도 주머니에 밀가루가 묻어 있다.",
-        "형을 찾으러 입대했다.",
-        "고양이에게 가족을 잃었다. 말이 없다.",
-        "노래를 잘한다. 밤마다 참호에서 흥얼거린다.",
-        "첫 월급으로 어머니에게 치즈 한 덩이를 보냈다.",
-        "약혼녀의 사진을 철모 안에 붙여 다닌다.",
-        "열여섯이라고 속이고 입대했다. 사실 열넷이다.",
-        "전쟁이 끝나면 바다를 보러 가겠다고 한다.",
-        "시계 수리공이었다. 손이 아직 떨리지 않는다.",
-        "도박 빚을 갚으러 왔다. 운이 좋다고 믿는다.",
-        "교회 성가대 출신. 기도 없이는 출전하지 않는다.",
-    };
+    // 털 · 이름 · 고향 · 사연 = 글자 테이블 키 (Tables/ko/camp.json). 쥐 기록엔 키를 저장
+    static string[] Keys(string pre, int n) => Enumerable.Range(0, n).Select(i => pre + i).ToArray();
+    public static readonly string[] FURS = Keys("camp.fur.", 6);
+    public static readonly string[] NAMES = Keys("camp.name.", 30);
+    public static readonly string[] HOMES = Keys("camp.home.", 10);
+    public static readonly string[] STORIES = Keys("camp.story.", 12);
 
-    static TraitDef T(string name, string desc, params (string k, float v)[] n) => new TraitDef { name = name, desc = desc, n = n.ToDictionary(x => x.k, x => x.v) };
+    static TraitDef T(params (string k, float v)[] n) => new TraitDef { n = n.ToDictionary(x => x.k, x => x.v) };
+    // 이름 · 설명 = 글자 테이블 키 camp.trait.<id>.name / .desc
+    static Dictionary<string, TraitDef> Keyed(Dictionary<string, TraitDef> d)
+    {
+        foreach (var kv in d) { kv.Value.name = $"camp.trait.{kv.Key}.name"; kv.Value.desc = $"camp.trait.{kv.Key}.desc"; }
+        return d;
+    }
     static TraitDef By(this TraitDef t, params (string k, float v)[] s) { t.stressBy = s.ToDictionary(x => x.k, x => x.v); return t; }
 
     // 특성: 모집 때 1~2개. stress = 스트레스 받는 배율, 나머지는 능력치 더하기
-    public static readonly Dictionary<string, TraitDef> TRAITS = new Dictionary<string, TraitDef>
+    public static readonly Dictionary<string, TraitDef> TRAITS = Keyed(new Dictionary<string, TraitDef>
     {
-        ["brave"] = T("용감함", "스트레스 −30%", ("stress", 0.7f)),
-        ["coward"] = T("겁쟁이", "스트레스 +30% · 회피 +5", ("stress", 1.3f), ("def", 5)),
-        ["veteran"] = T("노병", "명중 +5 · 처음 스트레스 25 · 경계 사격 감점 절반", ("aim", 5), ("startStress", 25)),
-        ["tough"] = T("튼튼함", "체력 +1", ("hp", 1)),
-        ["marksman"] = T("사격 재능", "명중 +5", ("aim", 5)),
-        ["nimble"] = T("날쌤", "이동 +1", ("mob", 1)),
-        ["drinker"] = T("술꾼", "판 끝나면 스트레스 −10 · 명중 −3", ("aim", -3), ("unwind", 10)),
-        ["homesick"] = T("향수병", "출전할 때마다 스트레스 +8", ("homesick", 8)),
-        ["pious"] = T("신앙심", "쉴 때 스트레스 두 배로 풀림 · 차례 시작에 스트레스 60 넘으면 기도 (−5)", ("rest", 2)),
-        ["sibling"] = T("형제", "같이 출전하면 명중 +8. 한쪽이 죽으면…"),
-        ["psychic"] = new TraitDef { name = "영매", desc = "가끔 다른 쥐들 눈엔 안 보이는 것을 본다", rare = true },
+        ["brave"] = T(("stress", 0.7f)),
+        ["coward"] = T(("stress", 1.3f), ("def", 5)),
+        ["veteran"] = T(("aim", 5), ("startStress", 25)),
+        ["tough"] = T(("hp", 1)),
+        ["marksman"] = T(("aim", 5)),
+        ["nimble"] = T(("mob", 1)),
+        ["drinker"] = T(("aim", -3), ("unwind", 10)),
+        ["homesick"] = T(("homesick", 8)),
+        ["pious"] = T(("rest", 2)),
+        ["sibling"] = T(),
+        ["psychic"] = new TraitDef { rare = true },
         // ── 림월드식 성격 ──
-        ["bloodlust"] = T("피에 굶주림", "처치하면 스트레스 −15 · 피 · 절단을 봐도 아무렇지 않음", ("killRelief", 15)).By(("gore", 0)),
-        ["squeamish"] = T("비위 약함", "피 · 절단을 보면 스트레스 두 배").By(("gore", 2), ("dead", 1.3f)),
-        ["pyrophobe"] = T("불 공포증", "불길 근처에서 스트레스 세 배").By(("fire", 3)),
-        ["psychopath"] = T("사이코패스", "동료가 죽어도 흔들리지 않음 · 아무도 이 쥐를 좋아하지 않음").By(("dead", 0), ("gore", 0), ("downed", 0.3f)),
-        ["ironwill"] = T("강철 의지", "스트레스 120 에서야 무너짐", ("breakAt", 20)),
-        ["nervous"] = T("예민함", "스트레스 80 에서 무너짐", ("breakAt", -20)),
-        ["optimist"] = T("낙천가", "판 끝나면 스트레스 −10", ("unwind", 10)),
-        ["pessimist"] = T("비관론자", "판 끝나면 스트레스 +8", ("unwind", -8)),
-        ["quick"] = T("빠른 학습", "경험치 1.5배", ("xp", 1.5f)),
-        ["slowwit"] = T("굼뜬 머리", "경험치 0.7배", ("xp", 0.7f)),
-        ["lucky"] = T("행운아", "전투당 1번, 죽을 피해를 체력 1로 버팀"),
-        ["careful"] = T("꼼꼼함", "팔을 다쳐도 재장전을 실수하지 않음"),
-        ["clumsy"] = T("덤벙댐", "재장전 10% 실패 · 수류탄 하나 더 · 수류탄이 15% 확률로 1칸 빗나감", ("grenades", 1)),
-        ["leader"] = T("타고난 지휘관", "3칸 안 아군 명중 +5 · 스트레스 −20%"),
-        ["loner"] = T("외톨이", "3칸 안에 아군이 없으면 명중 +10"),
-        ["smoker"] = T("골초", "매 턴 스트레스 −3 · 체력 −1", ("smoke", 3), ("hp", -1)),
-        ["sluggish"] = T("느림보", "이동 −1 · 체력 +1", ("mob", -1), ("hp", 1)),
-        ["sharpears"] = T("밝은 귀", "시야 +1", ("sight", 1)),
+        ["bloodlust"] = T(("killRelief", 15)).By(("gore", 0)),
+        ["squeamish"] = T().By(("gore", 2), ("dead", 1.3f)),
+        ["pyrophobe"] = T().By(("fire", 3)),
+        ["psychopath"] = T().By(("dead", 0), ("gore", 0), ("downed", 0.3f)),
+        ["ironwill"] = T(("breakAt", 20)),
+        ["nervous"] = T(("breakAt", -20)),
+        ["optimist"] = T(("unwind", 10)),
+        ["pessimist"] = T(("unwind", -8)),
+        ["quick"] = T(("xp", 1.5f)),
+        ["slowwit"] = T(("xp", 0.7f)),
+        ["lucky"] = T(),
+        ["careful"] = T(),
+        ["clumsy"] = T(("grenades", 1)),
+        ["leader"] = T(),
+        ["loner"] = T(),
+        ["smoker"] = T(("smoke", 3), ("hp", -1)),
+        ["sluggish"] = T(("mob", -1), ("hp", 1)),
+        ["sharpears"] = T(("sight", 1)),
         // ── 2026-10-30 확정안 (docs/SKILLS_TRAITS_PLAN.md 3-0) ──
-        ["cautious"] = T("신중함", "이동 안 한 턴 명중 +10, 이동한 턴 −5"),
-        ["desperate"] = T("절박함", "체력 절반 이하면 명중 +10 · 치명 +10"),
-        ["brawler"] = T("근접 광", "4칸 안 명중 +10, 9칸 밖 −10"),
-        ["longshot"] = T("원거리 본능", "9칸 밖 명중 +10, 3칸 안 −10"),
-        ["coverpro"] = T("엄폐 장인", "엄폐 중 회피 +10"),
-        ["reckless"] = T("무모함", "엄폐 없을 때 명중 +10 · 받는 스트레스 −20%"),
-        ["rage"] = T("분노 조절 장애", "맞으면 다음 사격 명중 +15 · 무너지면 광란 확률 두 배"),
-        ["calm"] = T("평온함", "무너져도 공황 · 광란 · 도주 대신 멍함 (행동력 1만 잃음)"),
-        ["catphobia"] = T("고양이 공포증", "3칸 안에 고양이가 있으면 차례마다 스트레스 +5"),
-        ["nightowl"] = T("어둠을 좋아함", "고양이 눈에 안 띌 때 (안개 속 · 매복) 스트레스가 안 쌓임"),
-        ["bigears"] = T("큰 귀", "경계 범위 +1 · 폭발에 휘말리면 다음 차례 행동력 −1"),
-        ["irontooth"] = T("쇠 이빨", "철조망을 갉으며 지나감 (공병처럼)"),
+        ["cautious"] = T(),
+        ["desperate"] = T(),
+        ["brawler"] = T(),
+        ["longshot"] = T(),
+        ["coverpro"] = T(),
+        ["reckless"] = T(),
+        ["rage"] = T(),
+        ["calm"] = T(),
+        ["catphobia"] = T(),
+        ["nightowl"] = T(),
+        ["bigears"] = T(),
+        ["irontooth"] = T(),
         // 전투가 만드는 특성 (치료 불가)
-        ["knifer"] = new TraitDef { name = "칼잡이", desc = "칼 명중 +10 · 치명 +10", acq = true },
-        ["shellshock"] = new TraitDef { name = "포탄 충격", desc = "폭발 근처에서 스트레스 두 배", acq = true, stressBy = new Dictionary<string, float> { ["blast"] = 2 } },
-        ["avenger"] = new TraitDef { name = "복수자", desc = "명중 +5 · 처치하면 스트레스 −10", acq = true, n = new Dictionary<string, float> { ["aim"] = 5, ["killRelief"] = 10 } },
-        ["broken"] = new TraitDef { name = "망가진", desc = "무너지는 기준 −15", acq = true, n = new Dictionary<string, float> { ["breakAt"] = -15 } },
-        ["notail"] = new TraitDef { name = "꼬리 잘린 쥐", desc = "이동 −1 · 회피 +5", acq = true, n = new Dictionary<string, float> { ["mob"] = -1, ["def"] = 5 } },
+        ["knifer"] = new TraitDef { acq = true },
+        ["shellshock"] = new TraitDef { acq = true, stressBy = new Dictionary<string, float> { ["blast"] = 2 } },
+        ["avenger"] = new TraitDef { acq = true, n = new Dictionary<string, float> { ["aim"] = 5, ["killRelief"] = 10 } },
+        ["broken"] = new TraitDef { acq = true, n = new Dictionary<string, float> { ["breakAt"] = -15 } },
+        ["notail"] = new TraitDef { acq = true, n = new Dictionary<string, float> { ["mob"] = -1, ["def"] = 5 } },
         // 관계 (상대는 bonds 에. 같이 출전해야 발동)
-        ["comrade"] = new TraitDef { name = "전우애", desc = "전우가 3칸 안이면 명중 +5 · 받는 스트레스 −20%. 전우가 죽으면 크게 흔들림", acq = true },
-        ["mentor"] = new TraitDef { name = "멘토", desc = "제자를 이끔 — 제자가 3칸 안이면 제자 명중 +8 · 경험치 1.5배", acq = true },
-        ["pupil"] = new TraitDef { name = "제자", desc = "멘토가 3칸 안이면 명중 +8 · 같이 출전하면 경험치 1.5배", acq = true },
-        ["feud"] = new TraitDef { name = "앙숙", desc = "앙숙과 3칸 안이면 차례마다 스트레스 +3", acq = true },
-    };
+        ["comrade"] = new TraitDef { acq = true },
+        ["mentor"] = new TraitDef { acq = true },
+        ["pupil"] = new TraitDef { acq = true },
+        ["feud"] = new TraitDef { acq = true },
+    });
     // 같이 가질 수 없는 특성
     static readonly string[][] TRAIT_CLASH =
     {
@@ -168,10 +166,10 @@ public static class CampRules
     // 스트레스 상태 글자 · 색
     public static (string t, Color c) StressState(int s, int cap = STRESS.breakAt)
     {
-        if (s >= cap - 15) return ("붕괴 직전", SkillsData.Hex("#ff7aa8"));
-        if (s >= STRESS.shaky) return ("불안", SkillsData.Hex("#c9a3ff"));
-        if (s >= 35) return ("긴장", SkillsData.Hex("#e8c66a"));
-        return ("안정", SkillsData.Hex("#9fd6a0"));
+        if (s >= cap - 15) return (Loc.T("camp.stress.3"), SkillsData.Hex("#ff7aa8"));
+        if (s >= STRESS.shaky) return (Loc.T("camp.stress.2"), SkillsData.Hex("#c9a3ff"));
+        if (s >= 35) return (Loc.T("camp.stress.1"), SkillsData.Hex("#e8c66a"));
+        return (Loc.T("camp.stress.0"), SkillsData.Hex("#9fd6a0"));
     }
 
     public const int RECRUIT_COST = 35, REFRESH_COST = 8, LIMB_COST = 50, SQUAD_MAX = 12, DEPLOY_MAX = 6;
@@ -190,8 +188,10 @@ public static class Camp
     // 새 쥐 한 마리 (모집 후보 · 처음 분대)
     public static RatRecord NewRat(CampData c, bool psychic = false)
     {
-        var used = new HashSet<string>(c.squad.Concat(c.fallen).Concat(c.recruits).Select(r => r.name));
-        var name = CampRules.NAMES.FirstOrDefault(n => !used.Contains(n) && Rnd < 0.5f) ?? CampRules.NAMES.FirstOrDefault(n => !used.Contains(n)) ?? "신병 " + (c.made + 1);
+        // 이름 겹침 검사는 키 · 글자 둘 다 (예전 저장은 한국어 이름)
+        var used = new HashSet<string>(c.squad.Concat(c.fallen).Concat(c.recruits).SelectMany(r => new[] { r.name, r.Name }));
+        bool Free(string n) => !used.Contains(n) && !used.Contains(Loc.T(n));
+        var name = CampRules.NAMES.FirstOrDefault(n => Free(n) && Rnd < 0.5f) ?? CampRules.NAMES.FirstOrDefault(Free) ?? Loc.F("camp.name.recruit", c.made + 1);
         var traits = new List<string>();
         if (psychic || Rnd < 0.15f) traits.Add("psychic");
         var pool = CampRules.TRAITS.Keys.Where(t => !CampRules.TRAITS[t].rare && !CampRules.TRAITS[t].acq && t != "sibling").ToList();
@@ -279,11 +279,12 @@ public static class Camp
     public static bool Fit(RatRecord r) => r.lost == null || r.lost.Count == 0;   // 팔다리 멀쩡
     public static bool Ready(RatRecord r) => Fit(r) && r.wounded <= 0;           // 출전 가능 (수비대 부상 아님)
     // 추모비로 (전투 · 수비대 공통). 형제를 잃은 쥐는 스트레스 +30
+    //   rank · how · grief 는 키로 저장 (화면에서 Loc.T)
     public static RatRecord Bury(CampData c, RatRecord r, string died, string how, int kills = 0)
     {
         c.squad.Remove(r); c.deploy.Remove(r.id);
         var f = r.Clone();
-        f.rank = CampRules.RANKS[RankIdx(r)].name; f.cls = SkillsData.RAT_CLASSES[ClassOf(r)].name; f.died = died; f.battle = c.battles; f.how = how ?? "전사"; f.kills = r.kills + kills;
+        f.rank = CampRules.RANKS[RankIdx(r)].name; f.cls = SkillsData.RAT_CLASSES[ClassOf(r)].name; f.died = died; f.battle = c.battles; f.how = how ?? "camp.how.kia"; f.kills = r.kills + kills;
         c.fallen.Add(f);
         var sib = c.squad.FirstOrDefault(q => q.sibling == r.id);
         if (sib != null) { sib.stress = Mathf.Min(99, sib.stress + 30); sib.grief = r.name; }

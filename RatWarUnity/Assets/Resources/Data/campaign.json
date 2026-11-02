@@ -4,160 +4,160 @@
   "x0": 0.0963, "dx": 0.0897, "y0": 0.1785, "dy": 0.1838,
   "start": [30, 31, 32, 33, 34, 35, 36, 37, 38, 23, 24, 25],
   "kinds": {
-    "sewer":   { "name": "하수구", "map": "sewer",   "income": 6 },
-    "harbor":  { "name": "항구",   "map": "station", "income": 8 },
-    "beach":   { "name": "해변",   "map": "trench",  "income": 3 },
-    "hills":   { "name": "구릉",   "map": "hill",    "income": 4 },
-    "farm":    { "name": "농지",   "map": "hill",    "income": 6 },
-    "village": { "name": "마을",   "map": "hill",    "income": 6 },
-    "factory": { "name": "공장",   "map": "station", "income": 12 },
-    "city":    { "name": "도시",   "map": "station", "income": 10 },
-    "capital": { "name": "제국 수도", "map": "station", "income": 25 },
-    "river":   { "name": "강변",   "map": "hill",    "income": 3 },
-    "bridge":  { "name": "다리",   "map": "station", "income": 5 },
-    "forest":  { "name": "숲",     "map": "hill",    "income": 3 },
-    "snow":    { "name": "설원",   "map": "hill",    "income": 2 },
-    "plains":  { "name": "평원",   "map": "hill",    "income": 4 },
-    "trench":  { "name": "참호",   "map": "trench",  "income": 3 },
-    "bunker":  { "name": "해안 요새", "map": "trench", "income": 4 }
+    "sewer":   { "name": "campaign.kind.sewer", "map": "sewer",   "income": 6 },
+    "harbor":  { "name": "campaign.kind.harbor",   "map": "station", "income": 8 },
+    "beach":   { "name": "campaign.kind.beach",   "map": "trench",  "income": 3 },
+    "hills":   { "name": "campaign.kind.hills",   "map": "hill",    "income": 4 },
+    "farm":    { "name": "campaign.kind.farm",   "map": "hill",    "income": 6 },
+    "village": { "name": "campaign.kind.village",   "map": "hill",    "income": 6 },
+    "factory": { "name": "campaign.kind.factory",   "map": "station", "income": 12 },
+    "city":    { "name": "campaign.kind.city",   "map": "station", "income": 10 },
+    "capital": { "name": "campaign.kind.capital", "map": "station", "income": 25 },
+    "river":   { "name": "campaign.kind.river",   "map": "hill",    "income": 3 },
+    "bridge":  { "name": "campaign.kind.bridge",   "map": "station", "income": 5 },
+    "forest":  { "name": "campaign.kind.forest",     "map": "hill",    "income": 3 },
+    "snow":    { "name": "campaign.kind.snow",   "map": "hill",    "income": 2 },
+    "plains":  { "name": "campaign.kind.plains",   "map": "hill",    "income": 4 },
+    "trench":  { "name": "campaign.kind.trench",   "map": "trench",  "income": 3 },
+    "bunker":  { "name": "campaign.kind.bunker", "map": "trench", "income": 4 }
   },
   "fx": {
-    "hq":        "쥐 사령부 — 빼앗기면 전쟁에서 진다",
-    "capital":   "고양이 제국 수도 — 점령하면 전쟁에서 이긴다",
-    "hospital":  "야전 병원 — 매 턴 분대 전원 스트레스 −10",
-    "recruit":   "모병소 — 매 턴 새 지원자가 온다",
-    "workshop":  "공방 — 의수 · 의족 값 절반",
-    "artillery": "포병 진지 — 모든 전투에 박격포탄 +1"
+    "hq":        "campaign.fx.hq",
+    "capital":   "campaign.fx.capital",
+    "hospital":  "campaign.fx.hospital",
+    "recruit":   "campaign.fx.recruit",
+    "workshop":  "campaign.fx.workshop",
+    "artillery": "campaign.fx.artillery"
   },
   "hexes": [
-    { "name": "북해 포대",     "kind": "bunker" },
-    { "name": "서리 숲",       "kind": "snow" },
-    { "name": "노르만 해안",   "kind": "bunker", "special": "b5" },
-    { "name": "침엽수 언덕",   "kind": "forest" },
-    { "name": "북부 초원",     "kind": "plains" },
-    { "name": "제국 참호선",   "kind": "trench" },
-    { "name": "펠린부르크",    "kind": "capital", "fx": "capital", "special": "b7" },
-    { "name": "동부 참호",     "kind": "trench", "fx": "artillery" },
-    { "name": "황제의 사냥터", "kind": "plains" },
-    { "name": "동해 숲",       "kind": "forest" },
+    { "name": "campaign.hex.0",     "kind": "bunker" },
+    { "name": "campaign.hex.1",       "kind": "snow" },
+    { "name": "campaign.hex.2",   "kind": "bunker", "special": "b5" },
+    { "name": "campaign.hex.3",   "kind": "forest" },
+    { "name": "campaign.hex.4",     "kind": "plains" },
+    { "name": "campaign.hex.5",   "kind": "trench" },
+    { "name": "campaign.hex.6",    "kind": "capital", "fx": "capital", "special": "b7" },
+    { "name": "campaign.hex.7",     "kind": "trench", "fx": "artillery" },
+    { "name": "campaign.hex.8", "kind": "plains" },
+    { "name": "campaign.hex.9",       "kind": "forest" },
 
-    { "name": "설산 기슭",     "kind": "snow" },
-    { "name": "아르벤 숲",     "kind": "snow", "special": "b3" },
-    { "name": "눈덮인 숲",     "kind": "snow" },
-    { "name": "숲 가장자리",   "kind": "forest" },
-    { "name": "철조망 벌판",   "kind": "plains" },
-    { "name": "아른 다리",     "kind": "bridge", "special": "b6" },
-    { "name": "쿠르크 평원",   "kind": "plains", "special": "b4" },
-    { "name": "북쪽 절벽",     "kind": "river" },
-    { "name": "강 상류",       "kind": "river" },
-    { "name": "섬 기슭",       "kind": "river" },
+    { "name": "campaign.hex.10",     "kind": "snow" },
+    { "name": "campaign.hex.11",     "kind": "snow", "special": "b3" },
+    { "name": "campaign.hex.12",     "kind": "snow" },
+    { "name": "campaign.hex.13",   "kind": "forest" },
+    { "name": "campaign.hex.14",   "kind": "plains" },
+    { "name": "campaign.hex.15",     "kind": "bridge", "special": "b6" },
+    { "name": "campaign.hex.16",   "kind": "plains", "special": "b4" },
+    { "name": "campaign.hex.17",     "kind": "river" },
+    { "name": "campaign.hex.18",       "kind": "river" },
+    { "name": "campaign.hex.19",       "kind": "river" },
 
-    { "name": "얼음 해안",     "kind": "forest" },
-    { "name": "서해안 들판",   "kind": "farm" },
-    { "name": "서쪽 여울",     "kind": "river" },
-    { "name": "밀밭",          "kind": "farm" },
-    { "name": "남쪽 나루",     "kind": "farm" },
-    { "name": "치즈 농장",     "kind": "farm" },
-    { "name": "강 중류",       "kind": "river" },
-    { "name": "동부 공장지대", "kind": "factory", "fx": "workshop" },
-    { "name": "강변 숲",       "kind": "forest" },
-    { "name": "폐허 도시",     "kind": "city" },
+    { "name": "campaign.hex.20",     "kind": "forest" },
+    { "name": "campaign.hex.21",   "kind": "farm" },
+    { "name": "campaign.hex.22",     "kind": "river" },
+    { "name": "campaign.hex.23",          "kind": "farm" },
+    { "name": "campaign.hex.24",     "kind": "farm" },
+    { "name": "campaign.hex.25",     "kind": "farm" },
+    { "name": "campaign.hex.26",       "kind": "river" },
+    { "name": "campaign.hex.27", "kind": "factory", "fx": "workshop" },
+    { "name": "campaign.hex.28",       "kind": "forest" },
+    { "name": "campaign.hex.29",     "kind": "city" },
 
-    { "name": "등대 항구",     "kind": "harbor" },
-    { "name": "됭크 해변",     "kind": "beach", "special": "b1" },
-    { "name": "풍차 마을",     "kind": "village", "fx": "recruit" },
-    { "name": "해안 언덕",     "kind": "hills" },
-    { "name": "종탑 마을",     "kind": "village", "fx": "hospital" },
-    { "name": "하수구 사령부", "kind": "sewer", "fx": "hq" },
-    { "name": "포병 언덕",     "kind": "hills", "fx": "artillery" },
-    { "name": "솔밭 구릉",     "kind": "hills" },
-    { "name": "스탈가르드",    "kind": "factory", "fx": "workshop", "special": "b2" },
-    { "name": "남쪽 강어귀",   "kind": "hills" }
+    { "name": "campaign.hex.30",     "kind": "harbor" },
+    { "name": "campaign.hex.31",     "kind": "beach", "special": "b1" },
+    { "name": "campaign.hex.32",     "kind": "village", "fx": "recruit" },
+    { "name": "campaign.hex.33",     "kind": "hills" },
+    { "name": "campaign.hex.34",     "kind": "village", "fx": "hospital" },
+    { "name": "campaign.hex.35", "kind": "sewer", "fx": "hq" },
+    { "name": "campaign.hex.36",     "kind": "hills", "fx": "artillery" },
+    { "name": "campaign.hex.37",     "kind": "hills" },
+    { "name": "campaign.hex.38",    "kind": "factory", "fx": "workshop", "special": "b2" },
+    { "name": "campaign.hex.39",   "kind": "hills" }
   ],
   "specials": {
     "b1": {
-      "name": "됭크 해변 철수", "kind": "defend", "turn": 1, "tpl": "mb1", "obj": "elim", "cats": 10, "reward": 100, "shells": 2,
-      "brief": "포위된 아군이 배에 오를 시간을 벌어야 한다. 해변 모래 언덕에서 고양이 선봉을 막아라.",
+      "name": "campaign.special.b1.name", "kind": "defend", "turn": 1, "tpl": "mb1", "obj": "elim", "cats": 10, "reward": 100, "shells": 2,
+      "brief": "campaign.special.b1.brief",
       "slides": [
-        { "img": "b1_dunk_1", "text": "개전 열흘. 국경은 무너졌고, 공화국군 삼십만이 됭크 해변에 갇혔다." },
-        { "img": "b1_dunk_2", "text": "어선, 나룻배, 유람선… 바다에 뜨는 것이라면 무엇이든 해변으로 향했다." },
-        { "img": "b1_dunk_3", "text": "제국의 급강하 폭격기가 하늘을 찢었다. 모래가 피처럼 솟구쳤다." },
-        { "img": "b1_dunk_4", "text": "마지막 배가 떠날 때까지 누군가는 언덕에 남아야 했다. 그게 우리 분대다." }
+        { "img": "b1_dunk_1", "text": "campaign.special.b1.slide.0" },
+        { "img": "b1_dunk_2", "text": "campaign.special.b1.slide.1" },
+        { "img": "b1_dunk_3", "text": "campaign.special.b1.slide.2" },
+        { "img": "b1_dunk_4", "text": "campaign.special.b1.slide.3" }
       ]
     },
     "b2": {
-      "name": "스탈가르드 시가전", "kind": "defend", "turn": 4, "tpl": "m22", "obj": "elim", "cats": 13, "reward": 120,
-      "brief": "공장 도시 스탈가르드에 제국군이 몰려온다. 벽돌 한 장, 계단 하나까지 지켜라.",
+      "name": "campaign.special.b2.name", "kind": "defend", "turn": 4, "tpl": "m22", "obj": "elim", "cats": 13, "reward": 120,
+      "brief": "campaign.special.b2.brief",
       "slides": [
-        { "img": "b2_stalgard_1", "text": "공화국의 심장, 공장 도시 스탈가르드. 겨울과 함께 제국군이 왔다." },
-        { "img": "b2_stalgard_2", "text": "무너진 굴뚝 사이, 저격수는 숨소리까지 죽였다." },
-        { "img": "b2_stalgard_3", "text": "거리 하나에 일주일. 방 하나에 하루. 복도 끝에 늘 고양이가 있었다." },
-        { "img": "b2_stalgard_4", "text": "\"이 도시 밖으로 물러설 땅은 없다.\" — 스탈가르드 수비대" }
+        { "img": "b2_stalgard_1", "text": "campaign.special.b2.slide.0" },
+        { "img": "b2_stalgard_2", "text": "campaign.special.b2.slide.1" },
+        { "img": "b2_stalgard_3", "text": "campaign.special.b2.slide.2" },
+        { "img": "b2_stalgard_4", "text": "campaign.special.b2.slide.3" }
       ]
     },
     "b3": {
-      "name": "아르벤 숲 포위전", "kind": "defend", "turn": 9, "tpl": "m2", "obj": "elim", "cats": 12, "reward": 120, "mirror": true,
-      "brief": "눈 덮인 아르벤 숲. 짙은 안개를 틈타 제국의 마지막 반격이 시작됐다. 포위된 채로 버텨라.",
+      "name": "campaign.special.b3.name", "kind": "defend", "turn": 9, "tpl": "m2", "obj": "elim", "cats": 12, "reward": 120, "mirror": true,
+      "brief": "campaign.special.b3.brief",
       "slides": [
-        { "img": "b3_arven_1", "text": "아르벤 숲의 겨울. 참호 속에서 발가락 감각이 먼저 전사했다." },
-        { "img": "b3_arven_2", "text": "안개 속에서 쇳소리가 들렸다. 제국은 아직 끝나지 않았다." },
-        { "img": "b3_arven_3", "text": "항복을 권하는 편지에 대대장은 한 마디로 답했다. \"찍.\"" },
-        { "img": "b3_arven_4", "text": "버티면 하늘이 갠다. 하늘이 개면 우리 비행기가 온다." }
+        { "img": "b3_arven_1", "text": "campaign.special.b3.slide.0" },
+        { "img": "b3_arven_2", "text": "campaign.special.b3.slide.1" },
+        { "img": "b3_arven_3", "text": "campaign.special.b3.slide.2" },
+        { "img": "b3_arven_4", "text": "campaign.special.b3.slide.3" }
       ]
     },
     "b4": {
-      "name": "쿠르크 평원 전차전", "kind": "attack", "tpl": "m21", "obj": "reach", "cats": 12, "reward": 130,
-      "brief": "끝없는 밀밭 위로 양군 전차가 맞붙는다. 능선의 깃발까지 밀고 올라가라.",
+      "name": "campaign.special.b4.name", "kind": "attack", "tpl": "m21", "obj": "reach", "cats": 12, "reward": 130,
+      "brief": "campaign.special.b4.brief",
       "slides": [
-        { "img": "b4_kurk_1", "text": "쿠르크 평원. 지평선 끝까지 강철이 늘어섰다." },
-        { "img": "b4_kurk_2", "text": "공병들은 석 달 동안 밀밭에 도랑을 파고 지뢰를 심었다." },
-        { "img": "b4_kurk_3", "text": "포신이 닿을 만큼 가까웠다. 하늘이 검은 연기로 덮였다." },
-        { "img": "b4_kurk_4", "text": "해가 질 무렵, 평원에 서 있는 전차는 우리 것뿐이었다." }
+        { "img": "b4_kurk_1", "text": "campaign.special.b4.slide.0" },
+        { "img": "b4_kurk_2", "text": "campaign.special.b4.slide.1" },
+        { "img": "b4_kurk_3", "text": "campaign.special.b4.slide.2" },
+        { "img": "b4_kurk_4", "text": "campaign.special.b4.slide.3" }
       ]
     },
     "b5": {
-      "name": "노르만 해안 상륙", "kind": "attack", "tpl": "mb1", "obj": "officer", "cats": 14, "reward": 150,
-      "brief": "제국의 해안 요새선에 상륙한다. 벙커를 지휘하는 장교를 쓰러뜨려 교두보를 열어라.",
+      "name": "campaign.special.b5.name", "kind": "attack", "tpl": "mb1", "obj": "officer", "cats": 14, "reward": 150,
+      "brief": "campaign.special.b5.brief",
       "slides": [
-        { "img": "b5_norman_1", "text": "폭풍이 걷힌 새벽, 공화국 함대가 바다를 덮었다." },
-        { "img": "b5_norman_2", "text": "상륙정 안. 누군가는 기도했고, 누군가는 치즈를 씹었다." },
-        { "img": "b5_norman_3", "text": "램프가 내려가는 순간, 해변은 총알의 비가 되었다." },
-        { "img": "b5_norman_4", "text": "절벽 위 요새. 저것만 무너뜨리면 길이 열린다." }
+        { "img": "b5_norman_1", "text": "campaign.special.b5.slide.0" },
+        { "img": "b5_norman_2", "text": "campaign.special.b5.slide.1" },
+        { "img": "b5_norman_3", "text": "campaign.special.b5.slide.2" },
+        { "img": "b5_norman_4", "text": "campaign.special.b5.slide.3" }
       ]
     },
     "b6": {
-      "name": "아른 다리 강습", "kind": "attack", "tpl": "m3", "obj": "officer", "cats": 11, "reward": 150,
-      "brief": "강을 건너는 단 하나의 다리. 공수부대가 다리 끝을 붙잡았다 — 수비대 지휘관을 잡아 다리를 확보하라.",
+      "name": "campaign.special.b6.name", "kind": "attack", "tpl": "m3", "obj": "officer", "cats": 11, "reward": 150,
+      "brief": "campaign.special.b6.brief",
       "slides": [
-        { "img": "b6_arn_1", "text": "하늘이 낙하산으로 하얗게 물들었다. 목표는 아른 다리." },
-        { "img": "b6_arn_2", "text": "작은 마을을 가로질러, 다리를 향해 달렸다." },
-        { "img": "b6_arn_3", "text": "다리 끝을 쥐었다. 그러나 건너편에서 전차가 오고 있었다." },
-        { "img": "b6_arn_4", "text": "\"지원은 언제 오는가?\" 무전기는 대답하지 않았다." }
+        { "img": "b6_arn_1", "text": "campaign.special.b6.slide.0" },
+        { "img": "b6_arn_2", "text": "campaign.special.b6.slide.1" },
+        { "img": "b6_arn_3", "text": "campaign.special.b6.slide.2" },
+        { "img": "b6_arn_4", "text": "campaign.special.b6.slide.3" }
       ]
     },
     "b7": {
-      "name": "펠린부르크 함락", "kind": "attack", "tpl": "mb1", "obj": "officer", "cats": 16, "reward": 300, "shells": 3, "mirror": true,
-      "brief": "제국의 수도. 총통 근위대장을 쓰러뜨리면 전쟁이 끝난다.",
+      "name": "campaign.special.b7.name", "kind": "attack", "tpl": "mb1", "obj": "officer", "cats": 16, "reward": 300, "shells": 3, "mirror": true,
+      "brief": "campaign.special.b7.brief",
       "slides": [
-        { "img": "b7_felin_1", "text": "그날 밤, 제국 수도의 하늘은 낮처럼 밝았다." },
-        { "img": "b7_felin_2", "text": "무너진 기둥 사이로 공화국 전차가 굴러갔다. 거대한 고양이 동상이 쓰러졌다." },
-        { "img": "b7_felin_3", "text": "지하 벙커의 총통은 지도 위의 군대에게 소리쳤다. 그 군대는 이미 없었다." },
-        { "img": "b7_felin_4", "text": "궁전 지붕까지 계단은 이백 개. 마지막 한 걸음이 남았다." }
+        { "img": "b7_felin_1", "text": "campaign.special.b7.slide.0" },
+        { "img": "b7_felin_2", "text": "campaign.special.b7.slide.1" },
+        { "img": "b7_felin_3", "text": "campaign.special.b7.slide.2" },
+        { "img": "b7_felin_4", "text": "campaign.special.b7.slide.3" }
       ]
     }
   },
   "prologue": [
-    { "img": "prologue_1", "text": "라테리아 공화국. 치즈와 굴뚝과 하수구의 나라. 그해 여름은 평화로웠다." },
-    { "img": "prologue_2", "text": "북쪽 펠리니아 제국의 총통은 선언했다. \"쥐의 땅은 고양이의 식탁이다.\"" },
-    { "img": "prologue_3", "text": "폭격 첫날 밤, 시민들은 하수구 깊이 몸을 숨겼다." },
-    { "img": "prologue_4", "text": "하수구 사령부. 땅을 한 칸씩 되찾는다 — 그것이 우리의 전쟁이다." }
+    { "img": "prologue_1", "text": "campaign.prologue.0" },
+    { "img": "prologue_2", "text": "campaign.prologue.1" },
+    { "img": "prologue_3", "text": "campaign.prologue.2" },
+    { "img": "prologue_4", "text": "campaign.prologue.3" }
   ],
   "victory": [
-    { "img": "epilogue_1", "text": "펠린부르크에 공화국 깃발이 올랐다. 전쟁이 끝났다." },
-    { "img": "epilogue_2", "text": "돌아오지 못한 이름들을 기억하며." }
+    { "img": "epilogue_1", "text": "campaign.victory.0" },
+    { "img": "epilogue_2", "text": "campaign.victory.1" }
   ],
   "defeat": [
-    { "img": "epilogue_3", "text": "하수구 사령부가 함락됐다. 공화국의 깃발이 내려갔다." },
-    { "img": "epilogue_4", "text": "그래도 몇몇은 어둠 속으로 빠져나갔다. 언젠가 돌아오기 위해." }
+    { "img": "epilogue_3", "text": "campaign.defeat.0" },
+    { "img": "epilogue_4", "text": "campaign.defeat.1" }
   ]
 }

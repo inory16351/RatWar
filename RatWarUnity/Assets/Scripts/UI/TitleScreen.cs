@@ -14,11 +14,13 @@ public class TitleScreen : MonoBehaviour
         UIK.OnClick(UIK.B(menu, "New"), () => Menus.OpenSlots(true, Enter));
         UIK.OnClick(UIK.B(menu, "Load"), () => Menus.OpenSlots(false, Enter));
         UIK.OnClick(UIK.B(menu, "Settings"), Menus.OpenSettings);
-        UIK.OnClick(UIK.B(menu, "Quit"), () => Menus.Ask("게임을 종료할까요?", Menus.Quit, "종료", "취소"));
+        UIK.OnClick(UIK.B(menu, "Quit"), () => Menus.Ask(Loc.T("ui.title.quit_ask"), Menus.Quit, Loc.T("ui.common.quit"), Loc.T("ui.common.cancel")));
         var logo = Resources.Load<Sprite>("Art/out/ui/logo");
         var li = UIK.I(transform, "Panel/Logo");
         if (logo) { li.sprite = logo; li.enabled = true; UIK.Show(UIK.F(transform, "Panel/Logo/Text"), false); UIK.Show(UIK.F(transform, "Panel/Logo/Sub"), false); }
         UIK.T(transform, "Panel/Version").text = "v" + Application.version;
+        // 언어를 바꾸면 슬롯 요약 글자도 다시
+        Loc.Changed += () => { if (this && gameObject.activeInHierarchy) OnEnable(); };
     }
 
     void OnEnable()
@@ -27,7 +29,7 @@ public class TitleScreen : MonoBehaviour
         int last = SaveSlots.Last();
         UIK.B(menu, "Continue").interactable = last >= 0;
         UIK.B(menu, "Load").interactable = SaveSlots.Any;
-        UIK.T(menu, "Continue/Info").text = last >= 0 ? $"슬롯 {last + 1} · {SaveSlots.Summary(SaveSlots.Read(last))}" : "";
+        UIK.T(menu, "Continue/Info").text = last >= 0 ? Loc.F("ui.title.continue_info", last + 1, SaveSlots.Summary(SaveSlots.Read(last))) : "";
     }
 
     // 슬롯 하나로 들어감: 진행 중 전투가 있으면 전투로, 아니면 사령부

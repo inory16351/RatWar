@@ -64,9 +64,9 @@ public static class SaveSlots
         }
         catch (Exception e) { Debug.LogWarning("슬롯 읽기 실패 " + e.Message); return null; }
     }
-    public static string Summary(Info s) => s == null ? "빈 슬롯"
-        : $"{RULES.DiffOf(s.diff).name} · {s.turn}턴 · 땅 {s.land}칸 · 분대 {s.squad} · 보급품 {s.supplies}"
-          + (s.over == "win" ? " · 승리" : s.over == "lose" ? " · 패배" : s.inBattle ? " · 전투 중" : "");
+    public static string Summary(Info s) => s == null ? Loc.T("ui.slots.empty")
+        : Loc.F("ui.slots.summary", Loc.T(RULES.DiffOf(s.diff).name), s.turn, s.land, s.squad, s.supplies)
+          + (s.over == "win" ? " · " + Loc.T("ui.common.win") : s.over == "lose" ? " · " + Loc.T("ui.common.lose") : s.inBattle ? " · " + Loc.T("ui.slots.in_battle") : "");
 
     // 예전 단일 저장 → 슬롯 1 (슬롯이 하나도 없을 때만)
     public static void MigrateLegacy()

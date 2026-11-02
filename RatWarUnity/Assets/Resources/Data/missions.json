@@ -2,12 +2,12 @@
  {
   "id": "m1",
   "act": 1,
-  "name": "1-1 · 하수구 출구",
+  "name": "game.mission.m1.name",
   "map": "sewer",
   "obj": "elim",
   "reward": 50,
   "shells": 0,
-  "brief": "하수구를 빠져나가 마을 외곽의 고양이 초소를 쓸어버려라. 첫 출격이다 — 엄폐물에서 엄폐물로.",
+  "brief": "game.mission.m1.brief",
   "cats": [
    {
     "cls": "trooper",
@@ -63,12 +63,12 @@
  {
   "id": "m2",
   "act": 1,
-  "name": "1-2 · 언덕 위의 박격포",
+  "name": "game.mission.m2.name",
   "map": "hill",
   "obj": "elim",
   "reward": 60,
   "shells": 3,
-  "brief": "농장을 지나 언덕 위 버려진 박격포 진지를 차지하고, 참호선까지 고양이 분대를 몰아내라.",
+  "brief": "game.mission.m2.brief",
   "cats": [
    {
     "cls": "trooper",
@@ -159,12 +159,12 @@
  {
   "id": "m3",
   "act": 1,
-  "name": "1-3 · 철도역의 장교",
+  "name": "game.mission.m3.name",
   "map": "station",
   "obj": "officer",
   "reward": 80,
   "shells": 0,
-  "brief": "화물 적치장을 뚫고 철도역 뒤 마을에 숨은 고양이 장교를 사살하라. 장교만 쓰러뜨리면 나머지는 흩어진다.",
+  "brief": "game.mission.m3.brief",
   "cats": [
    {
     "cls": "trooper",
@@ -249,12 +249,12 @@
  {
   "id": "mb1",
   "act": 1,
-  "name": "1막 보스 · 참호선 돌파",
+  "name": "game.mission.mb1.name",
   "map": "trench",
   "obj": "officer",
   "reward": 120,
   "shells": 2,
-  "brief": "무인지대를 건너 참호 세 줄을 뚫고, 지휘 벙커의 독재 고양이 장교를 쓰러뜨려라. 기관총 진지를 뺏으면 2차 참호를 쓸어버릴 수 있다.",
+  "brief": "game.mission.mb1.brief",
   "cats": [
    {
     "cls": "trooper",
@@ -374,7 +374,7 @@
  {
   "id": "m21",
   "act": 2,
-  "name": "2-1 · 참호 돌파 (임시)",
+  "name": "game.mission.m21.name",
   "map": "hill",
   "mirror": true,
   "obj": "reach",
@@ -385,7 +385,7 @@
    "z": 1,
    "r": 1
   },
-  "brief": "참호선을 뚫고 폐허 마을의 깃발까지 쥐 한 마리라도 닿게 하라. 다 잡을 필요는 없다.",
+  "brief": "game.mission.m21.brief",
   "cats": [
    {
     "cls": "trooper",
@@ -476,13 +476,13 @@
  {
   "id": "m22",
   "act": 2,
-  "name": "2-2 · 총통의 근위대 (임시)",
+  "name": "game.mission.m22.name",
   "map": "station",
   "mirror": true,
   "obj": "elim",
   "reward": 120,
   "shells": 0,
-  "brief": "총통 직속 근위대가 역을 틀어쥐었다. 남김없이 쓸어버려라.",
+  "brief": "game.mission.m22.brief",
   "cats": [
    {
     "cls": "trooper",

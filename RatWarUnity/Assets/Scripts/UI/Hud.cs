@@ -44,8 +44,8 @@ public class Hud : MonoBehaviour
         UIK.OnClick(endTurn, () => Battle.EndRatTurnUI());
         // 전투 중간 저장 (아군 차례에만)
         saveBtn = UIK.B(t, "SaveBar/Save"); exitBtn = UIK.B(t, "SaveBar/Exit");
-        UIK.OnClick(saveBtn, () => Banner(BattleSave.Save() ? "저장했습니다" : "지금은 저장할 수 없습니다", "rat"));
-        UIK.OnClick(exitBtn, () => { if (BattleSave.Save()) Lobby.I.Show(); else Banner("지금은 저장할 수 없습니다", "cat"); });
+        UIK.OnClick(saveBtn, () => Banner(BattleSave.Save() ? Loc.T("hud.save.ok") : Loc.T("hud.save.fail"), "rat"));
+        UIK.OnClick(exitBtn, () => { if (BattleSave.Save()) Lobby.I.Show(); else Banner(Loc.T("hud.save.fail"), "cat"); });
     }
     Button saveBtn, exitBtn;
 
@@ -59,7 +59,7 @@ public class Hud : MonoBehaviour
         foreach (var p in pops) if (p.rt) Destroy(p.rt.gameObject);
         pops.Clear();
         Battle.SelectNext();
-        Banner($"아군 차례 · {Battle.round}턴", "rat");
+        Banner(Loc.F("hud.turn.rat", Battle.round), "rat");
     }
 
     public void Banner(string text, string side)
@@ -178,14 +178,14 @@ public class Hud : MonoBehaviour
         UpdateTags(); UpdatePops(dt);
 
         saveBtn.interactable = exitBtn.interactable = BattleSave.CanSave;
-        turn.text = Battle.over != null ? "" : Battle.turn == "rat" ? $"아군 차례 · {Battle.round}턴" : "고양이 군 차례…";
+        turn.text = Battle.over != null ? "" : Battle.turn == "rat" ? Loc.F("hud.turn.rat", Battle.round) : Loc.T("hud.turn.cat");
         turn.color = Battle.turn == "rat" ? UIK.RAT : UIK.CAT;
-        shells.text = Battle.shells > 0 ? $"박격포탄 {Battle.shells}" : "";
+        shells.text = Battle.shells > 0 ? Loc.F("hud.shells", Battle.shells) : "";
         RenderTip();
         if (lastVer == Battle.version) return;
         lastVer = Battle.version;
-        mission.text = $"<b>{Battle.mission.name}</b>\n" + string.Join("\n", Battle.ObjectiveText().Select(o => (o.ok ? "☑ " : "☐ ") + (o.ok ? UIK.Col(o.t, UIK.OK) : o.t))) + "\n" + UIK.Dim($"{Battle.round}턴 · 보상 보급품 {Battle.mission.reward}");
-        log.text = string.Join("\n", Battle.log.Select(l => UIK.Col(l.msg, l.kind == "bad" ? UIK.NEG : l.kind == "good" ? UIK.OK : l.kind == "warn" ? UIK.GOLD : l.kind == "title" ? UIK.INK : UIK.DIM)));
+        mission.text = $"<b>{Loc.T(Battle.mission.name)}</b>\n" + string.Join("\n", Battle.ObjectiveText().Select(o => (o.ok ? "☑ " : "☐ ") + (o.ok ? UIK.Col(Loc.T(o.t), UIK.OK) : Loc.T(o.t)))) + "\n" + UIK.Dim(Loc.F("hud.mission.footer", Battle.round, Battle.mission.reward));
+        log.text = string.Join("\n", Battle.log.Select(l => UIK.Col(Loc.T(l.msg), l.kind == "bad" ? UIK.NEG : l.kind == "good" ? UIK.OK : l.kind == "warn" ? UIK.GOLD : l.kind == "title" ? UIK.INK : UIK.DIM)));
         RenderBottom();
     }
 
@@ -218,13 +218,14 @@ public class Hud : MonoBehaviour
             var x = rats[i]; var c = squad.GetChild(i);
             bool done = x.alive && Battle.turn == "rat" && x.ap <= 0;
             var ss = CampRules.StressState(x.stress, Camp.BreakAt(x.r));
-            UIK.T(c, "Name").text = x.name;
+            UIK.T(c, "Name").text = Loc.T(x.name);
             string hp = new string('■', Mathf.Max(0, x.hp)) + UIK.Dim(new string('□', Mathf.Max(0, x.maxHp - x.hp)));
-            UIK.T(c, "Info").text = x.alive ? $"{UIK.Col(hp, UIK.RAT)}\n{UIK.Col(new string('●', x.ap), UIK.GOLD)}{UIK.Dim(new string('○', Mathf.Max(0, 2 - x.ap)))} 탄{x.ammo}" + (x.wounds.Count > 0 ? UIK.Col(" 부상", UIK.NEG) : "")
-                : x.downed ? UIK.Col("쓰러짐", UIK.NEG) : UIK.Dim("전사");
+            UIK.T(c, "Info").text = x.alive ? $"{UIK.Col(hp, UIK.RAT)}\n{UIK.Col(new string('●', x.ap), UIK.GOLD)}{UIK.Dim(new string('○', Mathf.Max(0, 2 - x.ap)))} {Loc.F("hud.card.ammo", x.ammo)}" + (x.wounds.Count > 0 ? " " + UIK.Col(Loc.T("hud.card.wounded"), UIK.NEG) : "")
+                : x.downed ? UIK.Col(Loc.T("hud.card.downed"), UIK.NEG) : UIK.Dim(Loc.T("hud.card.dead"));
             UIK.Bar(UIK.F(c, "SBar"), x.stress / 100f, ss.c);
             c.GetComponent<Image>().color = x == u ? UIK.GOLD : done ? new Color(0.55f, 0.55f, 0.55f) : x.alive ? Color.white : new Color(0.4f, 0.35f, 0.35f);
-            UIK.Tip(c.GetComponent<Button>(), $"<b>{CampRules.RANKS[CampRules.RankOf(x.xp)].name} {x.name}</b> · {x.def.name}\n체력 {x.hp}/{x.maxHp} · 탄 {x.ammo}/{x.clip} · 행동력 {x.ap}\n스트레스 {UIK.Col($"{x.stress} · {ss.t}", ss.c)}" + (x.wounds.Count > 0 ? "\n" + UIK.Col(string.Join(" · ", x.wounds.Select(w => Battle.PART_NAME[w.Key] + (w.Value > 1 ? " 잘림" : " 부상"))), UIK.NEG) : ""));
+            UIK.Tip(c.GetComponent<Button>(), Loc.F("hud.card.tip", $"{Loc.T(CampRules.RANKS[CampRules.RankOf(x.xp)].name)} {Loc.T(x.name)}", Loc.T(x.def.name), x.hp, x.maxHp, x.ammo, x.clip, x.ap, UIK.Col($"{x.stress} · {Loc.T(ss.t)}", ss.c))
+                + (x.wounds.Count > 0 ? "\n" + UIK.Col(string.Join(" · ", x.wounds.Select(w => Loc.F(w.Value > 1 ? "hud.wound.severed" : "hud.wound.hurt", Loc.T(Battle.PART_NAME[w.Key])))), UIK.NEG) : ""));
         }
 
         // 행동 패널
@@ -235,9 +236,9 @@ public class Hud : MonoBehaviour
         {
             var ss = u.r != null ? CampRules.StressState(u.stress, Camp.BreakAt(u.r)) : ("", Color.white);
             UIK.T(selInfo, "Text").text = u.r != null
-                ? $"<b>{CampRules.RANKS[CampRules.RankOf(u.xp)].name} {u.name}</b>  {UIK.Dim(u.def.name)}   체력 {u.hp}/{u.maxHp} · 탄 {u.ammo}/{u.clip}{(u.psi > 0 ? $" · 정신력 {u.psi}" : "")} · 행동력 {u.ap}   스트레스 {UIK.Col($"{u.stress} {ss.Item1}", ss.Item2)}\n"
-                  + string.Join(" ", u.r.traits.Select(tr => UIK.Col("[" + CampRules.TRAITS[tr].name + "]", CampRules.TRAITS[tr].rare ? UIK.PSY : UIK.DIM)))
-                : $"<b>{u.name}</b>  {UIK.Col($"정신 지배 중 · {u.controlled}턴", UIK.PSY)}";
+                ? Loc.F("hud.sel.info", $"{Loc.T(CampRules.RANKS[CampRules.RankOf(u.xp)].name)} {Loc.T(u.name)}", UIK.Dim(Loc.T(u.def.name)), u.hp, u.maxHp, u.ammo, u.clip, u.psi > 0 ? Loc.F("hud.sel.psi", u.psi) : "", u.ap, UIK.Col($"{u.stress} {Loc.T(ss.Item1)}", ss.Item2)) + "\n"
+                  + string.Join(" ", u.r.traits.Select(tr => UIK.Col("[" + Loc.T(CampRules.TRAITS[tr].name) + "]", CampRules.TRAITS[tr].rare ? UIK.PSY : UIK.DIM)))
+                : $"<b>{Loc.T(u.name)}</b>  {UIK.Col(Loc.F("hud.sel.controlled", u.controlled), UIK.PSY)}";
             var pslot = (RectTransform)UIK.F(selInfo, "Portrait");
             if (u.r != null && selPid != u.id) { selPid = u.id; UIK.Portrait(pslot, u.r); }
             if (u.r == null && selPid != -1) { selPid = -1; Tpl.Clear(pslot); }
@@ -251,11 +252,11 @@ public class Hud : MonoBehaviour
             bool on = (Battle.mode == "target" || Battle.mode == "tile") && Battle.ability == a.ab;
             UIK.I(b, "Icon").sprite = ArtLib.Icon(a.ab);
             UIK.I(b, "Icon").color = a.ok ? Color.white : new Color(1, 1, 1, 0.35f);
-            UIK.T(b, "Label").text = A.name;
+            UIK.T(b, "Label").text = Loc.T(A.name);
             UIK.T(b, "Label").color = a.ok ? UIK.INK : UIK.DIM;
             UIK.T(b, "Key").text = (i + 1).ToString();
             UIK.T(b, "Count").text = a.count != null ? "×" + a.count : "";
-            UIK.T(b, "Why").text = a.ok ? "" : a.why;
+            UIK.T(b, "Why").text = a.ok ? "" : Loc.T(a.why);
             var img = b.GetComponent<Image>();
             img.sprite = ArtLib.Sprite(on ? "out/ui/btn_hi.png" : a.ok ? "out/ui/btn.png" : "out/ui/btn_off.png");
             img.color = A.psi > 0 && a.ok ? new Color(0.85f, 0.75f, 1f) : Color.white;
@@ -266,30 +267,23 @@ public class Hud : MonoBehaviour
         endTurn.interactable = Battle.turn == "rat" && Battle.mode != "busy";
     }
 
-    static readonly Dictionary<string, string> FLAVOR = new Dictionary<string, string>
-    {
-        ["ambush"] = "고양이는 구멍 안을 보지 못한다.", ["warcry"] = "찍! 찍찍! 찍찍찍!",
-        ["tunnel"] = "땅 밑은 언제나 쥐의 영토였다.", ["command"] = "전령은 작고 빠르고, 셀 수 없이 많다.", ["dominate"] = "눈을 마주치는 순간, 그 고양이는 더 이상 고양이가 아니다.",
-        ["knife"] = "총소리는 무리를 깨운다. 칼은 깨우지 않는다.", ["flame"] = "불은 엄폐물을 가리지 않는다.",
-        ["barrage"] = "조준은 사치다. 탄은 많다.", ["trap"] = "고양이는 발밑을 보지 않는다.", ["smoke"] = "안 보이면 못 쏜다.", ["dash"] = "그림자처럼 다가가, 소리 없이.",
-        ["painkiller"] = "아픈 건 나중에.", ["supply"] = "붕대는 모두에게 돌아간다.", ["flare"] = "밤은 고양이 편이 아니다.", ["artillery"] = "좌표 불러라. 포병이 듣고 있다.",
-        ["terror"] = "고양이도 두려움을 안다.", ["cleanse"] = "숨을 쉬어. 아직 살아 있어.",
-    };
+    // 능력 한 줄 대사: 키 hud.flavor.<능력> 가 있는 것만
     // 롤식 툴팁 내용
     public static string AbilityTip(string ab, string why = "", int? count = null)
     {
         if (!GameData.ABILITIES.TryGetValue(ab, out var A)) return "";
-        var tags = new List<string> { A.ap > 0 ? $"행동력 {A.ap}" : "행동력 없이", A.end ? "쓰면 턴 끝" : "턴 계속" };
-        if (A.psi > 0) tags.Add($"정신력 {A.psi}");
-        if (A.once) tags.Add("전투당 1번");
-        if (A.uses > 0 && ab != "flame") tags.Add($"전투당 {A.uses}번");
-        if (A.cd > 0) tags.Add($"쿨타임 {A.cd}턴");
-        if (count != null) tags.Add($"남은 횟수 {count}");
-        if (A.range > 0) tags.Add($"사거리 {A.range}칸");
-        if (A.radius > 0) tags.Add($"범위 {A.radius}칸");
-        if (A.HasDmg) tags.Add($"피해 {A.dmgMin}–{A.dmgMax}");
-        return $"<size=18><b>{A.name}</b></size>{(A.key != "" ? UIK.Dim("   단축키 " + A.key.ToUpper()) : "")}\n{UIK.Col(string.Join(" · ", tags), UIK.GOLD)}\n{A.desc}"
-            + (!string.IsNullOrEmpty(why) ? "\n" + UIK.Col("✖ " + why, UIK.NEG) : "") + (FLAVOR.TryGetValue(ab, out var f) ? "\n" + UIK.Dim($"<i>“{f}”</i>") : "");
+        var tags = new List<string> { A.ap > 0 ? Loc.F("hud.ab.ap", A.ap) : Loc.T("hud.ab.free"), Loc.T(A.end ? "hud.ab.ends" : "hud.ab.keeps") };
+        if (A.psi > 0) tags.Add(Loc.F("hud.ab.psi", A.psi));
+        if (A.once) tags.Add(Loc.T("hud.ab.once"));
+        if (A.uses > 0 && ab != "flame") tags.Add(Loc.F("hud.ab.uses", A.uses));
+        if (A.cd > 0) tags.Add(Loc.F("hud.ab.cd", A.cd));
+        if (count != null) tags.Add(Loc.F("hud.ab.left", count));
+        if (A.range > 0) tags.Add(Loc.F("hud.ab.range", A.range));
+        if (A.radius > 0) tags.Add(Loc.F("hud.ab.radius", A.radius));
+        if (A.HasDmg) tags.Add(Loc.F("hud.ab.dmg", A.dmgMin, A.dmgMax));
+        string fk = "hud.flavor." + ab;
+        return $"<size=18><b>{Loc.T(A.name)}</b></size>{(A.key != "" ? UIK.Dim("   " + Loc.F("hud.ab.hotkey", A.key.ToUpper())) : "")}\n{UIK.Col(string.Join(" · ", tags), UIK.GOLD)}\n{Loc.T(A.desc)}"
+            + (!string.IsNullOrEmpty(why) ? "\n" + UIK.Col("✖ " + Loc.T(why), UIK.NEG) : "") + (Loc.Has(fk) ? "\n" + UIK.Dim($"<i>“{Loc.T(fk)}”</i>") : "");
     }
 
     // 명중 미리보기 (대상 고르는 중 · 적 위에 마우스)
@@ -310,16 +304,16 @@ public class Hud : MonoBehaviour
         var A = GameData.ABILITIES[ab];
         if (Battle.mode == "target" && !new[] { "shoot", "aimed", "heavy", "knife" }.Contains(ab))
         {
-            tip.text = $"<b>{A.name} → {b.name}</b>  {UIK.Dim($"체력 {b.hp}/{b.maxHp}")}\n{A.desc}\n{UIK.Dim("클릭 · Enter 사용 / Tab 다음 대상 / Esc 취소")}";
+            tip.text = $"<b>{Loc.T(A.name)} → {Loc.T(b.name)}</b>  {UIK.Dim(Loc.F("hud.tip.hp", b.hp, b.maxHp))}\n{Loc.T(A.desc)}\n{UIK.Dim(Loc.T("hud.tip.use_hint"))}";
         }
         else
         {
             var info = Battle.GetHitInfo(a, b, aimed: ab == "aimed", heavy: ab == "heavy", knife: ab == "knife");
             int bonus = ab == "aimed" ? 1 : 0;
-            tip.text = $"<b>{b.name}</b>  {UIK.Dim($"체력 {b.hp}/{b.maxHp}")}\n<size=34><b>{info.hit}%</b></size>{UIK.Dim(" 명중")}   <size=26>{info.crit}%</size>{UIK.Dim(" 치명")}\n"
-                + $"피해 {info.wp.dmgMin + bonus}–{info.wp.dmgMax + bonus}{(info.flanked ? UIK.Col(" · 측면!", UIK.GOLD) : "")}{(b.active ? "" : UIK.Col(" · 눈치 못 챔", UIK.GOLD))}\n"
-                + string.Join("\n", info.parts.Select(p => $"{p.n}  {UIK.Col((p.v >= 0 ? "+" : "") + p.v, p.v >= 0 ? UIK.OK : UIK.NEG)}"))
-                + (Battle.mode == "target" ? "\n" + UIK.Dim("클릭 · Enter 발사 / Tab 다음 대상 / Esc 취소") : "");
+            tip.text = $"<b>{Loc.T(b.name)}</b>  {UIK.Dim(Loc.F("hud.tip.hp", b.hp, b.maxHp))}\n<size=34><b>{info.hit}%</b></size>{UIK.Dim(Loc.T("hud.tip.hit"))}   <size=26>{info.crit}%</size>{UIK.Dim(Loc.T("hud.tip.crit"))}\n"
+                + Loc.F("hud.tip.dmg", info.wp.dmgMin + bonus, info.wp.dmgMax + bonus) + (info.flanked ? UIK.Col(Loc.T("hud.tip.flanked"), UIK.GOLD) : "") + (b.active ? "" : UIK.Col(Loc.T("hud.tip.unaware"), UIK.GOLD)) + "\n"
+                + string.Join("\n", info.parts.Select(p => $"{Loc.T(p.n)}  {UIK.Col((p.v >= 0 ? "+" : "") + p.v, p.v >= 0 ? UIK.OK : UIK.NEG)}"))
+                + (Battle.mode == "target" ? "\n" + UIK.Dim(Loc.T("hud.tip.fire_hint")) : "");
         }
     }
 
@@ -339,8 +333,8 @@ public class Hud : MonoBehaviour
             rt.anchoredPosition = lp;
             bool selU = u == Battle.sel && Battle.turn == "rat";
             // 쥐는 늘 이름 (고른 쥐는 굵게), 고양이는 표적만
-            UIK.T(rt, "Name").text = u.side == "rat" ? (selU ? $"<b>{u.name}</b>" : UIK.Col(u.name, UIK.RAT)) : u.target ? u.name : "";
-            UIK.T(rt, "Hp").text = u.downed ? UIK.Col("✚ 쓰러짐", UIK.NEG) : UIK.Col(new string('■', Mathf.Max(0, u.hp)), u.side == "rat" ? UIK.RAT : UIK.CAT) + UIK.Dim(new string('□', Mathf.Max(0, u.maxHp - u.hp)))
+            UIK.T(rt, "Name").text = u.side == "rat" ? (selU ? $"<b>{Loc.T(u.name)}</b>" : UIK.Col(Loc.T(u.name), UIK.RAT)) : u.target ? Loc.T(u.name) : "";
+            UIK.T(rt, "Hp").text = u.downed ? UIK.Col(Loc.T("hud.tag.downed"), UIK.NEG) : UIK.Col(new string('■', Mathf.Max(0, u.hp)), u.side == "rat" ? UIK.RAT : UIK.CAT) + UIK.Dim(new string('□', Mathf.Max(0, u.maxHp - u.hp)))
                 + (u.overwatch ? UIK.Col(" ◉", UIK.RAT) : "") + (u.hunker ? UIK.Col(" ▼", UIK.RAT) : "") + (u.ward > 0 ? UIK.Col(" ⛨", UIK.PSY) : "") + (u.marked ? UIK.Col(" ◎", UIK.GOLD) : "") + (u.suppressedBy != null ? UIK.Col(" 〰", UIK.GOLD) : "");
             var bar = UIK.F(rt, "SBar");
             UIK.Show(bar, u.side == "rat" && u.r != null);

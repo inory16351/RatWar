@@ -68,7 +68,7 @@ public class Cutscene : MonoBehaviour
         t = 0; typed = 0;
         title.text = s.title != null ? s.title + (s.sub != null ? "\n" + UIK.Dim($"<size=24>{s.sub}</size>") : "") : idx == 0 ? head : "";
         caption.text = "";
-        hint.text = UIK.Dim($"{idx + 1} / {slides.Length}    클릭 · 스페이스 다음    Esc 건너뛰기");
+        hint.text = UIK.Dim(Loc.F("cut.hint", idx + 1, slides.Length));
     }
 
     void Finish()

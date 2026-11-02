@@ -24,6 +24,7 @@ public class WarState
 
 public class WarKind { public string name, map; public int income; }
 public class WarHex { public string name, kind, fx, special; }
+// campaign.json 의 이름 · 설명 · 컷씬 글 = 글자 테이블 키 (Tables/ko/campaign.json)
 // 컷씬 한 장. text 는 테이블 키여도 됨. rat 이 있으면 그림 대신 검은 바탕에 초상 (에필로그)
 public class Slide { public string img, text, title, sub; [Newtonsoft.Json.JsonIgnore] public RatRecord rat; }
 public class WarSpecial
@@ -112,14 +113,13 @@ public static class War
         int tier = Threat(c, hex);
         CatMix(cats, tier, special, K.map != "sewer", h.kind == "capital", new System.Random(turn * 7919 + hex * 131 + (kind == "attack" ? 1 : 2)));
         int reward = special ? sp.reward : (kind == "attack" ? 30 + turn * 4 : 25 + turn * 3) + K.income * 2;
-        string verb = kind == "attack" ? "공격" : "방어";
-        string brief = (special ? sp.brief
-            : kind == "attack" ? $"{K.name} '{h.name}'을(를) 고양이에게서 빼앗는다. 이기면 이 땅이 우리 것이 된다."
-            : $"고양이가 우리 {K.name} '{h.name}'을(를) 침공했다. 지면 이 땅을 잃는다.") + "\n" + ThreatText(cats, tier);
+        // name · brief 는 화면 글자 (테이블에서 풀어 둠)
+        string hn = Loc.T(h.name), kn = Loc.T(K.name);
+        string brief = (special ? Loc.T(sp.brief) : Loc.F(kind == "attack" ? "war.brief.attack" : "war.brief.defend", kn, hn)) + "\n" + ThreatText(cats, tier);
         return new MissionDef
         {
             id = MissionId(c, hex, kind),
-            name = special ? sp.name : $"{h.name} {verb}",
+            name = special ? Loc.T(sp.name) : Loc.F(kind == "attack" ? "war.mission.attack" : "war.mission.defend", hn),
             map = tpl.map, obj = obj, brief = brief, reward = reward,
             mirror = special ? sp.mirror : hex % 2 == 1,
             shells = (special ? sp.shells : tpl.shells) + HoldCount(c, "artillery"),
@@ -142,7 +142,7 @@ public static class War
         ("trooper", 1, 6, 99), ("mgcat", 2, 3, 3), ("catsniper", 3, 2, 2), ("catassault", 3, 3, 3),
         ("catflame", 4, 2, 2), ("catgren", 4, 2, 2), ("officer", 5, 1, 1), ("catheavy", 5, 2, 2),
     };
-    public static readonly string[] TIER_NAME = { "", "선봉대", "정규군", "증원군", "기갑 사단", "근위 정예" };
+    public static readonly string[] TIER_NAME = { "", "war.tier.1", "war.tier.2", "war.tier.3", "war.tier.4", "war.tier.5" }; // 글자 테이블 키
     public const float ELITE_PER_TIER = 0.12f; // 3단계부터 단계마다 정예 확률 +12%
     // 템플릿 배치 자리(위치 · 무리)는 그대로, 병과만 단계에 맞게 다시 굴림. 주요 전투는 소총병 절반만 바꿈 (짜 둔 구성 유지)
     static void CatMix(CatSpawn[] cats, int tier, bool special, bool tanks, bool capital, System.Random rng)
@@ -168,9 +168,9 @@ public static class War
     }
     static string ThreatText(CatSpawn[] cats, int tier)
     {
-        var kinds = cats.GroupBy(x => x.cls).OrderByDescending(g => g.Count()).Select(g => $"{GameData.CLASSES[g.Key].name} {g.Count()}");
+        var kinds = cats.GroupBy(x => x.cls).OrderByDescending(g => g.Count()).Select(g => $"{Loc.T(GameData.CLASSES[g.Key].name)} {g.Count()}");
         int el = cats.Count(x => x.elite);
-        return UIK.Col($"위협 {tier}단계 · {TIER_NAME[tier]}", UIK.CAT) + UIK.Dim($" — {string.Join(" · ", kinds)}{(el > 0 ? $" (정예 {el})" : "")}");
+        return UIK.Col(Loc.F("war.threat", tier, Loc.T(TIER_NAME[tier])), UIK.CAT) + UIK.Dim($" — {string.Join(" · ", kinds)}{(el > 0 ? Loc.F("war.threat.elite", el) : "")}");
     }
 
     // 이어하기: 저장한 전투의 임무 id → 같은 임무 다시
@@ -241,18 +241,18 @@ public static class War
     {
         var w = c.war; int hex = w.battleHex;
         if (hex < 0) return;
-        var name = D.hexes[hex].name;
+        var name = Loc.T(D.hexes[hex].name);
         if (IsSpecial(c, hex, w.battleKind) && (win || w.battleKind == "defend")) w.seen.Add(D.hexes[hex].special + ":done");
         w.news.Clear();
         if (w.battleKind == "attack")
         {
-            if (win) { w.own[hex] = "rat"; w.news.Add(UIK.Col($"▲ {name} 점령!", UIK.OK)); }
-            else w.news.Add(UIK.Col($"✖ {name} 공격 실패", UIK.NEG));
+            if (win) { w.own[hex] = "rat"; w.news.Add(UIK.Col(Loc.F("war.news.taken", name), UIK.OK)); }
+            else w.news.Add(UIK.Col(Loc.F("war.news.attackFail", name), UIK.NEG));
         }
         else
         {
-            if (win) w.news.Add(UIK.Col($"■ {name} 방어 성공", UIK.OK));
-            else { Lose(c, hex); w.news.Add(UIK.Col($"▼ {name} 함락", UIK.NEG)); }
+            if (win) w.news.Add(UIK.Col(Loc.F("war.news.defended", name), UIK.OK));
+            else { Lose(c, hex); w.news.Add(UIK.Col(Loc.F("war.news.lost", name), UIK.NEG)); }
         }
         w.threats.Remove(hex);
         EndTurn(c);
@@ -262,7 +262,7 @@ public static class War
     public static void Wait(CampData c)
     {
         c.war.news.Clear();
-        c.war.news.Add(UIK.Dim("이번 턴은 출격하지 않았다 — 분대가 쉰다"));
+        c.war.news.Add(UIK.Dim(Loc.T("war.news.wait")));
         foreach (var r in c.squad.Where(q => Posted(c, q.id) < 0)) { r.stress = Mathf.Max(0, r.stress + CampRules.STRESS.rest); r.rested++; if (r.rested >= 2) r.afflicted = ""; }
         EndTurn(c);
         Camp.Save(c);
@@ -280,26 +280,26 @@ public static class War
             // 직접 안 막은 주요 방어전은 그걸로 끝 (다음 턴에 또 오지 않음)
             var sp = SpecialOf(hex);
             if (sp != null && sp.kind == "defend") w.seen.Add(D.hexes[hex].special + ":done");
-            var name = D.hexes[hex].name;
+            var name = Loc.T(D.hexes[hex].name);
             var gar = Garrison(c, hex).ToList();
             float hold = HoldChance(c, hex);
             string pct = $" ({Mathf.RoundToInt(hold * 100)}%)";
             if (UnityEngine.Random.value < hold)
             {
-                w.news.Add(gar.Count > 0 ? UIK.Col($"■ {name} 수비대({string.Join(", ", gar.Select(r => r.name))})가 침공을 막아냈다{pct}", UIK.OK)
-                    : UIK.Dim($"■ {name} 수비대가 침공을 막아냈다 (자동){pct}"));
+                w.news.Add(gar.Count > 0 ? UIK.Col(Loc.F("war.news.held", name, string.Join(", ", gar.Select(r => r.Name)), pct), UIK.OK)
+                    : UIK.Dim(Loc.F("war.news.held.auto", name, pct)));
                 foreach (var r in gar) { r.xp++; r.stress = Mathf.Min(99, r.stress + GARRISON_STRESS); r.rested = 0; }
             }
             else
             {
                 Lose(c, hex);
-                w.news.Add(UIK.Col($"▼ {name} 수비대가 무너졌다{(gar.Count > 0 ? "" : " (자동)")}{pct}", UIK.NEG));
+                w.news.Add(UIK.Col(Loc.F(gar.Count > 0 ? "war.news.fell" : "war.news.fell.auto", name, pct), UIK.NEG));
                 foreach (var r in gar)
                 {
                     r.stress = Mathf.Min(99, r.stress + GARRISON_STRESS * 2); r.rested = 0;
                     if (UnityEngine.Random.value >= GARRISON_HURT) continue;
-                    if (UnityEngine.Random.value < GARRISON_DIE) { Camp.Bury(c, r, name + " 수비", "수비 중 전사"); w.news.Add(UIK.Col($"  ✝ {r.name} 전사", UIK.NEG)); }
-                    else { r.wounded = 1; c.deploy.Remove(r.id); w.news.Add(UIK.Col($"  ✚ {r.name} 부상 — 한 턴 쉼", UIK.NEG)); }
+                    if (UnityEngine.Random.value < GARRISON_DIE) { Camp.Bury(c, r, Loc.F("war.died.garrison", name), "war.how.garrison"); w.news.Add(UIK.Col(Loc.F("war.news.kia", r.Name), UIK.NEG)); }
+                    else { r.wounded = 1; c.deploy.Remove(r.id); w.news.Add(UIK.Col(Loc.F("war.news.wounded", r.Name), UIK.NEG)); }
                 }
             }
         }
@@ -308,12 +308,12 @@ public static class War
         w.battleHex = -1; w.battleKind = "";
         // 승패
         int hq = Array.FindIndex(D.hexes, h => h.fx == "hq"), cap = Array.FindIndex(D.hexes, h => h.fx == "capital");
-        if (cap >= 0 && Rat(c, cap)) { w.over = "win"; w.news.Add(UIK.Col("펠린부르크 함락 — 전쟁에서 이겼다!", UIK.GOLD)); return; }
-        if (hq >= 0 && !Rat(c, hq) || Count(c, "rat") == 0) { w.over = "lose"; w.news.Add(UIK.Col("하수구 사령부 함락 — 전쟁에서 졌다", UIK.NEG)); return; }
+        if (cap >= 0 && Rat(c, cap)) { w.over = "win"; w.news.Add(UIK.Col(Loc.F("war.news.win", Loc.T(D.hexes[cap].name)), UIK.GOLD)); return; }
+        if (hq >= 0 && !Rat(c, hq) || Count(c, "rat") == 0) { w.over = "lose"; w.news.Add(UIK.Col(Loc.F("war.news.lose", Loc.T(D.hexes[Mathf.Max(0, hq)].name)), UIK.NEG)); return; }
         // 수입 · 땅 효과
         int inc = Mathf.RoundToInt(Income(c) * RULES.DiffOf(c.diff).income);
         c.supplies += inc;
-        w.news.Add(UIK.Col($"보급품 +{inc} (땅 {Count(c, "rat")}칸)", UIK.GOLD));
+        w.news.Add(UIK.Col(Loc.F("war.news.income", inc, Count(c, "rat")), UIK.GOLD));
         if (Holds(c, "hospital")) foreach (var r in c.squad) r.stress = Mathf.Max(0, r.stress - 10);
         if (Holds(c, "recruit")) Camp.RollRecruits(c);
         w.turn++;
@@ -344,6 +344,6 @@ public static class War
             while (k < front.Count - 1 && (roll -= weights[k]) > 0) k++;
             w.threats.Add(front[k]); front.RemoveAt(k);
         }
-        if (w.threats.Count > 0) w.news.Add(UIK.Col($"고양이 침공: {string.Join(", ", w.threats.Select(i => D.hexes[i].name))}", UIK.CAT));
+        if (w.threats.Count > 0) w.news.Add(UIK.Col(Loc.F("war.news.invade", string.Join(", ", w.threats.Select(i => Loc.T(D.hexes[i].name)))), UIK.CAT));
     }
 }

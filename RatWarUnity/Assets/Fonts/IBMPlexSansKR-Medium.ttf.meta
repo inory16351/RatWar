@@ -10,6 +10,12 @@ TrueTypeFontImporter:
   includeFontData: 1
   fontNames:
   - IBM Plex Sans KR
+  - Malgun Gothic
+  - Microsoft YaHei
+  - Yu Gothic UI
+  - Meiryo
+  - Segoe UI
+  - Arial
   fallbackFontReferences: []
   customCharacters: 
   fontRenderingMode: 0

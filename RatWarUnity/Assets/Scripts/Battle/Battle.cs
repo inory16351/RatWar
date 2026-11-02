@@ -57,7 +57,7 @@ public static class Battle
         var u = new Unit
         {
             id = ++UID, side = side, cls = st != null ? st.clsId : cls, def = def, x = x, z = z, px = x, pz = z,
-            name = r != null ? r.name : def.name,
+            name = r != null ? r.Name : Loc.T(def.name),
             maxHp = st != null ? st.hp : def.hp, hp = st != null ? st.hp : def.hp, aim = st != null ? st.aim : def.aim,
             weapon = st?.weapon != null && st.weapon != def.weapon ? st.weapon : null,
             clip = WP(st?.weapon ?? def.weapon).clip + (st != null ? st.clip : 0),
@@ -116,8 +116,8 @@ public static class Battle
         foreach (var c in def.cats)
         {
             var u = MakeUnit("cat", c.cls, c.x, c.z, pod: c.pod, target: c.target, faceIdx: CAT_FACE.TryGetValue(c.head ?? "", out var f) ? f : -1);
-            if (c.elite) { u.maxHp += ELITE_HP; u.hp += ELITE_HP; u.aim += ELITE_AIM; u.name = "정예 " + u.name; }
-            if (c.target) u.name = "표적 · " + u.name;
+            if (c.elite) { u.maxHp += ELITE_HP; u.hp += ELITE_HP; u.aim += ELITE_AIM; u.name = Loc.F("battle.unit.elite", u.name); }
+            if (c.target) u.name = Loc.F("battle.unit.target", u.name);
             units.Add(u);
         }
         shells = def.mortarShells;
@@ -125,7 +125,7 @@ public static class Battle
         statKills = statLost = 0;
         BeginTurn("rat");
         UpdateVision();
-        Say(mission.name, "title");
+        Say(Loc.T(mission.name), "title");
     }
 
     // 저장한 전투 이어하기 (BattleSave). 실행 중에만 쓰는 참조(병과 표 · 쥐 기록 · 제압 상대)를 다시 이어 붙임
@@ -216,7 +216,7 @@ public static class Battle
             var group = Cats().Where(c => c.pod == pod && !c.active).ToList();
             if (group.Count == 0) continue;
             foreach (var c in group) c.active = true;
-            Say($"고양이 무리 발견! ({group.Count})", "warn");
+            Say(Loc.F("battle.log.pod_found", group.Count), "warn");
             View.Focus(group[0]);
             await Sleep(350);
             foreach (var c in group)
@@ -235,63 +235,63 @@ public static class Battle
         int x = ax == int.MinValue ? a.x : ax, z = ax == int.MinValue ? a.z : az; // 고양이 AI: 가상의 자리에서 계산
         var wp = WP(heavy ? "hmg" : a.Weapon);
         float d = World.Dist(x, z, b.x, b.z);
-        var parts = new List<(string, int)> { ("조준", a.aim), ("거리", wp.range(World.JsRound(d))) };
+        var parts = new List<(string, int)> { (Loc.T("battle.hit.aim"), a.aim), (Loc.T("battle.hit.range"), wp.range(World.JsRound(d))) };
         bool flamer = !heavy && !knife && a.Weapon == "flamer";
         var cv = knife || flamer || b.def.vehicle ? (0, false) : World.CoverAgainst(w, b.x, b.z, x, z); // 전차는 엄폐 못 함
-        if (flamer) parts.Add(("불길 (엄폐 무시)", 0));
-        if (cv.Item1 > 0) parts.Add((cv.Item1 == 2 ? "높은 엄폐" : "낮은 엄폐", -RULES.coverDef[cv.Item1]));
-        if (b.hunker && cv.Item1 > 0) parts.Add(("엎드림", -RULES.hunkerDef));
+        if (flamer) parts.Add((Loc.T("battle.hit.flame"), 0));
+        if (cv.Item1 > 0) parts.Add((Loc.T(cv.Item1 == 2 ? "battle.hit.cover_high" : "battle.hit.cover_low"), -RULES.coverDef[cv.Item1]));
+        if (b.hunker && cv.Item1 > 0) parts.Add((Loc.T("battle.hit.hunker"), -RULES.hunkerDef));
         int ha = World.TileAt(w, x, z).h, hb = World.TileAt(w, b.x, b.z).h;
-        if (ha > hb) parts.Add(("고지", RULES.highGroundAim));
-        if (a.suppressedBy != null) parts.Add(("제압당함", RULES.suppressAim));
-        if (a.wounds.ContainsKey("arm") && !a.painkiller) parts.Add(("팔 부상", -RULES.armWoundAim));
-        if (overwatchShot) parts.Add(("경계 사격", RULES.overwatchAim));
-        if (overwatchShot && Camp.Has(a.r, "veteran") && !a.perks.Contains("sentry")) parts.Add(("노병", -RULES.overwatchAim / 2));
-        if (extra != 0) parts.Add((extraName ?? "보정", extra));
+        if (ha > hb) parts.Add((Loc.T("battle.hit.high"), RULES.highGroundAim));
+        if (a.suppressedBy != null) parts.Add((Loc.T("battle.hit.suppressed"), RULES.suppressAim));
+        if (a.wounds.ContainsKey("arm") && !a.painkiller) parts.Add((Loc.T("battle.hit.arm"), -RULES.armWoundAim));
+        if (overwatchShot) parts.Add((Loc.T("battle.hit.overwatch"), RULES.overwatchAim));
+        if (overwatchShot && Camp.Has(a.r, "veteran") && !a.perks.Contains("sentry")) parts.Add((Loc.T("battle.hit.veteran"), -RULES.overwatchAim / 2));
+        if (extra != 0) parts.Add((Loc.T(extraName ?? "battle.hit.extra"), extra));
         // 연막: 쏘는 쪽 · 맞는 쪽이 연막 안이거나 연막을 지나감
-        if (!knife && (SmokeAt(x, z) || SmokeAt(b.x, b.z) || World.LineAny(w, x, z, b.x, b.z, t => SmokeAt(t.x, t.z)))) parts.Add(("연막", -30));
-        if (aimed) parts.Add(("정조준", 20));
-        if (knife) parts.Add(("칼", 30));
-        if (a.buffAim != 0) parts.Add(("함성", a.buffAim));
-        if (b.marked && a.side == "rat") parts.Add(("표적 지정", 15));
-        if (a.perks.Contains("closeq") && d <= 4) parts.Add(("근접 사격", 15));
-        if (overwatchShot && a.perks.Contains("sentry")) parts.Add(("노련한 경계", -RULES.overwatchAim));
+        if (!knife && (SmokeAt(x, z) || SmokeAt(b.x, b.z) || World.LineAny(w, x, z, b.x, b.z, t => SmokeAt(t.x, t.z)))) parts.Add((Loc.T("battle.hit.smoke"), -30));
+        if (aimed) parts.Add((Loc.T("battle.hit.aimed"), 20));
+        if (knife) parts.Add((Loc.T("battle.hit.knife"), 30));
+        if (a.buffAim != 0) parts.Add((Loc.T("battle.hit.warcry"), a.buffAim));
+        if (b.marked && a.side == "rat") parts.Add((Loc.T("battle.hit.marked"), 15));
+        if (a.perks.Contains("closeq") && d <= 4) parts.Add((Loc.T("battle.hit.closeq"), 15));
+        if (overwatchShot && a.perks.Contains("sentry")) parts.Add((Loc.T("battle.hit.sentry"), -RULES.overwatchAim));
         bool weak = b.marked && b.weakMarked && a.side == "rat";
-        if (b.defB != 0 && !weak) parts.Add(("회피", -b.defB));
-        if (weak) parts.Add(("약점 간파", 0));
-        if (Camp.Has(b.r, "coverpro") && cv.Item1 > 0) parts.Add(("엄폐 장인", -10));
-        if (a.side == "rat" && Rats().Any(o => o != a && Camp.Has(o.r, "leader") && World.Dist(o.x, o.z, x, z) <= 3)) parts.Add(("지휘관 곁", 5));
-        if (Camp.Has(a.r, "loner") && !Rats().Any(o => o != a && World.Dist(o.x, o.z, x, z) <= 3)) parts.Add(("외톨이", 10));
-        if (a.r != null && a.r.traits.Contains("sibling") && !string.IsNullOrEmpty(a.r.sibling) && units.Any(o => o.rosterId == a.r.sibling && !o.alive && !o.downed)) parts.Add(("복수심", 15));
-        if (a.side == "cat" && Cats().Any(o => o.def.aura > 0 && o != a && World.Dist(o.x, o.z, x, z) <= 4)) parts.Add(("장교 지휘", 10));
+        if (b.defB != 0 && !weak) parts.Add((Loc.T("battle.hit.dodge"), -b.defB));
+        if (weak) parts.Add((Loc.T("battle.hit.weak"), 0));
+        if (Camp.Has(b.r, "coverpro") && cv.Item1 > 0) parts.Add((Loc.T("battle.hit.coverpro"), -10));
+        if (a.side == "rat" && Rats().Any(o => o != a && Camp.Has(o.r, "leader") && World.Dist(o.x, o.z, x, z) <= 3)) parts.Add((Loc.T("battle.hit.leader"), 5));
+        if (Camp.Has(a.r, "loner") && !Rats().Any(o => o != a && World.Dist(o.x, o.z, x, z) <= 3)) parts.Add((Loc.T("battle.hit.loner"), 10));
+        if (a.r != null && a.r.traits.Contains("sibling") && !string.IsNullOrEmpty(a.r.sibling) && units.Any(o => o.rosterId == a.r.sibling && !o.alive && !o.downed)) parts.Add((Loc.T("battle.hit.revenge"), 15));
+        if (a.side == "cat" && Cats().Any(o => o.def.aura > 0 && o != a && World.Dist(o.x, o.z, x, z) <= 4)) parts.Add((Loc.T("battle.hit.officer"), 10));
         // 특성 (쥐)
         var r = a.r;
         bool half = a.hp * 2 <= a.maxHp;
         if (r != null)
         {
-            if (Camp.Has(r, "cautious")) parts.Add(("신중함", a.moved ? -5 : 10));
-            if (Camp.Has(r, "desperate") && half) parts.Add(("절박함", 10));
-            if (Camp.Has(r, "brawler") && d <= 4) parts.Add(("근접 광", 10));
-            if (Camp.Has(r, "brawler") && d > 9) parts.Add(("근접 광", -10));
-            if (Camp.Has(r, "longshot") && d > 9) parts.Add(("원거리 본능", 10));
-            if (Camp.Has(r, "longshot") && d <= 3) parts.Add(("원거리 본능", -10));
-            if (Camp.Has(r, "reckless") && World.CoverSides(w, x, z).Count == 0) parts.Add(("무모함", 10));
-            if (a.rageAim) parts.Add(("분노", 15));
-            if (Camp.Has(r, "comrade") && PartnerNear(a, "comrade", x, z)) parts.Add(("전우 곁", 5));
-            if (Camp.Has(r, "pupil") && PartnerNear(a, "mentor", x, z)) parts.Add(("멘토 곁", 8));
-            if (knife && Camp.Has(r, "knifer")) parts.Add(("칼잡이", 10));
+            if (Camp.Has(r, "cautious")) parts.Add((Loc.T("battle.hit.cautious"), a.moved ? -5 : 10));
+            if (Camp.Has(r, "desperate") && half) parts.Add((Loc.T("battle.hit.desperate"), 10));
+            if (Camp.Has(r, "brawler") && d <= 4) parts.Add((Loc.T("battle.hit.brawler"), 10));
+            if (Camp.Has(r, "brawler") && d > 9) parts.Add((Loc.T("battle.hit.brawler"), -10));
+            if (Camp.Has(r, "longshot") && d > 9) parts.Add((Loc.T("battle.hit.longshot"), 10));
+            if (Camp.Has(r, "longshot") && d <= 3) parts.Add((Loc.T("battle.hit.longshot"), -10));
+            if (Camp.Has(r, "reckless") && World.CoverSides(w, x, z).Count == 0) parts.Add((Loc.T("battle.hit.reckless"), 10));
+            if (a.rageAim) parts.Add((Loc.T("battle.hit.rage"), 15));
+            if (Camp.Has(r, "comrade") && PartnerNear(a, "comrade", x, z)) parts.Add((Loc.T("battle.hit.comrade"), 5));
+            if (Camp.Has(r, "pupil") && PartnerNear(a, "mentor", x, z)) parts.Add((Loc.T("battle.hit.mentor"), 8));
+            if (knife && Camp.Has(r, "knifer")) parts.Add((Loc.T("battle.hit.knifer"), 10));
         }
         // 난이도
         var D = Diff;
         if (a.side == "rat")
         {
-            if (D.ratAim != 0) parts.Add(("난이도", D.ratAim));
-            if (D.streak > 0 && a.missStreak > 0) parts.Add(("끈기", Mathf.Min(D.streakMax, a.missStreak * D.streak)));
+            if (D.ratAim != 0) parts.Add((Loc.T("battle.hit.diff"), D.ratAim));
+            if (D.streak > 0 && a.missStreak > 0) parts.Add((Loc.T("battle.hit.streak"), Mathf.Min(D.streakMax, a.missStreak * D.streak)));
         }
         else
         {
-            if (D.catAim != 0) parts.Add(("난이도", D.catAim));
-            if (D.chain > 0 && catHits > 0 && b.side == "rat") parts.Add(("연속 명중 완화", -catHits * D.chain));
+            if (D.catAim != 0) parts.Add((Loc.T("battle.hit.diff"), D.catAim));
+            if (D.chain > 0 && catHits > 0 && b.side == "rat") parts.Add((Loc.T("battle.hit.chain"), -catHits * D.chain));
         }
         int hit = Mathf.Clamp(parts.Sum(p => p.Item2), 1, 99);
         bool open = cv.Item1 == 0 && World.CoverSides(w, b.x, b.z).Count == 0;
@@ -324,7 +324,7 @@ public static class Battle
         {
             scan = 0;
             // 지배 끝난 고양이는 돌아감
-            foreach (var u in units) if (u.controlled > 0 && --u.controlled <= 0) { u.side = "cat"; u.active = true; u.tint = Color.white; View.Popup(u, "정신 돌아옴", "#ff9f8f"); Say($"{u.name} 지배 풀림", "warn"); }
+            foreach (var u in units) if (u.controlled > 0 && --u.controlled <= 0) { u.side = "cat"; u.active = true; u.tint = Color.white; View.Popup(u, Loc.T("battle.pop.freed"), "#ff9f8f"); Say(Loc.F("battle.log.freed", u.name), "warn"); }
         }
         if (side == "cat") foreach (var c in units) c.revealed = false;
         if (side == "rat")
@@ -338,12 +338,12 @@ public static class Battle
             u.ap = RULES.ap; u.moved = false;
             u.overwatch = false; u.hunker = false; u.buffAim = 0; u.fired = false;
             if (u.suppressing != null) { u.suppressing.suppressedBy = null; u.suppressing = null; }
-            if (u.panic > 0) { u.panic--; u.ap = 0; View.Popup(u, "공황 — 움직이지 못함", "#c9a3ff"); }
+            if (u.panic > 0) { u.panic--; u.ap = 0; View.Popup(u, Loc.T("battle.pop.panic"), "#c9a3ff"); }
             foreach (var k in u.cd.Keys.ToList()) if (--u.cd[k] <= 0) u.cd.Remove(k);
-            if (u.dazed > 0) { u.dazed = 0; u.ap = Mathf.Max(0, u.ap - 1); View.Popup(u, "멍함 — 행동력 −1", "#c9a3ff"); }
+            if (u.dazed > 0) { u.dazed = 0; u.ap = Mathf.Max(0, u.ap - 1); View.Popup(u, Loc.T("battle.pop.dazed"), "#c9a3ff"); }
             if (side == "rat" && Camp.Has(u.r, "smoker") && round > 1) AddStress(u, -(int)TRAITS["smoker"].Get("smoke"));
             if (side != "rat" || u.r == null || round <= 1) continue;
-            if (Camp.Has(u.r, "pious") && u.stress > 60) { AddStress(u, -5); View.Popup(u, "기도", "#c9a3ff"); }
+            if (Camp.Has(u.r, "pious") && u.stress > 60) { AddStress(u, -5); View.Popup(u, Loc.T("battle.pop.pray"), "#c9a3ff"); }
             if (Camp.Has(u.r, "catphobia") && Cats().Any(c => c.visible && World.Dist(c, u) <= 3)) AddStress(u, 5, "phobia");
             if (Camp.Has(u.r, "feud") && PartnerNear(u, "feud", u.x, u.z)) AddStress(u, 3, "feud");
         }
@@ -358,7 +358,7 @@ public static class Battle
         foreach (var u in units.Where(u => u.alive && (u.burn > 0 || fires.Any(f => f.x == u.x && f.z == u.z))).ToList())
         {
             u.burn = Mathf.Max(0, u.burn - 1);
-            View.Popup(u, "화상", "#ff9a3c");
+            View.Popup(u, Loc.T("battle.pop.burn"), "#ff9a3c");
             await Damage(u, 1 + u.burnB, kind: "fire", part: "torso");
         }
     }
@@ -377,7 +377,7 @@ public static class Battle
             if (Camp.Has(u.r, "comrade") && PartnerNear(u, "comrade", u.x, u.z)) lead *= 0.8f;
         }
         u.stress = Mathf.Clamp(u.stress + (n > 0 ? World.JsRound(n * Camp.StressMul(u.r, why) * lead) : n), 0, cap);
-        if (n > 0 && u.stress - before >= 6) View.Popup(u, $"스트레스 +{u.stress - before}", "#c9a3ff");
+        if (n > 0 && u.stress - before >= 6) View.Popup(u, Loc.F("battle.pop.stress", u.stress - before), "#c9a3ff");
         if (u.stress >= cap && u.broke == null) u.broke = why ?? "true"; // 실제로 무너지는 건 그 쥐 차례
         version++;
     }
@@ -393,14 +393,14 @@ public static class Battle
     }
     static readonly (string id, string name, int w, string desc)[] BREAKS =
     {
-        ("panic", "공황", 50, "몸이 굳어 버림"), ("frenzy", "광란", 25, "눈에 보이는 아무나 쏨"), ("flee", "도주", 25, "적에게서 달아남"),
+        ("panic", "battle.break.panic", 50, "battle.break.panic.desc"), ("frenzy", "battle.break.frenzy", 25, "battle.break.frenzy.desc"), ("flee", "battle.break.flee", 25, "battle.break.flee.desc"),
     };
     static async Awaitable Breakdowns()
     {
         foreach (var u in Rats().Where(u => u.broke != null && u.r != null).ToList())
         {
             var B = BREAKS[0];
-            if (Camp.Has(u.r, "calm")) B = ("daze", "멍함", 0, "잠깐 넋이 나감");
+            if (Camp.Has(u.r, "calm")) B = ("daze", "battle.break.daze", 0, "battle.break.daze.desc");
             else
             {
                 var table = BREAKS.Select(b => b.id == "frenzy" && Camp.Has(u.r, "rage") ? (id: b.id, name: b.name, w: b.w * 2, desc: b.desc) : b).ToArray();
@@ -410,8 +410,8 @@ public static class Battle
             u.broke = null; u.brokeName = B.name;
             u.stress = STRESS.after;
             View.Focus(u); View.Slowmo(0.6f, 0.35f);
-            View.Popup(u, $"{B.name}!", "#c9a3ff");
-            Say($"{u.name} 정신이 무너졌다 — {B.name} ({B.desc})", "bad");
+            View.Popup(u, Loc.T(B.name) + "!", "#c9a3ff");
+            Say(Loc.F("battle.log.break", u.name, Loc.T(B.name), Loc.T(B.desc)), "bad");
             u.face = "hit"; u.faceT = 2;
             Witness(u, STRESS.panicNear, "panic");
             await Sleep(900);
@@ -420,7 +420,7 @@ public static class Battle
             else if (B.id == "frenzy")
             {
                 var t = units.Where(o => o != u && o.alive && World.CanSee(world, u, o) && (o.side == "rat" || o.visible)).OrderBy(o => World.Dist(u, o)).FirstOrDefault();
-                if (t != null && u.ammo > 0) { Say($"{u.name}이(가) {t.name}에게 총을 겨눈다!", "bad"); if (await Shoot(u, t) && t.side == "rat") t.hitByFrenzy = u.rosterId; }
+                if (t != null && u.ammo > 0) { Say(Loc.F("battle.log.frenzy_aim", u.name, t.name), "bad"); if (await Shoot(u, t) && t.side == "rat") t.hitByFrenzy = u.rosterId; }
                 u.ap = 0;
             }
             else
@@ -449,8 +449,8 @@ public static class Battle
         if (turn != "rat" || mode == "busy" || over != null) return;
         mode = "busy"; sel = null;
         foreach (var r in Rats())
-            if (!r.fired && !r.overwatch && !r.hidden && World.CoverSides(world, r.x, r.z).Count > 0) { r.hunker = true; View.Popup(r, "엎드림", "#8fd0ff"); }
-        View.Banner("고양이 군 차례", "cat");
+            if (!r.fired && !r.overwatch && !r.hidden && World.CoverSides(world, r.x, r.z).Count > 0) { r.hunker = true; View.Popup(r, Loc.T("battle.pop.hunker"), "#8fd0ff"); }
+        View.Banner(Loc.T("battle.banner.cat"), "cat");
         BeginTurn("cat");
         await Sleep(900);
         await CatTurn();
@@ -459,7 +459,7 @@ public static class Battle
         if (over != null) return;
         round++;
         BeginTurn("rat");
-        View.Banner($"아군 차례 · {round}턴", "rat");
+        View.Banner(Loc.F("battle.banner.rat", round), "rat");
         await Strikes();
         if (over != null) return;
         await Breakdowns();
@@ -477,7 +477,7 @@ public static class Battle
         {
             if (over != null) return;
             View.FocusPoint(BoardView.TilePos(s.x, s.z));
-            Say("포격 도착!", "warn");
+            Say(Loc.T("battle.log.strike"), "warn");
             Sfx.Mortar();
             await Sleep(700);
             var A = AB["artillery"];
@@ -520,9 +520,9 @@ public static class Battle
     public static List<(string t, bool ok)> ObjectiveText()
     {
         int left = Cats().Count();
-        if (mission.obj == "officer") return new List<(string, bool)> { ("표적 장교 사살", !units.Any(u => u.target && u.alive)), ($"남은 고양이 {left}", false) };
-        if (mission.obj == "reach") return new List<(string, bool)> { ("깃발까지 쥐 한 마리", ObjectiveDone()), ($"남은 고양이 {left}", left == 0) };
-        return new List<(string, bool)> { ($"고양이 전멸 (남은 {left})", left == 0) };
+        if (mission.obj == "officer") return new List<(string, bool)> { (Loc.T("battle.obj.officer"), !units.Any(u => u.target && u.alive)), (Loc.F("battle.obj.left", left), false) };
+        if (mission.obj == "reach") return new List<(string, bool)> { (Loc.T("battle.obj.reach"), ObjectiveDone()), (Loc.F("battle.obj.left", left), left == 0) };
+        return new List<(string, bool)> { (Loc.F("battle.obj.elim", left), left == 0) };
     }
     static void CheckOver()
     {
@@ -569,18 +569,18 @@ public static class Battle
             u.x = step.x; u.z = step.z; u.px = u.x; u.pz = u.z;
             // 갉기: 철조망 칸을 지나가며 끊음
             var here = World.TileAt(w, u.x, u.z);
-            if (here.prop == 'X') { View.Debris(u.x, u.z, 'X'); here.prop = '\0'; View.GroundDirty(); View.Popup(u, "갉작!", "#d8d0b8"); }
+            if (here.prop == 'X') { View.Debris(u.x, u.z, 'X'); here.prop = '\0'; View.GroundDirty(); View.Popup(u, Loc.T("battle.pop.gnaw"), "#d8d0b8"); }
             // 부비트랩: 고양이가 밟으면 터짐
             if (u.side == "cat" && traps.Any(t => t.x == u.x && t.z == u.z))
             {
                 var tr = traps.First(t => t.x == u.x && t.z == u.z);
                 traps.Remove(tr); View.MarksChanged();
-                Say($"{u.name} 부비트랩을 밟았다!", "good");
+                Say(Loc.F("battle.log.trap_hit", u.name), "good");
                 var A = AB["trap"];
                 await Explode(u.x, u.z, A.radius, A.dmgMin, A.dmgMax, ById(tr.owner));
                 if (!u.alive) break;
             }
-            if (u.side == "cat") foreach (var r in Rats()) if (r.hidden && World.Dist(r, u) < 1.6f) { r.hidden = false; View.Popup(r, "들킴!", "#ff6b5b"); }
+            if (u.side == "cat") foreach (var r in Rats()) if (r.hidden && World.Dist(r, u) < 1.6f) { r.hidden = false; View.Popup(r, Loc.T("battle.pop.spotted"), "#ff6b5b"); }
             var wake = UpdateVision();
             // 경계 사격 (제압당한 채 움직여도)
             foreach (var e in EnemiesOf(u).ToList())
@@ -592,7 +592,7 @@ public static class Battle
                 if (react)
                 {
                     e.overwatch = false;
-                    Say($"{e.name} 반응 사격!", "warn");
+                    Say(Loc.F("battle.log.react", e.name), "warn");
                     await Shoot(e, u, overwatchShot: true);
                 }
             }
@@ -621,11 +621,11 @@ public static class Battle
         bool show = u.side == "rat" || u.visible;
         if ((u.wounds.ContainsKey("arm") && !Camp.Has(u.r, "careful") && R01 < RULES.armReloadFail) || (Camp.Has(u.r, "clumsy") && R01 < 0.1f))
         {
-            if (show) { View.Popup(u, "재장전 실패", "#ff6b5b"); Say($"{u.name} 재장전 실패 (팔 부상)", u.side == "rat" ? "bad" : "good"); }
+            if (show) { View.Popup(u, Loc.T("battle.pop.reload_fail"), "#ff6b5b"); Say(Loc.F("battle.log.reload_fail", u.name), u.side == "rat" ? "bad" : "good"); }
             return false;
         }
         u.ammo = WP(u.Weapon).clip;
-        if (show) View.Popup(u, "재장전", "#d8d0b8");
+        if (show) View.Popup(u, Loc.T("battle.pop.reload"), "#d8d0b8");
         return true;
     }
 
@@ -649,10 +649,10 @@ public static class Battle
         int shots = a.Weapon == "lmg" || a.Weapon == "smg" || heavy ? 3 : 1;
         int dmg = Rnd(wp.dmgMin, wp.dmgMax) + (crit ? RULES.critDmg : 0) + (aimed ? 1 : 0) + a.dmgB;
         bool lethal = hit && (crit || dmg >= b.hp + b.ward);
-        if (a.hidden) { a.hidden = false; View.Popup(a, "매복!", "#8fd0ff"); }
+        if (a.hidden) { a.hidden = false; View.Popup(a, Loc.T("battle.pop.ambush_fire"), "#8fd0ff"); }
         a.fired = true;
         // 안개 속 고양이가 쏘면 그 자리가 드러남 (다음 고양이 차례까지)
-        if (a.side == "cat" && !a.visible) { a.revealed = true; a.visible = true; a.seen = true; View.FocusPair(a, b.x, b.z); View.Popup(a, "발견!", "#ff9f8f"); }
+        if (a.side == "cat" && !a.visible) { a.revealed = true; a.visible = true; a.seen = true; View.FocusPair(a, b.x, b.z); View.Popup(a, Loc.T("battle.pop.revealed"), "#ff9f8f"); }
         if (lethal) await View.Cinematic(a, b, crit);
         for (int i = 0; i < shots; i++)
         {
@@ -665,8 +665,8 @@ public static class Battle
         if (hit) await Damage(b, dmg, crit, a, a.Weapon, RollHitPart(crit));
         else
         {
-            View.Popup(b, "빗나감", "#d8d0b8");
-            Say($"{a.name} → {b.name} 빗나감 ({info.hit}%)");
+            View.Popup(b, Loc.T("battle.pop.miss"), "#d8d0b8");
+            Say(Loc.F("battle.log.miss", a.name, b.name, info.hit));
             if (b.side == "rat") AddStress(b, 3, "shot");
         }
         if (lethal) View.EndCinematic();
@@ -703,7 +703,7 @@ public static class Battle
             if (e.side == "cat" && !e.active) alerted.Add(e.pod);
             var info = GetHitInfo(a, e, overwatchShot);
             bool hit = R100 < info.hit;
-            if (!hit) { View.Popup(e, "빗나감", "#d8d0b8"); continue; }
+            if (!hit) { View.Popup(e, Loc.T("battle.pop.miss"), "#d8d0b8"); continue; }
             any = true; e.burn = Mathf.Max(e.burn, 1);
             await Damage(e, Rnd(GameData.WEAPONS["flamer"].dmgMin, GameData.WEAPONS["flamer"].dmgMax) + a.dmgB, false, a, "fire", "torso");
         }
@@ -721,14 +721,14 @@ public static class Battle
     }
     static async Awaitable FuelExplode(Unit u)
     {
-        View.Popup(u, "연료통 폭발!", "#ff9a3c");
-        Say($"{u.name}의 연료통이 터졌다!", "bad");
+        View.Popup(u, Loc.T("battle.pop.fuel_boom"), "#ff9a3c");
+        Say(Loc.F("battle.log.fuel_boom", u.name), "bad");
         await Sleep(300);
         await Explode(u.x, u.z, GameData.flamerBoomR, GameData.flamerBoomMin, GameData.flamerBoomMax, null);
     }
 
     // ── 맞은 부위: 머리 = 즉사, 몸통 = 체력, 팔 · 다리 = 부상 ──
-    public static readonly Dictionary<string, string> PART_NAME = new Dictionary<string, string> { ["head"] = "머리", ["torso"] = "몸통", ["arm"] = "팔", ["leg"] = "다리" };
+    public static readonly Dictionary<string, string> PART_NAME = new Dictionary<string, string> { ["head"] = "battle.part.head", ["torso"] = "battle.part.torso", ["arm"] = "battle.part.arm", ["leg"] = "battle.part.leg" };
     static string RollHitPart(bool crit)
     {
         var w = crit ? RULES.hitPartsCrit : RULES.hitParts;
@@ -745,20 +745,20 @@ public static class Battle
         {
             int absorbed = Mathf.Min(u.ward, dmg);
             u.ward -= absorbed; dmg -= absorbed;
-            View.Popup(u, $"방어막 −{absorbed}", "#c9a3ff");
+            View.Popup(u, Loc.F("battle.pop.ward", absorbed), "#c9a3ff");
             if (dmg <= 0) return;
         }
         // 행운아: 전투당 1번 죽을 피해를 체력 1로
         if (Camp.Has(u.r, "lucky") && !u.used.Contains("lucky") && (dmg >= u.hp || part == "head"))
         {
             u.used.Add("lucky"); dmg = Mathf.Max(0, u.hp - 1); part = "torso";
-            View.Popup(u, "행운!", "#ffcf4a"); Say($"{u.name} 아슬아슬하게 살았다 (행운아)", "good");
+            View.Popup(u, Loc.T("battle.pop.lucky"), "#ffcf4a"); Say(Loc.F("battle.log.lucky", u.name), "good");
         }
         // 전차: 폭발 아닌 피해는 장갑만큼 깎임 (최소 1), 부위 부상 없음
         if (u.def.vehicle)
         {
             part = "torso";
-            if (u.def.armor > 0 && kind != "explosion" && dmg > 0) { int a0 = dmg; dmg = Mathf.Max(1, dmg - u.def.armor); if (dmg < a0) View.Popup(u, $"장갑 −{a0 - dmg}", "#c8ccd4"); }
+            if (u.def.armor > 0 && kind != "explosion" && dmg > 0) { int a0 = dmg; dmg = Mathf.Max(1, dmg - u.def.armor); if (dmg < a0) View.Popup(u, Loc.F("battle.pop.armor", a0 - dmg), "#c8ccd4"); }
         }
         if (u.side == "rat" && part == "leg" && (crit || kind == "explosion")) u.legBlast = true;
         if (u.side == "rat" && kind == "explosion" && R01 < 0.3f) u.legBlast = true;
@@ -769,10 +769,10 @@ public static class Battle
         u.face = "hit"; u.faceT = 1.0f;
         u.st.hit = 1;
         if (!u.def.vehicle) View.Blood(u, crit || part == "head" ? 14 : 8);
-        string where = part != null && part != "torso" ? PART_NAME[part] + " " : "";
-        View.Popup(u, where + (crit ? "치명타! " : "") + "−" + dmg, crit || part == "head" ? "#ffcf4a" : "#ff6b5b");
+        string where = part != null && part != "torso" ? Loc.T(PART_NAME[part]) + " " : "";
+        View.Popup(u, where + (crit ? Loc.T("battle.pop.crit") + " " : "") + "−" + dmg, crit || part == "head" ? "#ffcf4a" : "#ff6b5b");
         Sfx.Hit();
-        if (from != null) Say($"{from.name} → {u.name} {where}{dmg} 피해{(crit ? " (치명타)" : "")}", u.side == "rat" ? "bad" : "good");
+        if (from != null) Say(Loc.F(crit ? "battle.log.damage_crit" : "battle.log.damage", from.name, u.name, where, dmg), u.side == "rat" ? "bad" : "good");
         version++;
         if (part == "head") { await Kill(u, from, kind, true, crit); return; }
         if (part == "arm" || part == "leg")
@@ -781,7 +781,7 @@ public static class Battle
             u.wounds[part] = Mathf.Max(u.wounds.TryGetValue(part, out var wv) ? wv : 0, severed ? 2 : 1);
             if (part == "leg" && !u.painkiller) u.mob = Mathf.Max(2, Mathf.FloorToInt(u.baseMob * RULES.legWoundMob));
             if (severed || u.hp <= 0) { await DownUnit(u, from, part, severed); return; }
-            Say($"{u.name} {PART_NAME[part]} 부상", u.side == "rat" ? "bad" : "good");
+            Say(Loc.F("battle.log.wound", u.name, Loc.T(PART_NAME[part])), u.side == "rat" ? "bad" : "good");
             return;
         }
         if (u.hp <= 0) await Kill(u, from, kind, false, crit);
@@ -790,7 +790,7 @@ public static class Battle
     // 쓰러짐: 행동 불가 · 누움. 적이 확인사살하면 사망, 이긴 채 끝나면 부상자로 살아남음
     static async Awaitable DownUnit(Unit u, Unit from, string part, bool severed)
     {
-        if (FuelBoom(u)) { await Kill(u, from, "explosion"); u.deathHow = "연료통 폭발"; await FuelExplode(u); return; }
+        if (FuelBoom(u)) { await Kill(u, from, "explosion"); u.deathHow = "battle.how.fuel"; await FuelExplode(u); return; }
         u.alive = false; u.downed = true; u.hp = 0;
         u.overwatch = false; u.hunker = false;
         if (u.suppressing != null) { u.suppressing.suppressedBy = null; u.suppressing = null; }
@@ -798,7 +798,7 @@ public static class Battle
         if (u.side == "cat") statKills++; else statLost++;
         if (u.side == "rat") { AddStress(u, STRESS.downed, "downed"); Witness(u, 12, "downed"); }
         else if (from != null) AddStress(from, STRESS.kill);
-        Say($"{u.name} 쓰러짐!{(severed ? $" ({PART_NAME[part]} 잘림)" : "")}", u.side == "rat" ? "bad" : "good");
+        Say(severed ? Loc.F("battle.log.down_severed", u.name, Loc.T(PART_NAME[part])) : Loc.F("battle.log.down", u.name), u.side == "rat" ? "bad" : "good");
         if (from != null) FaceToward(u, from.x, from.z);
         u.forceSide = true; u.face = "hit";
         Sfx.Death();
@@ -819,8 +819,8 @@ public static class Battle
         {
             // 이미 누워 있음: 넘어지는 동작 없이 피만
             View.Blood(u, 10);
-            Say(u.side == "rat" ? $"{u.name} 전사…" : $"{u.name} 사살", u.side == "rat" ? "bad" : "good");
-            if (u.side == "rat") { u.deathHow = "쓰러진 채 확인사살"; Witness(u, STRESS.allyDead + 8, "dead"); }
+            Say(Loc.F(u.side == "rat" ? "battle.log.rat_dead" : "battle.log.cat_dead", u.name), u.side == "rat" ? "bad" : "good");
+            if (u.side == "rat") { u.deathHow = "battle.how.executed"; Witness(u, STRESS.allyDead + 8, "dead"); }
             Sfx.Death();
             u.corpse = true;
             CheckOver();
@@ -830,8 +830,8 @@ public static class Battle
         if (u.side == "cat") statKills++; else statLost++;
         if (u.side == "rat") Witness(u, STRESS.allyDead, "dead");
         else if (from != null) AddStress(from, STRESS.kill - (int)Camp.TraitSum(from.r, "killRelief"));
-        u.deathHow = headshot ? "머리에 총탄" : kind == "explosion" ? "폭발" : kind == "fire" ? "불길" : from != null && from.side == "rat" ? "아군의 총에" : "총탄";
-        Say(u.side == "rat" ? $"{u.name} 전사…" : $"{u.name} {(u.def.vehicle ? "격파!" : "사살")}", u.side == "rat" ? "bad" : "good");
+        u.deathHow = headshot ? "battle.how.headshot" : kind == "explosion" ? "battle.how.explosion" : kind == "fire" ? "battle.how.fire" : from != null && from.side == "rat" ? "battle.how.friendly" : "battle.how.shot";
+        Say(Loc.F(u.side == "rat" ? "battle.log.rat_dead" : u.def.vehicle ? "battle.log.tank_dead" : "battle.log.cat_dead", u.name), u.side == "rat" ? "bad" : "good");
         // 쓰러지는 방향: 쏜 쪽 반대. 옆모습으로 돌려서 리그로 쓰러뜨림
         if (from != null) FaceToward(u, from.x, from.z);
         u.forceSide = true;
@@ -841,13 +841,13 @@ public static class Battle
         else if (kind == "explosion") gore = R01 < 0.6f ? "burst" : "sever";
         else if (crit && R01 < 0.65f) gore = R01 < 0.5f ? "decap" : "sever";
         else if (kind == "shotgun" && R01 < 0.4f) gore = "sever";
-        if (u.def.vehicle) { gore = null; u.deathHow = "격파"; View.Explosion(u.x, u.z, 1.2f); Sfx.Boom(); } // 전차: 피 대신 폭발 → 잔해
+        if (u.def.vehicle) { gore = null; u.deathHow = "battle.how.destroyed"; View.Explosion(u.x, u.z, 1.2f); Sfx.Boom(); } // 전차: 피 대신 폭발 → 잔해
         u.gore = gore;
         if (gore != null && u.side == "rat") Witness(u, STRESS.gore, "gore");
         Sfx.Death();
         await View.Die(u, gore);
         u.corpse = true;
-        if (kind != "explosion" || !u.used.Contains("fuelboom")) if (FuelBoom(u)) { u.deathHow = "연료통 폭발"; await FuelExplode(u); }
+        if (kind != "explosion" || !u.used.Contains("fuelboom")) if (FuelBoom(u)) { u.deathHow = "battle.how.fuel"; await FuelExplode(u); }
         UpdateVision();
         CheckOver();
     }
@@ -863,7 +863,7 @@ public static class Battle
         Sfx.Shot(a.Weapon);
         a.st.recoil = 1;
         a.ammo = Mathf.Max(0, a.ammo - 1);
-        Say($"{a.name}: {b.name} 확인사살", b.side == "rat" ? "bad" : "good");
+        Say(Loc.F("battle.log.execute", a.name, b.name), b.side == "rat" ? "bad" : "good");
         await Sleep(200);
         await Kill(b, a, a.Weapon);
         await Sleep(350);
@@ -877,7 +877,7 @@ public static class Battle
         if (!mortar && Camp.Has(a.r, "clumsy") && R01 < 0.15f)
         {
             var d = World.DIRS8[rng.Next(8)]; tx += d[0]; tz += d[1];
-            View.Popup(a, "앗, 빗나갔다", "#ff9f8f");
+            View.Popup(a, Loc.T("battle.pop.fumble"), "#ff9f8f");
         }
         a.face = "attack"; a.faceT = 1.6f;
         View.FocusPair(a, tx, tz);
@@ -955,14 +955,14 @@ public static class Battle
                     FaceToward(u, target.x, target.z);
                     View.FocusPair(u, target.x, target.z);
                     for (int i = 0; i < 6; i++) { View.Muzzle(u, target, false, false, false, "lmg"); Sfx.Shot("lmg"); u.st.recoil = 1; await Sleep(80); }
-                    View.Popup(target, "제압됨", "#ffb84a");
-                    Say($"{u.name}: {target.name} 제압 사격");
+                    View.Popup(target, Loc.T("battle.pop.suppressed"), "#ffb84a");
+                    Say(Loc.F("battle.log.suppress", u.name, target.name));
                     await Sleep(400);
                     break;
                 case "grenade": await ThrowGrenade(u, tile.x, tile.z); break;
                 case "mortar": shells--; await ThrowGrenade(u, tile.x, tile.z, true); break;
-                case "overwatch": SpendAP(u, ab); u.overwatch = true; View.Popup(u, "경계", "#8fd0ff"); Say($"{u.name} 경계"); break;
-                case "hunker": SpendAP(u, ab); u.hunker = true; View.Popup(u, "엎드림", "#8fd0ff"); break;
+                case "overwatch": SpendAP(u, ab); u.overwatch = true; View.Popup(u, Loc.T("battle.pop.overwatch"), "#8fd0ff"); Say(Loc.F("battle.log.overwatch", u.name)); break;
+                case "hunker": SpendAP(u, ab); u.hunker = true; View.Popup(u, Loc.T("battle.pop.hunker"), "#8fd0ff"); break;
                 case "reload": SpendAP(u, ab); Reload(u); Sfx.Reload(); await Sleep(350); break;
                 case "firstaid":
                     SpendAP(u, ab); u.medkits--;
@@ -972,8 +972,8 @@ public static class Battle
                         // 구출: 쓰러진 아군을 일으킴
                         target.downed = false; target.alive = true; target.hp = 2; target.st.death = null; target.forceSide = false; target.face = null; target.ap = 0;
                         View.Revive(target);
-                        View.Popup(target, "일어남!", "#7fdc8a");
-                        Say($"{u.name} → {target.name} 구출!", "good");
+                        View.Popup(target, Loc.T("battle.pop.revived"), "#7fdc8a");
+                        Say(Loc.F("battle.log.revive", u.name, target.name), "good");
                         AddStress(target, -15);
                     }
                     else
@@ -981,35 +981,35 @@ public static class Battle
                         int heal = AB["firstaid"].heal + u.healB;
                         target.hp = Mathf.Min(target.maxHp, target.hp + heal);
                         View.Popup(target, "+" + heal, "#7fdc8a");
-                        Say($"{u.name} → {target.name} 응급 처치", "good");
+                        Say(Loc.F("battle.log.firstaid", u.name, target.name), "good");
                     }
                     await Sleep(350);
                     break;
                 case "knife": SpendAP(u, ab); await KnifeAttack(u, target); break;
-                case "ambush": SpendAP(u, ab); u.hidden = true; u.hunker = false; View.Popup(u, "쥐구멍 매복", "#8fd0ff"); Say($"{u.name} 매복 — 쏘기 전까지 안 보임"); break;
+                case "ambush": SpendAP(u, ab); u.hidden = true; u.hunker = false; View.Popup(u, Loc.T("battle.pop.ambush"), "#8fd0ff"); Say(Loc.F("battle.log.ambush", u.name)); break;
                 case "warcry":
                     u.used.Add("warcry");
                     u.face = "attack"; u.faceT = 1.5f;
-                    View.Shout(u, "찍찍!!");
-                    foreach (var f in FriendsOf(u).ToList()) if (World.Dist(f, u) <= 4) { f.buffAim = 10; AddStress(f, STRESS.warcry); View.Popup(f, "명중 +10", "#ffcf4a"); }
-                    Say($"{u.name} 찍찍 함성! 분대 사기가 오른다", "good");
+                    View.Shout(u, Loc.T("battle.shout.warcry"));
+                    foreach (var f in FriendsOf(u).ToList()) if (World.Dist(f, u) <= 4) { f.buffAim = 10; AddStress(f, STRESS.warcry); View.Popup(f, Loc.T("battle.pop.warcry"), "#ffcf4a"); }
+                    Say(Loc.F("battle.log.warcry", u.name), "good");
                     await Sleep(500);
                     break;
                 case "charge":
                     SpendAP(u, ab); u.charges--;
                     FaceToward(u, tile.x, tile.z);
-                    View.Popup(u, "폭약 설치!", "#ffb84a");
+                    View.Popup(u, Loc.T("battle.pop.charge"), "#ffb84a");
                     await Sleep(600);
                     // 짧은 도화선: 붙은 칸에 폭발
                     await Explode(tile.x, tile.z, 0.8f, 3, 4, u, high: true);
                     break;
                 case "tunnel":
                     SpendAP(u, ab); u.used.Add("tunnel");
-                    View.Popup(u, "땅굴 파는 중…", "#d8d0b8");
+                    View.Popup(u, Loc.T("battle.pop.digging"), "#d8d0b8");
                     View.Dig(u.x, u.z); await Sleep(700);
                     world.tunnels.Add((new Pt(u.x, u.z), new Pt(tile.x, tile.z)));
                     View.Dig(tile.x, tile.z); View.GroundDirty();
-                    Say($"{u.name} 땅굴 완성 — 입구에서 출구까지 한 걸음", "good");
+                    Say(Loc.F("battle.log.tunnel", u.name), "good");
                     await Sleep(400);
                     break;
                 case "flame":
@@ -1020,29 +1020,29 @@ public static class Battle
                     SpendAP(u, ab);
                     target.marked = true;
                     if (u.perks.Contains("weakspot")) target.weakMarked = true;
-                    View.Popup(target, "표적 지정", "#ffcf4a");
-                    Say($"{u.name}: {target.name} 표적 지정 (아군 명중 +15)");
+                    View.Popup(target, Loc.T("battle.pop.marked"), "#ffcf4a");
+                    Say(Loc.F("battle.log.mark", u.name, target.name));
                     await Sleep(300);
                     break;
                 case "command":
                     SpendAP(u, ab);
                     target.ap += 1;
                     View.RatsRun(u, target);
-                    View.Popup(target, "행동력 +1", "#8fd0ff");
-                    Say($"{u.name} → {target.name}: 쥐떼 전령이 명령을 전함", "good");
+                    View.Popup(target, Loc.T("battle.pop.command"), "#8fd0ff");
+                    Say(Loc.F("battle.log.command", u.name, target.name), "good");
                     await Sleep(400);
                     break;
                 case "dominate":
                     SpendAP(u, ab); u.psi -= AB["dominate"].psi;
                     FaceToward(u, target.x, target.z);
                     await View.Psi(u, target, "#b07cff");
-                    if (target.target || R01 < 0.15f) { View.Popup(target, "저항!", "#ff9f8f"); Say($"{target.name}이(가) 정신 지배를 버텼다", "warn"); }
+                    if (target.target || R01 < 0.15f) { View.Popup(target, Loc.T("battle.pop.resist"), "#ff9f8f"); Say(Loc.F("battle.log.dominate_resist", target.name), "warn"); }
                     else
                     {
                         target.side = "rat"; target.controlled = 2; target.active = true; target.ap = 0; target.overwatch = false;
                         target.tint = SkillsData.Hex("#b9a0ff");
-                        View.Popup(target, "지배됨", "#c9a3ff");
-                        Say($"{u.name}: {target.name}의 정신을 붙잡았다 (2턴)", "good");
+                        View.Popup(target, Loc.T("battle.pop.dominated"), "#c9a3ff");
+                        Say(Loc.F("battle.log.dominate", u.name, target.name), "good");
                     }
                     await Sleep(400);
                     break;
@@ -1052,7 +1052,7 @@ public static class Battle
                     SpendAP(u, ab);
                     traps.Add((tile.x, tile.z, u.id)); View.MarksChanged();
                     View.Dig(tile.x, tile.z);
-                    View.Popup(u, "덫 설치", "#ffb84a"); Say($"{u.name} 부비트랩 설치");
+                    View.Popup(u, Loc.T("battle.pop.trap"), "#ffb84a"); Say(Loc.F("battle.log.trap", u.name));
                     await Sleep(350);
                     break;
                 case "smoke":
@@ -1062,7 +1062,7 @@ public static class Battle
                     foreach (var t in world.tiles)
                         if (World.Dist(t.x, t.z, tile.x, tile.z) <= AD.radius) { smokes.RemoveAll(m => m.x == t.x && m.z == t.z); smokes.Add((t.x, t.z, 2)); }
                     View.SmokePuff(tile.x, tile.z, AD.radius); View.MarksChanged();
-                    Say($"{u.name} 연막탄!");
+                    Say(Loc.F("battle.log.smoke", u.name));
                     UpdateVision();
                     await Sleep(400);
                     break;
@@ -1070,7 +1070,7 @@ public static class Battle
                 {
                     SpendAP(u, ab);
                     var spot = DashSpot(u, target);
-                    if (spot != null) { View.Popup(u, "돌진!", "#b07cff"); await MoveUnit(u, spot, scamper: true); }
+                    if (spot != null) { View.Popup(u, Loc.T("battle.pop.dash"), "#b07cff"); await MoveUnit(u, spot, scamper: true); }
                     if (u.alive && target.alive && World.Dist(u, target) < 1.6f) await KnifeAttack(u, target);
                     break;
                 }
@@ -1079,19 +1079,19 @@ public static class Battle
                     target.painkiller = true;
                     if (target.wounds.ContainsKey("leg")) target.mob = target.baseMob;
                     AddStress(target, -10);
-                    View.Popup(target, "진통제", "#7fdc8a"); Say($"{u.name} → {target.name} 진통제 (부상 무시)", "good");
+                    View.Popup(target, Loc.T("battle.pop.painkiller"), "#7fdc8a"); Say(Loc.F("battle.log.painkiller", u.name, target.name), "good");
                     await Sleep(300);
                     break;
                 case "supply":
                     SpendAP(u, ab); u.medkits--;
-                    View.Shout(u, "보급!");
+                    View.Shout(u, Loc.T("battle.shout.supply"));
                     foreach (var f in FriendsOf(u).Where(f => f.controlled == 0 && World.Dist(f, u) <= AD.radius).ToList())
                     {
                         int heal = Mathf.Min(f.maxHp - f.hp, AD.heal + u.healB);
                         if (heal <= 0) continue;
                         f.hp += heal; View.Popup(f, "+" + heal, "#7fdc8a");
                     }
-                    Say($"{u.name} 대량 보급품 — 주변 아군 체력 +{AD.heal + u.healB}", "good");
+                    Say(Loc.F("battle.log.supply", u.name, AD.heal + u.healB), "good");
                     await Sleep(450);
                     break;
                 case "flare":
@@ -1100,29 +1100,29 @@ public static class Battle
                     await View.Lob(u, tile.x, tile.z, 650);
                     flares.Add((tile.x, tile.z, 2)); View.MarksChanged();
                     View.FlareBurst(tile.x, tile.z);
-                    Say($"{u.name} 조명탄!", "good");
+                    Say(Loc.F("battle.log.flare", u.name), "good");
                     UpdateVision();
                     await Sleep(350);
                     break;
                 case "artillery":
                     SpendAP(u, ab); shells--;
                     strikes.Add((tile.x, tile.z, u.id)); View.MarksChanged();
-                    View.Popup(u, "포격 요청", "#ffb84a"); Say($"{u.name}: 포격 요청 — 다음 차례에 떨어짐", "good");
+                    View.Popup(u, Loc.T("battle.pop.artillery"), "#ffb84a"); Say(Loc.F("battle.log.artillery", u.name), "good");
                     await Sleep(350);
                     break;
                 case "terror":
                     SpendAP(u, ab); u.psi -= AD.psi;
                     FaceToward(u, target.x, target.z);
                     await View.Psi(u, target, "#9b4dff");
-                    if (target.target && R01 < 0.5f) { View.Popup(target, "저항!", "#ff9f8f"); Say($"{target.name}이(가) 공포를 버텼다", "warn"); }
-                    else { target.panic = 1; target.overwatch = false; View.Popup(target, "공포!", "#c9a3ff"); Say($"{u.name}: {target.name} 겁에 질림 (다음 턴 못 움직임)", "good"); }
+                    if (target.target && R01 < 0.5f) { View.Popup(target, Loc.T("battle.pop.resist"), "#ff9f8f"); Say(Loc.F("battle.log.terror_resist", target.name), "warn"); }
+                    else { target.panic = 1; target.overwatch = false; View.Popup(target, Loc.T("battle.pop.terror"), "#c9a3ff"); Say(Loc.F("battle.log.terror", u.name, target.name), "good"); }
                     await Sleep(350);
                     break;
                 case "cleanse":
                     SpendAP(u, ab); u.psi -= AD.psi;
                     await View.Psi(u, target, "#8fd0ff");
                     AddStress(target, -30); target.panic = 0; target.broke = null;
-                    View.Popup(target, "정신 정화", "#8fd0ff"); Say($"{u.name} → {target.name} 정신 정화", "good");
+                    View.Popup(target, Loc.T("battle.pop.cleanse"), "#8fd0ff"); Say(Loc.F("battle.log.cleanse", u.name, target.name), "good");
                     await Sleep(300);
                     break;
             }
@@ -1153,7 +1153,7 @@ public static class Battle
         View.Slash(u, target);
         await Sleep(220);
         if (hit) await Damage(target, Rnd(4, 6) + (crit ? 2 : 0), crit, u, "knife", crit ? "head" : "torso", quiet: true);
-        else View.Popup(target, "빗나감", "#d8d0b8");
+        else View.Popup(target, Loc.T("battle.pop.miss"), "#d8d0b8");
         if (cine) View.EndCinematic();
         if (target.side == "cat" && !target.active) alerted.Remove(target.pod);
         await Sleep(300);
@@ -1181,12 +1181,12 @@ public static class Battle
         float L = Mathf.Max(0.01f, World.Dist(u, target)), dx = (target.x - u.x) / L, dz = (target.z - u.z) / L;
         var A = AB["barrage"];
         var list = VisibleEnemies(u).Where(e => e == target || InCone(u, dx, dz, e.x, e.z, A.range, 1.5f)).OrderBy(e => World.Dist(u, e)).ToList();
-        Say($"{u.name} 난사!", "warn");
+        Say(Loc.F("battle.log.barrage", u.name), "warn");
         foreach (var e in list)
         {
             if (!u.alive || !e.alive) continue;
             u.ammo = Mathf.Max(1, u.ammo);
-            await Shoot(u, e, extra: -15, extraName: "난사");
+            await Shoot(u, e, extra: -15, extraName: "battle.hit.barrage");
         }
         u.ammo = 0;
         foreach (var t in world.tiles)
@@ -1237,7 +1237,7 @@ public static class Battle
             }
             if (bestAdj != null) { x = bestAdj.Value.x; z = bestAdj.Value.z; c = minCost; }
         }
-        if (c == null || c == 0) { View.Popup(u, "이동 불가", "#ff6b5b"); return; }
+        if (c == null || c == 0) { View.Popup(u, Loc.T("battle.pop.cant_move"), "#ff6b5b"); return; }
         mode = "busy"; version++;
         u.ap -= c <= u.mob ? 1 : 2;
         await MoveUnit(u, R.Path(x, z));
@@ -1258,29 +1258,29 @@ public static class Battle
         {
             var A = AB[ab];
             bool ok = u.ap >= A.ap; string why = ""; int? count = null;
-            if ((ab == "shoot" || ab == "aimed" || ab == "suppress" || ab == "overwatch" || ab == "barrage") && u.ammo <= 0) { ok = false; why = u.Weapon == "flamer" ? "연료 없음" : "탄 없음"; }
-            if (u.left.TryGetValue(ab, out var lf)) { count = lf; if (lf <= 0) { ok = false; why = "다 씀"; } }
-            if (ab == "painkiller" || ab == "supply") { count = u.medkits; if (u.medkits <= 0) { ok = false; why = "구급상자 없음"; } }
-            if (ab == "artillery") { count = shells; if (shells <= 0) { ok = false; why = "포탄 없음"; } }
-            if (ab == "aimed" && u.moved) { ok = false; why = "이동함"; }
-            if (ab == "suppress" && u.ammo < 2) { ok = false; why = "탄 2발 필요"; }
-            if (ab == "grenade") { count = u.grenades; if (u.grenades <= 0) { ok = false; why = "없음"; } }
-            if (ab == "firstaid") { count = u.medkits; if (u.medkits <= 0) { ok = false; why = "없음"; } }
-            if (ab == "charge") { count = u.charges; if (u.charges <= 0) { ok = false; why = "없음"; } else if (Adjacent(u, t => t.HasProp && GameData.PROPS[t.prop].emplacement == null).Count == 0) { ok = false; why = "붙은 엄폐물 없음"; } }
-            if (ab == "flame") { count = u.flame; if (u.flame <= 0) { ok = false; why = "연료 없음"; } }
-            if (A.psi > 0) { count = u.psi; if (u.psi < A.psi) { ok = false; why = "정신력 부족"; } }
-            if (A.once && u.used.Contains(ab)) { ok = false; why = "이번 판엔 씀"; }
-            if (u.cd.TryGetValue(ab, out var cdl) && cdl > 0) { ok = false; why = $"{cdl}턴 뒤"; }
-            if (ab == "ambush" && World.CoverSides(world, u.x, u.z).Count == 0) { ok = false; why = "엄폐물 옆에서만"; }
-            if (ab == "knife" && !vis.Any(e => World.Dist(e, u) < 1.6f)) { ok = false; why = "붙은 적 없음"; }
-            else if (A.target == "enemy" && AbilityTargets(u, ab).Count == 0) { ok = false; why = why != "" ? why : ab == "dash" ? "닿는 적 없음" : u.Weapon == "flamer" && ab == "shoot" ? "4칸 안 적 없음" : "대상 없음"; }
-            if ((A.target == "ally") && ab != "firstaid" && ab != "command" && AbilityTargets(u, ab).Count == 0) { ok = false; why = why != "" ? why : "대상 없음"; }
-            if (ab == "firstaid" && !FriendsOf(u).Concat(units.Where(o => o.downed && o.side == u.side)).Any(f => f != u && World.Dist(f, u) < 1.6f && (f.hp < f.maxHp || (f.downed && u.perks.Contains("revive"))))) { ok = false; why = why != "" ? why : "붙은 부상자 없음"; }
-            if (ab == "command" && !FriendsOf(u).Any(f => f != u && f.controlled == 0 && World.CanSee(world, u, f))) { ok = false; why = why != "" ? why : "보이는 아군 없음"; }
+            if ((ab == "shoot" || ab == "aimed" || ab == "suppress" || ab == "overwatch" || ab == "barrage") && u.ammo <= 0) { ok = false; why = Loc.T(u.Weapon == "flamer" ? "battle.why.no_fuel" : "battle.why.no_ammo"); }
+            if (u.left.TryGetValue(ab, out var lf)) { count = lf; if (lf <= 0) { ok = false; why = Loc.T("battle.why.used_up"); } }
+            if (ab == "painkiller" || ab == "supply") { count = u.medkits; if (u.medkits <= 0) { ok = false; why = Loc.T("battle.why.no_medkit"); } }
+            if (ab == "artillery") { count = shells; if (shells <= 0) { ok = false; why = Loc.T("battle.why.no_shells"); } }
+            if (ab == "aimed" && u.moved) { ok = false; why = Loc.T("battle.why.moved"); }
+            if (ab == "suppress" && u.ammo < 2) { ok = false; why = Loc.T("battle.why.ammo2"); }
+            if (ab == "grenade") { count = u.grenades; if (u.grenades <= 0) { ok = false; why = Loc.T("battle.why.none"); } }
+            if (ab == "firstaid") { count = u.medkits; if (u.medkits <= 0) { ok = false; why = Loc.T("battle.why.none"); } }
+            if (ab == "charge") { count = u.charges; if (u.charges <= 0) { ok = false; why = Loc.T("battle.why.none"); } else if (Adjacent(u, t => t.HasProp && GameData.PROPS[t.prop].emplacement == null).Count == 0) { ok = false; why = Loc.T("battle.why.no_adj_cover"); } }
+            if (ab == "flame") { count = u.flame; if (u.flame <= 0) { ok = false; why = Loc.T("battle.why.no_fuel"); } }
+            if (A.psi > 0) { count = u.psi; if (u.psi < A.psi) { ok = false; why = Loc.T("battle.why.no_psi"); } }
+            if (A.once && u.used.Contains(ab)) { ok = false; why = Loc.T("battle.why.once"); }
+            if (u.cd.TryGetValue(ab, out var cdl) && cdl > 0) { ok = false; why = Loc.F("battle.why.cooldown", cdl); }
+            if (ab == "ambush" && World.CoverSides(world, u.x, u.z).Count == 0) { ok = false; why = Loc.T("battle.why.need_cover"); }
+            if (ab == "knife" && !vis.Any(e => World.Dist(e, u) < 1.6f)) { ok = false; why = Loc.T("battle.why.no_adj_enemy"); }
+            else if (A.target == "enemy" && AbilityTargets(u, ab).Count == 0) { ok = false; why = why != "" ? why : Loc.T(ab == "dash" ? "battle.why.no_reach" : u.Weapon == "flamer" && ab == "shoot" ? "battle.why.no_flame_target" : "battle.why.no_target"); }
+            if ((A.target == "ally") && ab != "firstaid" && ab != "command" && AbilityTargets(u, ab).Count == 0) { ok = false; why = why != "" ? why : Loc.T("battle.why.no_target"); }
+            if (ab == "firstaid" && !FriendsOf(u).Concat(units.Where(o => o.downed && o.side == u.side)).Any(f => f != u && World.Dist(f, u) < 1.6f && (f.hp < f.maxHp || (f.downed && u.perks.Contains("revive"))))) { ok = false; why = why != "" ? why : Loc.T("battle.why.no_wounded"); }
+            if (ab == "command" && !FriendsOf(u).Any(f => f != u && f.controlled == 0 && World.CanSee(world, u, f))) { ok = false; why = why != "" ? why : Loc.T("battle.why.no_ally"); }
             list.Add(new AbilityState { ab = ab, ok = ok, why = why, count = count });
         }
         list.Add(new AbilityState { ab = "reload", ok = u.ap >= 1 && u.ammo < u.clip });
-        if (emp != null && emp.emplacement == "mortar") list.Add(new AbilityState { ab = "mortar", ok = u.ap >= 2 && shells > 0, why = shells > 0 ? (u.ap < 2 ? "행동력 2 필요" : "") : "포탄 없음", count = shells });
+        if (emp != null && emp.emplacement == "mortar") list.Add(new AbilityState { ab = "mortar", ok = u.ap >= 2 && shells > 0, why = shells > 0 ? (u.ap < 2 ? Loc.T("battle.why.ap2") : "") : Loc.T("battle.why.no_shells"), count = shells });
         if (emp != null && emp.emplacement == "hmg") list.Add(new AbilityState { ab = "heavy", ok = u.ap >= 1 && vis.Count > 0 });
         return list;
     }
@@ -1384,7 +1384,7 @@ public static class Battle
             if (emp != null && emp.emplacement == "mortar" && shells > 0)
             {
                 var tgt = ClusterTarget(c);
-                if (tgt != null) { shells--; Say($"{c.name} 박격포 사격!", "warn"); await ThrowGrenade(c, tgt.Value.x, tgt.Value.z, true); continue; }
+                if (tgt != null) { shells--; Say(Loc.F("battle.log.cat_mortar", c.name), "warn"); await ThrowGrenade(c, tgt.Value.x, tgt.Value.z, true); continue; }
             }
             if (emp != null && emp.emplacement == "hmg" && shots.Count > 0) { await Shoot(c, shots[0].r, heavy: true); continue; }
             // 1.5) 전차포: 쥐가 보이면 (엄폐한 쥐 우선) 포탄 — 쓰고 나면 2턴 쉼
@@ -1403,13 +1403,13 @@ public static class Battle
             if (c.flame > 0)
             {
                 var f = ClusterTarget(c, AB["flame"].range, 1);
-                if (f != null) { Say($"{c.name} 화염 방사!", "warn"); await CatFlame(c, f.Value.x, f.Value.z); continue; }
+                if (f != null) { Say(Loc.F("battle.log.cat_flame", c.name), "warn"); await CatFlame(c, f.Value.x, f.Value.z); continue; }
             }
             // 3) 수류탄: 두 마리 이상 모였으면
             if (c.grenades > 0)
             {
                 var g = ClusterTarget(c, 9, c.def.grenades >= 3 ? 1 : 2); // 척탄병은 한 마리에게도 던짐
-                if (g != null) { Say($"{c.name} 수류탄!", "warn"); await ThrowGrenade(c, g.Value.x, g.Value.z); continue; }
+                if (g != null) { Say(Loc.F("battle.log.cat_grenade", c.name), "warn"); await ThrowGrenade(c, g.Value.x, g.Value.z); continue; }
             }
             // 4) 더 나은 자리로 이동 후 사격
             var spot = BestTile(c, c.mob, false);
@@ -1424,13 +1424,13 @@ public static class Battle
             if (emp2 != null && emp2.emplacement == "mortar" && shells > 0)
             {
                 var tgt = ClusterTarget(c);
-                if (tgt != null) { shells--; Say($"{c.name} 박격포 사격!", "warn"); await ThrowGrenade(c, tgt.Value.x, tgt.Value.z, true); continue; }
+                if (tgt != null) { shells--; Say(Loc.F("battle.log.cat_mortar", c.name), "warn"); await ThrowGrenade(c, tgt.Value.x, tgt.Value.z, true); continue; }
             }
-            if (c.flame > 0 && c.alive) { var f = ClusterTarget(c, AB["flame"].range, 1); if (f != null) { Say($"{c.name} 화염 방사!", "warn"); await CatFlame(c, f.Value.x, f.Value.z); continue; } }
+            if (c.flame > 0 && c.alive) { var f = ClusterTarget(c, AB["flame"].range, 1); if (f != null) { Say(Loc.F("battle.log.cat_flame", c.name), "warn"); await CatFlame(c, f.Value.x, f.Value.z); continue; } }
             var finishAfter = DownedInReach(c);
             if (after.Count > 0 && after[0].h.hit >= 25) await CatAttack(c, after);
             else if (finishAfter != null && c.ammo > 0) await Execute(c, finishAfter);
-            else { c.overwatch = true; if (c.visible) View.Popup(c, "경계", "#ff9f8f"); }
+            else { c.overwatch = true; if (c.visible) View.Popup(c, Loc.T("battle.pop.overwatch"), "#ff9f8f"); }
             await Sleep(120);
         }
         UpdateVision();
@@ -1442,7 +1442,7 @@ public static class Battle
         c.cd["cannon"] = ab.cd + 1; // 고양이 차례 시작에 하나 줄어드니 +1
         c.ap = 0;
         FaceToward(c, x, z);
-        Say($"{c.name} 전차포 발사!", "warn");
+        Say(Loc.F("battle.log.cannon", c.name), "warn");
         View.FocusPair(c, x, z);
         c.face = "attack"; c.faceT = 1.4f;
         await Sleep(350);
@@ -1471,8 +1471,8 @@ public static class Battle
             best.r.suppressedBy = c; c.suppressing = best.r; c.ammo--;
             View.FocusPair(c, best.r.x, best.r.z);
             for (int i = 0; i < 6; i++) { View.Muzzle(c, best.r, false, false, false, "lmg"); Sfx.Shot("lmg"); c.st.recoil = 1; await Sleep(80); }
-            View.Popup(best.r, "제압됨", "#ffb84a");
-            Say($"{c.name}: {best.r.name} 제압 사격", "bad");
+            View.Popup(best.r, Loc.T("battle.pop.suppressed"), "#ffb84a");
+            Say(Loc.F("battle.log.suppress", c.name, best.r.name), "bad");
             await Sleep(300);
             return;
         }

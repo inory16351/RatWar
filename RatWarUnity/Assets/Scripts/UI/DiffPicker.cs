@@ -23,14 +23,14 @@ public static class DiffPicker
                 card.GetComponent<Image>().color = k == i ? Color.white : new Color(0.55f, 0.55f, 0.55f); // 고른 카드 = 밝게 + 금테
                 card.GetComponent<Outline>().enabled = k == i;
             }
-            start.GetComponentInChildren<Text>().text = $"{RULES.DIFFS[i].name}(으)로 전쟁 시작";
+            start.GetComponentInChildren<Text>().text = Loc.F("ui.diff.start", Loc.T(RULES.DIFFS[i].name));
         }
         for (int i = 0; i < RULES.DIFFS.Length; i++)
         {
             int n = i; var D = RULES.DIFFS[i]; var card = root.Find($"Card{i}");
-            UIK.T(card, "Name").text = D.name;
+            UIK.T(card, "Name").text = Loc.T(D.name);
             UIK.T(card, "Name").color = i == RULES.DIFFS.Length - 1 ? UIK.CAT : UIK.GOLD;
-            UIK.T(card, "Tag").text = D.tag;
+            UIK.T(card, "Tag").text = Loc.T(D.tag);
             UIK.T(card, "Body").text = Body(D);
             UIK.OnClick(card.GetComponent<Button>(), () => Select(n));
         }
@@ -47,12 +47,12 @@ public static class DiffPicker
     {
         var B = RULES.DIFFS[RULES.defaultDiff];
         string V(string s, bool diff, bool good) => diff ? UIK.Col(s, good ? UIK.OK : UIK.NEG) : s;
-        string inv = D.invade < 0 ? "한 턴 침공 −1" : D.invade > 0 ? "8턴부터 침공 +1" : "침공 기본";
-        return $"{UIK.Col("<b>전투</b>", UIK.GOLD)}\n{D.desc.Replace(" · ", "\n")}\n\n{UIK.Col("<b>전쟁</b>", UIK.GOLD)}\n"
-            + V($"위협 단계: {D.threatStep:0.#}턴마다", D.threatStep != B.threatStep, D.threatStep > B.threatStep) + "\n"
-            + V($"시작 보급품 {D.supplies}", D.supplies != B.supplies, D.supplies > B.supplies) + "\n"
-            + V($"턴 수입 ×{D.income:0.##}", D.income != B.income, D.income > B.income) + "\n"
+        string inv = Loc.T(D.invade < 0 ? "ui.diff.invade.less" : D.invade > 0 ? "ui.diff.invade.more" : "ui.diff.invade.base");
+        return $"{UIK.Col($"<b>{Loc.T("ui.diff.battle")}</b>", UIK.GOLD)}\n{Loc.T(D.desc).Replace(" · ", "\n")}\n\n{UIK.Col($"<b>{Loc.T("ui.diff.war")}</b>", UIK.GOLD)}\n"
+            + V(Loc.F("ui.diff.threat", D.threatStep), D.threatStep != B.threatStep, D.threatStep > B.threatStep) + "\n"
+            + V(Loc.F("ui.diff.supplies", D.supplies), D.supplies != B.supplies, D.supplies > B.supplies) + "\n"
+            + V(Loc.F("ui.diff.income", D.income), D.income != B.income, D.income > B.income) + "\n"
             + V(inv, D.invade != 0, D.invade < 0) + "\n"
-            + V($"자동 방어 {(D.hold >= 0 ? "+" : "−")}{Mathf.Abs(D.hold) * 100:0}%", D.hold != 0, D.hold > 0);
+            + V(Loc.F("ui.diff.hold", D.hold >= 0 ? "+" : "−", Mathf.Abs(D.hold) * 100), D.hold != 0, D.hold > 0);
     }
 }

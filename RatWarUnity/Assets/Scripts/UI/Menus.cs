@@ -42,16 +42,16 @@ public static class Menus
         if (Open("Slots")) { Show("Slots", false); return; }
         if (Open("Pause")) { ClosePause(); return; }
         var mode = GameRoot.I.Mode;
-        if (mode == "lobby") Ask("메인메뉴로 나갈까요?\n<size=20>사령부 기록은 자동 저장되어 있습니다</size>", () => GameRoot.I.ToTitle(), "나가기", "취소");
+        if (mode == "lobby") Ask(Loc.T("ui.menu.to_title_ask"), () => GameRoot.I.ToTitle(), Loc.T("ui.menu.leave"), Loc.T("ui.common.cancel"));
         else if (mode == "battle" && Battle.over == null) OpenPause();
     }
 
     // ── 확인 창 ──
-    public static void Ask(string msg, Action yes, string yesLabel = "예", string noLabel = "아니오")
+    public static void Ask(string msg, Action yes, string yesLabel = null, string noLabel = null)
     {
         T("Confirm", "Box/Message").text = msg;
-        B("Confirm", "Box/Yes").GetComponentInChildren<Text>().text = yesLabel;
-        B("Confirm", "Box/No").GetComponentInChildren<Text>().text = noLabel;
+        B("Confirm", "Box/Yes").GetComponentInChildren<Text>().text = yesLabel ?? Loc.T("ui.common.yes");
+        B("Confirm", "Box/No").GetComponentInChildren<Text>().text = noLabel ?? Loc.T("ui.common.no");
         UIK.OnClick(B("Confirm", "Box/Yes"), () => { Show("Confirm", false); yes(); });
         UIK.OnClick(B("Confirm", "Box/No"), () => Show("Confirm", false));
         Show("Confirm", true);
@@ -60,16 +60,16 @@ public static class Menus
     // ── 저장 슬롯 ── isNew = 새로 하기 (빈 칸 · 덮어쓰기), 아니면 불러오기
     public static void OpenSlots(bool isNew, Action<int> enter)
     {
-        T("Slots", "Box/Title").text = isNew ? "새로 하기 — 슬롯 고르기" : "불러오기";
+        T("Slots", "Box/Title").text = Loc.T(isNew ? "ui.slots.title_new" : "ui.slots.load");
         UIK.OnClick(B("Slots", "Box/Back"), () => Show("Slots", false));
         for (int i = 0; i < SaveSlots.COUNT; i++)
         {
             int n = i; var card = W("Slots").Find($"Box/Slot{i}");
             var info = SaveSlots.Read(i);
             UIK.T(card, "Info").text = SaveSlots.Summary(info);
-            UIK.T(card, "When").text = info != null ? $"마지막 저장 {info.when:yyyy-MM-dd HH:mm}" + (SaveSlots.Last() == i ? "  · 최근" : "") : "";
+            UIK.T(card, "When").text = info != null ? Loc.F("ui.slots.when", info.when.ToString("yyyy-MM-dd HH:mm")) + (SaveSlots.Last() == i ? "  · " + Loc.T("ui.slots.recent") : "") : "";
             var main = UIK.B(card, "Main");
-            main.GetComponentInChildren<Text>().text = isNew ? (info != null ? "덮어쓰고 시작" : "여기서 시작") : "불러오기";
+            main.GetComponentInChildren<Text>().text = Loc.T(isNew ? (info != null ? "ui.slots.overwrite_start" : "ui.slots.start_here") : "ui.slots.load");
             main.interactable = isNew || info != null;
             UIK.OnClick(main, () =>
             {
@@ -79,12 +79,12 @@ public static class Menus
                     SaveSlots.Delete(n); SaveSlots.Cur = n; Camp.Save(Camp.Fresh(d));
                     Show("Slots", false); enter(n);
                 }, null);
-                if (info != null) Ask($"슬롯 {n + 1} 의 기록을 지우고 새 전쟁을 시작할까요?\n<size=20>{SaveSlots.Summary(info)}</size>", pick, "덮어쓰기", "취소");
+                if (info != null) Ask(Loc.F("ui.slots.overwrite_ask", n + 1, SaveSlots.Summary(info)), pick, Loc.T("ui.slots.overwrite"), Loc.T("ui.common.cancel"));
                 else pick();
             });
             var del = UIK.B(card, "Delete");
             UIK.Show(del.transform, info != null);
-            UIK.OnClick(del, () => Ask($"슬롯 {n + 1} 을(를) 지울까요? 되돌릴 수 없습니다.\n<size=20>{SaveSlots.Summary(info)}</size>", () => { SaveSlots.Delete(n); OpenSlots(isNew, enter); }, "삭제", "취소"));
+            UIK.OnClick(del, () => Ask(Loc.F("ui.slots.delete_ask", n + 1, SaveSlots.Summary(info)), () => { SaveSlots.Delete(n); OpenSlots(isNew, enter); }, Loc.T("ui.slots.delete"), Loc.T("ui.common.cancel")));
         }
         Show("Slots", true);
     }
@@ -125,7 +125,7 @@ public static class Menus
         UIK.OnClick(B("Pause", "Box/ToMenu"), () => { if (BattleSave.Save()) { ClosePause(); GameRoot.I.ToTitle(); } });
         UIK.OnClick(B("Pause", "Box/Quit"), () => { if (BattleSave.Save()) Quit(); });
         B("Pause", "Box/ToMenu").interactable = can; B("Pause", "Box/Quit").interactable = can;
-        T("Pause", "Box/Note").text = can ? "전투는 지금 상태 그대로 저장됩니다" : "고양이 차례 · 행동 중에는 저장할 수 없습니다\n아군 차례에 다시 열어 주세요";
+        T("Pause", "Box/Note").text = Loc.T(can ? "ui.pause.can_save" : "ui.pause.cant_save");
         Time.timeScale = 0;
         Show("Pause", true);
     }

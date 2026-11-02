@@ -21,50 +21,50 @@ public static class SkillsData
 {
     public static readonly (string name, Color col)[] SECTORS =
     {
-        ("사격", Hex("#d9c36a")), ("화력", Hex("#d9824a")), ("폭파", Hex("#c8563f")),
-        ("기동", Hex("#6fa8d8")), ("지원", Hex("#7fbf8a")), ("정찰", Hex("#9b86c9")),
+        ("game.sector.shoot", Hex("#d9c36a")), ("game.sector.fire", Hex("#d9824a")), ("game.sector.demo", Hex("#c8563f")),
+        ("game.sector.move", Hex("#6fa8d8")), ("game.sector.support", Hex("#7fbf8a")), ("game.sector.recon", Hex("#9b86c9")),
     };
     public static Color Hex(string h) { ColorUtility.TryParseHtmlString(h, out var c); return c; }
 
     // 병종: 무기 · 기본치 · 기본 능력. 판의 갈래로 정해짐 (from = 갈래 번호, 혼합은 두 개)
     public static readonly Dictionary<string, ClassDef> RAT_CLASSES = new[]
     {
-        new ClassDef { id = "recruit", name = "소총수", hp = 6, aim = 65, mob = 6, weapon = "rifle", grenades = 1, abil = new[] { "shoot", "grenade", "overwatch" }, desc = "아직 길이 정해지지 않은 신병" },
-        new ClassDef { id = "sniper", name = "저격수", from = new[] { 0 }, hp = 5, aim = 72, mob = 6, weapon = "sniper", sight = 2, abil = new[] { "shoot", "aimed", "ambush", "overwatch" }, desc = "쥐구멍에 숨어 먼 거리 한 발. 가까우면 약함" },
-        new ClassDef { id = "gunner", name = "기관총 사수", from = new[] { 1 }, hp = 7, aim = 60, mob = 5, weapon = "lmg", abil = new[] { "shoot", "suppress", "warcry", "barrage", "overwatch" }, desc = "연사 · 제압 · 난사. 찍찍 함성으로 분대 사기를 올림" },
-        new ClassDef { id = "engineer", name = "공병", from = new[] { 2 }, hp = 6, aim = 64, mob = 6, weapon = "rifle", grenades = 2, charges = 2, abil = new[] { "shoot", "grenade", "charge", "tunnel", "trap", "overwatch" }, desc = "폭약으로 벽까지 날리고, 땅굴을 파고, 덫을 놓음. 철조망은 갉으며 지나감" },
-        new ClassDef { id = "commando", name = "코만도", from = new[] { 3 }, hp = 6, aim = 66, mob = 7, weapon = "smg", grenades = 1, def = 5, climb = true, abil = new[] { "shoot", "knife", "dash", "smoke", "grenade", "overwatch" }, desc = "벽을 타고 넘어 연막 속으로 파고들어 칼로 끝냄. 칼은 소리가 안 남" },
-        new ClassDef { id = "medic", name = "의무병", from = new[] { 4 }, hp = 6, aim = 62, mob = 6, weapon = "smg", medkits = 2, abil = new[] { "shoot", "firstaid", "painkiller", "supply", "overwatch" }, desc = "동료를 살려 내고, 진통제와 보급품으로 버티게 함" },
-        new ClassDef { id = "scout", name = "정찰병", from = new[] { 5 }, hp = 5, aim = 66, mob = 7, weapon = "rifle", sight = 2, whisker = 3, abil = new[] { "shoot", "mark", "flare", "overwatch" }, desc = "수염으로 벽 너머 적을 느끼고, 조명탄으로 밝히고, 표적을 찍어 줌" },
-        new ClassDef { id = "radio", name = "통신병", from = new[] { 0, 5 }, hp = 6, aim = 63, mob = 6, weapon = "smg", abil = new[] { "shoot", "command", "artillery", "overwatch" }, desc = "사격 + 정찰: 쥐떼 전령으로 멀리 있는 아군까지 지휘 · 무전으로 포격 유도" },
-        new ClassDef { id = "shaman", name = "주술사", from = new[] { 4, 5 }, hp = 5, aim = 60, mob = 6, weapon = "smg", psi = 3, abil = new[] { "shoot", "dominate", "terror", "cleanse", "overwatch" }, desc = "지원 + 정찰: 적의 정신을 붙잡거나 겁에 질리게 하고, 아군의 정신을 맑게 함" },
+        new ClassDef { id = "recruit", name = "game.class.recruit.name", hp = 6, aim = 65, mob = 6, weapon = "rifle", grenades = 1, abil = new[] { "shoot", "grenade", "overwatch" }, desc = "game.class.recruit.desc" },
+        new ClassDef { id = "sniper", name = "game.class.sniper.name", from = new[] { 0 }, hp = 5, aim = 72, mob = 6, weapon = "sniper", sight = 2, abil = new[] { "shoot", "aimed", "ambush", "overwatch" }, desc = "game.class.sniper.desc" },
+        new ClassDef { id = "gunner", name = "game.class.gunner.name", from = new[] { 1 }, hp = 7, aim = 60, mob = 5, weapon = "lmg", abil = new[] { "shoot", "suppress", "warcry", "barrage", "overwatch" }, desc = "game.class.gunner.desc" },
+        new ClassDef { id = "engineer", name = "game.class.engineer.name", from = new[] { 2 }, hp = 6, aim = 64, mob = 6, weapon = "rifle", grenades = 2, charges = 2, abil = new[] { "shoot", "grenade", "charge", "tunnel", "trap", "overwatch" }, desc = "game.class.engineer.desc" },
+        new ClassDef { id = "commando", name = "game.class.commando.name", from = new[] { 3 }, hp = 6, aim = 66, mob = 7, weapon = "smg", grenades = 1, def = 5, climb = true, abil = new[] { "shoot", "knife", "dash", "smoke", "grenade", "overwatch" }, desc = "game.class.commando.desc" },
+        new ClassDef { id = "medic", name = "game.class.medic.name", from = new[] { 4 }, hp = 6, aim = 62, mob = 6, weapon = "smg", medkits = 2, abil = new[] { "shoot", "firstaid", "painkiller", "supply", "overwatch" }, desc = "game.class.medic.desc" },
+        new ClassDef { id = "scout", name = "game.class.scout.name", from = new[] { 5 }, hp = 5, aim = 66, mob = 7, weapon = "rifle", sight = 2, whisker = 3, abil = new[] { "shoot", "mark", "flare", "overwatch" }, desc = "game.class.scout.desc" },
+        new ClassDef { id = "radio", name = "game.class.radio.name", from = new[] { 0, 5 }, hp = 6, aim = 63, mob = 6, weapon = "smg", abil = new[] { "shoot", "command", "artillery", "overwatch" }, desc = "game.class.radio.desc" },
+        new ClassDef { id = "shaman", name = "game.class.shaman.name", from = new[] { 4, 5 }, hp = 5, aim = 60, mob = 6, weapon = "smg", psi = 3, abil = new[] { "shoot", "dominate", "terror", "cleanse", "overwatch" }, desc = "game.class.shaman.desc" },
     }.ToDictionary(c => c.id);
 
     // 갈래마다: r1 = 첫 칸, r2 = 둘째 줄 꼭짓점(핵심), r3 = 셋째 줄 꼭짓점(정점), side = 셋째 줄 옆 칸 두 개, small = 경계 칸에 섞이는 작은 값
     class SectorFx { public NodeFx r1, r2, r3, small; public NodeFx[] side; }
     static readonly SectorFx[] NODE_FX =
     {
-        new SectorFx { r1 = new NodeFx().Set("aim", 5), r2 = NodeFx.Of("정조준", abil: "aimed"), r3 = NodeFx.Of("명사수").Set("crit", 15), side = new[] { new NodeFx().Set("aim", 5), new NodeFx().Set("sight", 1) }, small = new NodeFx().Set("aim", 3) },
-        new SectorFx { r1 = new NodeFx().Set("hp", 1), r2 = NodeFx.Of("제압 사격", abil: "suppress"), r3 = NodeFx.Of("긴 탄띠").Set("clip", 2), side = new[] { new NodeFx().Set("hp", 1), new NodeFx().Set("dmg", 1) }, small = new NodeFx().Set("hp", 1) },
-        new SectorFx { r1 = new NodeFx().Set("grenades", 1), r2 = NodeFx.Of("땅굴 파기", abil: "tunnel"), r3 = NodeFx.Of("화염방사기 장착", perk: "flamer"), side = new[] { NodeFx.Of("고폭 수류탄").Set("blast", 0.5f), NodeFx.Of("폭파 전문").Set("boom", 2).Set("charges", 1) }, small = new NodeFx().Set("grenades", 1) },
-        new SectorFx { r1 = new NodeFx().Set("mob", 1), r2 = NodeFx.Of("근접 격투", abil: "knife"), r3 = NodeFx.Of("날쌘 발").Set("def", 10).Set("mob", 1), side = new[] { NodeFx.Of("근접 사격", perk: "closeq"), new NodeFx().Set("def", 5) }, small = new NodeFx().Set("def", 3) },
-        new SectorFx { r1 = NodeFx.Of("응급 처치", abil: "firstaid").Set("medkits", 1), r2 = NodeFx.Of("구출", perk: "revive"), r3 = NodeFx.Of("야전 의무").Set("heal", 2), side = new[] { new NodeFx().Set("medkits", 1), NodeFx.Of("구급 가방").Set("medkits", 2) }, small = new NodeFx().Set("hp", 1) },
-        new SectorFx { r1 = new NodeFx().Set("sight", 1), r2 = NodeFx.Of("노련한 경계", perk: "sentry"), r3 = NodeFx.Of("조용한 발걸음", perk: "ghost"), side = new[] { new NodeFx().Set("sight", 1), NodeFx.Of("약점 간파", perk: "weakspot") }, small = new NodeFx().Set("aim", 2) },
+        new SectorFx { r1 = new NodeFx().Set("aim", 5), r2 = NodeFx.Of("game.node.aimed", abil: "aimed"), r3 = NodeFx.Of("game.node.marksman").Set("crit", 15), side = new[] { new NodeFx().Set("aim", 5), new NodeFx().Set("sight", 1) }, small = new NodeFx().Set("aim", 3) },
+        new SectorFx { r1 = new NodeFx().Set("hp", 1), r2 = NodeFx.Of("game.node.suppress", abil: "suppress"), r3 = NodeFx.Of("game.node.longbelt").Set("clip", 2), side = new[] { new NodeFx().Set("hp", 1), new NodeFx().Set("dmg", 1) }, small = new NodeFx().Set("hp", 1) },
+        new SectorFx { r1 = new NodeFx().Set("grenades", 1), r2 = NodeFx.Of("game.node.tunnel", abil: "tunnel"), r3 = NodeFx.Of("game.node.flamer", perk: "flamer"), side = new[] { NodeFx.Of("game.node.he").Set("blast", 0.5f), NodeFx.Of("game.node.demo").Set("boom", 2).Set("charges", 1) }, small = new NodeFx().Set("grenades", 1) },
+        new SectorFx { r1 = new NodeFx().Set("mob", 1), r2 = NodeFx.Of("game.node.knife", abil: "knife"), r3 = NodeFx.Of("game.node.swift").Set("def", 10).Set("mob", 1), side = new[] { NodeFx.Of("game.node.closeq", perk: "closeq"), new NodeFx().Set("def", 5) }, small = new NodeFx().Set("def", 3) },
+        new SectorFx { r1 = NodeFx.Of("game.node.firstaid", abil: "firstaid").Set("medkits", 1), r2 = NodeFx.Of("game.node.revive", perk: "revive"), r3 = NodeFx.Of("game.node.fieldmed").Set("heal", 2), side = new[] { new NodeFx().Set("medkits", 1), NodeFx.Of("game.node.medbag").Set("medkits", 2) }, small = new NodeFx().Set("hp", 1) },
+        new SectorFx { r1 = new NodeFx().Set("sight", 1), r2 = NodeFx.Of("game.node.sentry", perk: "sentry"), r3 = NodeFx.Of("game.node.ghost", perk: "ghost"), side = new[] { new NodeFx().Set("sight", 1), NodeFx.Of("game.node.weakspot", perk: "weakspot") }, small = new NodeFx().Set("aim", 2) },
     };
     public static readonly Dictionary<string, string> PERK_TEXT = new Dictionary<string, string>
     {
-        ["revive"] = "쓰러진 아군을 응급 처치로 일으킴 (체력 2)",
-        ["closeq"] = "4칸 안 명중 +15",
-        ["sentry"] = "경계 사격 명중 감점 없음",
-        ["ghost"] = "자는 고양이 무리가 3칸 안에서만 깸",
-        ["flamer"] = "무기가 화염방사기로 바뀜: 명중 +15 · 4칸 부채꼴 불길 · 쓰러질 때 40% 폭발 (확정 사망)",
-        ["weakspot"] = "표적 지정한 적: 회피 무시 · 아군 치명 +15",
-        ["gnawer"] = "철조망 칸으로 가면 이동력 1 더 쓰고 갉아 끊으며 지나감",
+        ["revive"] = "game.perk.revive",
+        ["closeq"] = "game.perk.closeq",
+        ["sentry"] = "game.perk.sentry",
+        ["ghost"] = "game.perk.ghost",
+        ["flamer"] = "game.perk.flamer",
+        ["weakspot"] = "game.perk.weakspot",
+        ["gnawer"] = "game.perk.gnawer",
     };
     public static readonly Dictionary<string, string> STAT_TEXT = new Dictionary<string, string>
     {
-        ["hp"] = "체력", ["aim"] = "명중", ["mob"] = "이동", ["sight"] = "시야", ["crit"] = "치명", ["def"] = "회피", ["dmg"] = "피해", ["clip"] = "탄창",
-        ["grenades"] = "수류탄", ["medkits"] = "구급상자", ["heal"] = "치료량", ["blast"] = "폭발 범위", ["boom"] = "폭발 피해", ["burn"] = "화상 피해", ["charges"] = "폭약", ["psi"] = "정신력",
+        ["hp"] = "game.stat.hp", ["aim"] = "game.stat.aim", ["mob"] = "game.stat.mob", ["sight"] = "game.stat.sight", ["crit"] = "game.stat.crit", ["def"] = "game.stat.def", ["dmg"] = "game.stat.dmg", ["clip"] = "game.stat.clip",
+        ["grenades"] = "game.stat.grenades", ["medkits"] = "game.stat.medkits", ["heal"] = "game.stat.heal", ["blast"] = "game.stat.blast", ["boom"] = "game.stat.boom", ["burn"] = "game.stat.burn", ["charges"] = "game.stat.charges", ["psi"] = "game.stat.psi",
     };
 
     public const int R = 3;
@@ -76,7 +76,7 @@ public static class SkillsData
     static Dictionary<string, HexCell> BuildCells()
     {
         var cells = new Dictionary<string, HexCell>();
-        cells[Key(0, 0)] = new HexCell { q = 0, r = 0, ring = 0, sec = new int[0], fx = new NodeFx(), title = "신병" };
+        cells[Key(0, 0)] = new HexCell { q = 0, r = 0, ring = 0, sec = new int[0], fx = new NodeFx(), title = "game.skill.center" };
         for (int k = 1; k <= R; k++)
             for (int i = 0; i < 6; i++)
                 for (int j = 0; j < k; j++)
@@ -113,10 +113,10 @@ public static class SkillsData
     public static string FxText(NodeFx fx)
     {
         var t = new List<string>();
-        if (fx.name != null) t.Add(fx.name);
-        if (fx.abil != null) t.Add("능력: " + GameData.ABILITIES[fx.abil].name);
-        if (fx.perk != null) t.Add(PERK_TEXT[fx.perk]);
-        foreach (var kv in fx.n) if (STAT_TEXT.ContainsKey(kv.Key)) t.Add($"{STAT_TEXT[kv.Key]} +{kv.Value}");
+        if (fx.name != null) t.Add(Loc.T(fx.name));
+        if (fx.abil != null) t.Add(Loc.F("game.fx.abil", Loc.T(GameData.ABILITIES[fx.abil].name)));
+        if (fx.perk != null) t.Add(Loc.T(PERK_TEXT[fx.perk]));
+        foreach (var kv in fx.n) if (STAT_TEXT.ContainsKey(kv.Key)) t.Add(Loc.F("game.fx.stat", Loc.T(STAT_TEXT[kv.Key]), kv.Value));
         return string.Join(" · ", t);
     }
 

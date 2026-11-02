@@ -162,8 +162,8 @@ const maps = {};
 const C = (cls, head, x, z, pod, target) => ({ cls, head, x, z, pod, ...(target ? { target: true } : {}) });
 const missions = [
   {
-    id: 'm1', act: 1, name: '1-1 · 하수구 출구', map: 'sewer', obj: 'elim', reward: 50, shells: 0,
-    brief: '하수구를 빠져나가 마을 외곽의 고양이 초소를 쓸어버려라. 첫 출격이다 — 엄폐물에서 엄폐물로.',
+    id: 'm1', act: 1, name: 'game.mission.m1.name', map: 'sewer', obj: 'elim', reward: 50, shells: 0,
+    brief: 'game.mission.m1.brief',
     cats: [
       C('trooper', 'mackerel', 6, 14, 'A'), C('trooper', 'tuxedo', 13, 13, 'A'),
       C('mgcat', 'boss_turret', 4, 8, 'B'), C('trooper', 'chonk', 14, 8, 'B'),
@@ -171,8 +171,8 @@ const missions = [
     ],
   },
   {
-    id: 'm2', act: 1, name: '1-2 · 언덕 위의 박격포', map: 'hill', obj: 'elim', reward: 60, shells: 3,
-    brief: '농장을 지나 언덕 위 버려진 박격포 진지를 차지하고, 참호선까지 고양이 분대를 몰아내라.',
+    id: 'm2', act: 1, name: 'game.mission.m2.name', map: 'hill', obj: 'elim', reward: 60, shells: 3,
+    brief: 'game.mission.m2.brief',
     cats: [
       C('trooper', 'loaf', 8, 21, 'F'), C('trooper', 'chonk', 17, 22, 'F'),
       C('trooper', 'mackerel', 5, 11, 'A'), C('trooper', 'tuxedo', 7, 10, 'A'),
@@ -183,8 +183,8 @@ const missions = [
     ],
   },
   {
-    id: 'm3', act: 1, name: '1-3 · 철도역의 장교', map: 'station', obj: 'officer', reward: 80, shells: 0,
-    brief: '화물 적치장을 뚫고 철도역 뒤 마을에 숨은 고양이 장교를 사살하라. 장교만 쓰러뜨리면 나머지는 흩어진다.',
+    id: 'm3', act: 1, name: 'game.mission.m3.name', map: 'station', obj: 'officer', reward: 80, shells: 0,
+    brief: 'game.mission.m3.brief',
     cats: [
       C('trooper', 'mackerel', 8, 21, 'G'), C('trooper', 'tuxedo', 16, 22, 'G'),
       C('trooper', 'mackerel', 9, 13, 'A'), C('trooper', 'loaf', 16, 12, 'A'),
@@ -194,8 +194,8 @@ const missions = [
     ],
   },
   {
-    id: 'mb1', act: 1, name: '1막 보스 · 참호선 돌파', map: 'trench', obj: 'officer', reward: 120, shells: 2,
-    brief: '무인지대를 건너 참호 세 줄을 뚫고, 지휘 벙커의 독재 고양이 장교를 쓰러뜨려라. 기관총 진지를 뺏으면 2차 참호를 쓸어버릴 수 있다.',
+    id: 'mb1', act: 1, name: 'game.mission.mb1.name', map: 'trench', obj: 'officer', reward: 120, shells: 2,
+    brief: 'game.mission.mb1.brief',
     cats: [
       C('trooper', 'mackerel', 3, 28, 'A'), C('mgcat', 'boss_turret', 10, 25, 'A'), C('trooper', 'tuxedo', 13, 28, 'A'),
       C('mgcat', 'boss_turret', 20, 25, 'B'), C('trooper', 'chonk', 26, 28, 'B'),
@@ -208,8 +208,8 @@ const missions = [
   },
   // 2막 자리 (임시: 1막 맵 좌우 뒤집기) — 2막 맵이 나오면 바꿈
   {
-    id: 'm21', act: 2, name: '2-1 · 참호 돌파 (임시)', map: 'hill', mirror: true, obj: 'reach', reward: 90, shells: 2, goal: { x: 11, z: 1, r: 1 },
-    brief: '참호선을 뚫고 폐허 마을의 깃발까지 쥐 한 마리라도 닿게 하라. 다 잡을 필요는 없다.',
+    id: 'm21', act: 2, name: 'game.mission.m21.name', map: 'hill', mirror: true, obj: 'reach', reward: 90, shells: 2, goal: { x: 11, z: 1, r: 1 },
+    brief: 'game.mission.m21.brief',
     cats: [
       C('trooper', 'loaf', 8, 21, 'F2'), C('trooper', 'chonk', 17, 22, 'F2'),
       C('trooper', 'mackerel', 5, 11, 'A'), C('mgcat', 'boss_turret', 17, 10, 'B'), C('trooper', 'chonk', 19, 9, 'B'),
@@ -218,8 +218,8 @@ const missions = [
     ],
   },
   {
-    id: 'm22', act: 2, name: '2-2 · 총통의 근위대 (임시)', map: 'station', mirror: true, obj: 'elim', reward: 120, shells: 0,
-    brief: '총통 직속 근위대가 역을 틀어쥐었다. 남김없이 쓸어버려라.',
+    id: 'm22', act: 2, name: 'game.mission.m22.name', map: 'station', mirror: true, obj: 'elim', reward: 120, shells: 0,
+    brief: 'game.mission.m22.brief',
     cats: [
       C('trooper', 'mackerel', 8, 21, 'G2'), C('trooper', 'tuxedo', 16, 22, 'G2'),
       C('trooper', 'mackerel', 9, 13, 'A'), C('trooper', 'loaf', 16, 12, 'A'),

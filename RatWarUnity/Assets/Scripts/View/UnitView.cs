@@ -285,7 +285,7 @@ public class UnitView : MonoBehaviour
     // 병과 · 정예 색: 중장갑 = 쇳빛, 정예 = 붉은 기 (아직 전용 리그가 없는 병과도 한눈에 구분)
     Color Look => u.side != "cat" && u.controlled == 0 ? Color.white
         : u.cls == "catheavy" ? new Color(0.78f, 0.84f, 0.95f)
-        : u.name != null && u.name.Contains("정예") ? new Color(1f, 0.86f, 0.82f) : Color.white;
+        : u.r == null && u.def != null && u.maxHp > u.def.hp ? new Color(1f, 0.86f, 0.82f) : Color.white;
 
     // 의수 · 의족 색을 지키면서 틴트 곱하기
     readonly Dictionary<SpriteRenderer, Color> baseCol = new Dictionary<SpriteRenderer, Color>();
