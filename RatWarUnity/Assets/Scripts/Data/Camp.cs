@@ -178,6 +178,7 @@ public static class CampRules
     // 모집 값 = 기본 + 위협 단계마다 + 모집할 때마다 누적 + 지원자 계급마다
     public const int RECRUIT_PER_TIER = 10, RECRUIT_PER_HIRE = 3, RECRUIT_PER_RANK = 15;
     public const int REFRESH_PER_ROLL = 4, REFRESH_PER_TIER = 5; // 지원자 새로 받기 값 = 기본 + 이번 전쟁에서 받은 횟수마다 + 위협 단계마다
+    public const int LIMB_PER_TIER = 10; // 의수 · 의족 값 = 기본 + 이번 전쟁에서 단 수마다 + 위협 단계마다
     public const float VET_PER_TIER = 0.15f; // 위협 2단계부터 단계마다 지원자가 계급을 달고 올 확률 +15%
 }
 
@@ -374,10 +375,11 @@ public static class Camp
         if (c.supplies < cost) return false;
         c.supplies -= cost; c.rerolls++; RollRecruits(c); Save(c); return true;
     }
-    // 의수 · 의족 값: 이번 전쟁에서 달 때마다 +15 (전략 지도에서 공방을 쥐고 있으면 절반)
+    // 의수 · 의족 값: 이번 전쟁에서 달 때마다 +15, 위협 단계마다 +10 (전략 지도에서 공방을 쥐고 있으면 절반)
     public static int LimbCost(CampData c)
     {
-        int cost = CampRules.LIMB_COST + c.limbs * CampRules.LIMB_PER_FIT;
+        int tier = c.war != null && c.war.own.Count == War.N ? War.Threat(c) : 1;
+        int cost = CampRules.LIMB_COST + c.limbs * CampRules.LIMB_PER_FIT + (tier - 1) * CampRules.LIMB_PER_TIER;
         return War.Holds(c, "workshop") ? cost / 2 : cost;
     }
     public static bool FitLimb(CampData c, RatRecord r)
