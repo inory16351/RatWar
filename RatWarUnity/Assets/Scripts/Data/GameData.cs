@@ -221,21 +221,25 @@ public static class RULES
     // 전쟁(아웃게임) 쪽 — 새 전쟁 시작 때 고르고 그 전쟁 동안 고정:
     //   threatStep = 위협 단계 하나 오르는 데 드는 진척 (클수록 고양이가 느리게 세짐) · supplies = 시작 보급품
     //   income = 턴 수입 배율 · invade = 한 턴 침공 수 보정 (+ 는 8턴부터) · hold = 자동 방어 성공률 보정
+    //   land = 처음 가진 땅 칸 수 (사령부에서 가까운 순, campaign.json start 앞에서부터)
     public class Diff
     {
         public string name, tag, desc; public int ratAim, catAim, catCrit, streak, streakMax, chain;
-        public float threatStep = 3, income = 1, hold; public int supplies = 60, invade;
+        public float threatStep = 3, income = 1, hold; public int supplies = 60, invade, land = 12;
     }
     public static readonly Diff[] DIFFS =
     {
         new Diff { name = "game.diff.easy.name", tag = "game.diff.easy.tag", desc = "game.diff.easy.desc", ratAim = 10, catAim = -10, catCrit = -10, streak = 10, streakMax = 30, chain = 10,
-            threatStep = 4, supplies = 90, income = 1.25f, invade = -1, hold = 0.10f },
+            threatStep = 4, supplies = 90, income = 1.25f, invade = -1, hold = 0.10f, land = 16 },
         new Diff { name = "game.diff.normal.name", tag = "game.diff.normal.tag", desc = "game.diff.normal.desc", streak = 5, streakMax = 15, chain = 5 },
         new Diff { name = "game.diff.hard.name", tag = "game.diff.hard.tag", desc = "game.diff.hard.desc", catAim = 5, catCrit = 5,
-            threatStep = 2.5f, supplies = 50, income = 0.9f, hold = -0.05f },
+            threatStep = 2.5f, supplies = 50, income = 0.9f, hold = -0.05f, land = 9 },
         new Diff { name = "game.diff.nightmare.name", tag = "game.diff.nightmare.tag", desc = "game.diff.nightmare.desc", catAim = 10, catCrit = 10,
-            threatStep = 2, supplies = 40, income = 0.75f, invade = 1, hold = -0.10f },
+            threatStep = 2, supplies = 40, income = 0.75f, invade = 1, hold = -0.10f, land = 6 },
     };
     public static Diff DiffOf(int i) => DIFFS[UnityEngine.Mathf.Clamp(i, 0, DIFFS.Length - 1)];
     public const int defaultDiff = 1;
+    // 참호의 악몽(마지막 난이도)은 병장 이상으로 전쟁을 이겨야 열림 (슬롯과 상관없이 이 컴퓨터에 남김)
+    public static bool Unlocked(int i) => i < DIFFS.Length - 1 || UnityEngine.PlayerPrefs.GetInt("diffClear", -1) >= defaultDiff;
+    public static void Cleared(int i) { if (i > UnityEngine.PlayerPrefs.GetInt("diffClear", -1)) { UnityEngine.PlayerPrefs.SetInt("diffClear", i); UnityEngine.PlayerPrefs.Save(); } }
 }

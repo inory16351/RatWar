@@ -29,6 +29,7 @@
   "ui.diff.battle": "Combat",
   "ui.diff.war": "Guerre",
   "ui.diff.threat": "Niveau de menace : tous les {0:0.#} tours",
+  "ui.diff.land": "Territoire de départ : {0} régions",
   "ui.diff.supplies": "Ravitaillement de départ : {0}",
   "ui.diff.income": "Revenu par tour ×{0:0.##}",
   "ui.diff.invade.less": "Invasions par tour −1",
@@ -97,6 +98,7 @@
   "ui.hex.fort": "▣ Fort : défense auto +{0}%",
   "ui.hex.threat": "Invasion féline ! Si vous n'intervenez pas, la garnison tentera sa chance",
   "ui.hex.attackable": "Voisine de nos terres : peut être attaquée",
+  "ui.hex.siege": "La capitale ne peut être attaquée qu'une fois entièrement encerclée ({0}/{1} territoires adjacents)",
   "ui.info.rat": "République : {0} cases",
   "ui.info.cat": "Empire : {0} cases",
   "ui.info.income": "Revenu +{0}/tour",
@@ -153,7 +155,10 @@
   "ui.recruit.refresh": "Autres volontaires (ravitaillement {0})",
   "ui.recruit.btn": "Recruter (ravitaillement {0})",
   "ui.recruit.joined": "{0} s'engage",
+  "ui.recruit.locked": "Vous avez déjà pris ce volontaire ce tour-ci.\nUn nouveau arrivera au prochain tour ou avec « Autres volontaires ».",
+  "ui.recruit.locked_btn": "Tour suivant",
   "ui.memorial.empty": "Aucun nom gravé pour l'instant.",
   "ui.memorial.head": "Mémorial",
-  "ui.memorial.line": "{0}, {1} · {2} sorties · {3} victimes"
+  "ui.memorial.line": "{0}, {1} · {2} sorties · {3} victimes",
+  "ui.diff.locked": "Verrouillé\n\nGagnez une guerre en difficulté {0} ou plus pour débloquer."
 }

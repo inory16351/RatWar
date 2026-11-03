@@ -1,163 +1,682 @@
 {
-  "note": "전략 지도: 육각 10×4 (평평한 윗변, 홀수 열이 반 칸 아래). 칸 번호 = r*10+c. 위치는 out/ui/war_map.jpg 위 비율",
-  "cols": 10, "rows": 4,
-  "x0": 0.0963, "dx": 0.0897, "y0": 0.1785, "dy": 0.1838,
-  "start": [30, 31, 32, 33, 34, 35, 36, 37, 38, 23, 24, 25],
-  "kinds": {
-    "sewer":   { "name": "campaign.kind.sewer", "map": "sewer",   "income": 6 },
-    "harbor":  { "name": "campaign.kind.harbor",   "map": "station", "income": 8 },
-    "beach":   { "name": "campaign.kind.beach",   "map": "trench",  "income": 3 },
-    "hills":   { "name": "campaign.kind.hills",   "map": "hill",    "income": 4 },
-    "farm":    { "name": "campaign.kind.farm",   "map": "hill",    "income": 6 },
-    "village": { "name": "campaign.kind.village",   "map": "hill",    "income": 6 },
-    "factory": { "name": "campaign.kind.factory",   "map": "station", "income": 12 },
-    "city":    { "name": "campaign.kind.city",   "map": "station", "income": 10 },
-    "capital": { "name": "campaign.kind.capital", "map": "station", "income": 25 },
-    "river":   { "name": "campaign.kind.river",   "map": "hill",    "income": 3 },
-    "bridge":  { "name": "campaign.kind.bridge",   "map": "station", "income": 5 },
-    "forest":  { "name": "campaign.kind.forest",     "map": "hill",    "income": 3 },
-    "snow":    { "name": "campaign.kind.snow",   "map": "hill",    "income": 2 },
-    "plains":  { "name": "campaign.kind.plains",   "map": "hill",    "income": 4 },
-    "trench":  { "name": "campaign.kind.trench",   "map": "trench",  "income": 3 },
-    "bunker":  { "name": "campaign.kind.bunker", "map": "trench", "income": 4 }
+ "note": "전략 지도: 육각 10×4 (평평한 윗변, 홀수 열이 반 칸 아래). 칸 번호 = r*10+c. 위치는 out/ui/war_map.jpg 위 비율",
+ "cols": 13,
+ "rows": 6,
+ "x0": 0.08,
+ "dx": 0.07,
+ "y0": 0.105,
+ "dy": 0.1437,
+ "start": [
+  71,
+  70,
+  72,
+  58,
+  57,
+  59,
+  69,
+  73,
+  56,
+  60,
+  68,
+  74,
+  55,
+  61,
+  67,
+  75
+ ],
+ "kinds": {
+  "sewer": {
+   "name": "campaign.kind.sewer",
+   "map": "sewer",
+   "income": 3
   },
-  "fx": {
-    "hq":        "campaign.fx.hq",
-    "capital":   "campaign.fx.capital",
-    "hospital":  "campaign.fx.hospital",
-    "recruit":   "campaign.fx.recruit",
-    "workshop":  "campaign.fx.workshop",
-    "artillery": "campaign.fx.artillery"
+  "harbor": {
+   "name": "campaign.kind.harbor",
+   "map": "station",
+   "income": 4
   },
-  "hexes": [
-    { "name": "campaign.hex.0",     "kind": "bunker" },
-    { "name": "campaign.hex.1",       "kind": "snow" },
-    { "name": "campaign.hex.2",   "kind": "bunker", "special": "b5" },
-    { "name": "campaign.hex.3",   "kind": "forest" },
-    { "name": "campaign.hex.4",     "kind": "plains" },
-    { "name": "campaign.hex.5",   "kind": "trench" },
-    { "name": "campaign.hex.6",    "kind": "capital", "fx": "capital", "special": "b7" },
-    { "name": "campaign.hex.7",     "kind": "trench", "fx": "artillery" },
-    { "name": "campaign.hex.8", "kind": "plains" },
-    { "name": "campaign.hex.9",       "kind": "forest" },
-
-    { "name": "campaign.hex.10",     "kind": "snow" },
-    { "name": "campaign.hex.11",     "kind": "snow", "special": "b3" },
-    { "name": "campaign.hex.12",     "kind": "snow" },
-    { "name": "campaign.hex.13",   "kind": "forest" },
-    { "name": "campaign.hex.14",   "kind": "plains" },
-    { "name": "campaign.hex.15",     "kind": "bridge", "special": "b6" },
-    { "name": "campaign.hex.16",   "kind": "plains", "special": "b4" },
-    { "name": "campaign.hex.17",     "kind": "river" },
-    { "name": "campaign.hex.18",       "kind": "river" },
-    { "name": "campaign.hex.19",       "kind": "river" },
-
-    { "name": "campaign.hex.20",     "kind": "forest" },
-    { "name": "campaign.hex.21",   "kind": "farm" },
-    { "name": "campaign.hex.22",     "kind": "river" },
-    { "name": "campaign.hex.23",          "kind": "farm" },
-    { "name": "campaign.hex.24",     "kind": "farm" },
-    { "name": "campaign.hex.25",     "kind": "farm" },
-    { "name": "campaign.hex.26",       "kind": "river" },
-    { "name": "campaign.hex.27", "kind": "factory", "fx": "workshop" },
-    { "name": "campaign.hex.28",       "kind": "forest" },
-    { "name": "campaign.hex.29",     "kind": "city" },
-
-    { "name": "campaign.hex.30",     "kind": "harbor" },
-    { "name": "campaign.hex.31",     "kind": "beach", "special": "b1" },
-    { "name": "campaign.hex.32",     "kind": "village", "fx": "recruit" },
-    { "name": "campaign.hex.33",     "kind": "hills" },
-    { "name": "campaign.hex.34",     "kind": "village", "fx": "hospital" },
-    { "name": "campaign.hex.35", "kind": "sewer", "fx": "hq" },
-    { "name": "campaign.hex.36",     "kind": "hills", "fx": "artillery" },
-    { "name": "campaign.hex.37",     "kind": "hills" },
-    { "name": "campaign.hex.38",    "kind": "factory", "fx": "workshop", "special": "b2" },
-    { "name": "campaign.hex.39",   "kind": "hills" }
-  ],
-  "specials": {
-    "b1": {
-      "name": "campaign.special.b1.name", "kind": "defend", "turn": 1, "tpl": "mb1", "obj": "elim", "cats": 10, "reward": 100, "shells": 2,
-      "brief": "campaign.special.b1.brief",
-      "slides": [
-        { "img": "b1_dunk_1", "text": "campaign.special.b1.slide.0" },
-        { "img": "b1_dunk_2", "text": "campaign.special.b1.slide.1" },
-        { "img": "b1_dunk_3", "text": "campaign.special.b1.slide.2" },
-        { "img": "b1_dunk_4", "text": "campaign.special.b1.slide.3" }
-      ]
+  "beach": {
+   "name": "campaign.kind.beach",
+   "map": "trench",
+   "income": 2
+  },
+  "hills": {
+   "name": "campaign.kind.hills",
+   "map": "hill",
+   "income": 2
+  },
+  "farm": {
+   "name": "campaign.kind.farm",
+   "map": "hill",
+   "income": 3
+  },
+  "village": {
+   "name": "campaign.kind.village",
+   "map": "hill",
+   "income": 3
+  },
+  "factory": {
+   "name": "campaign.kind.factory",
+   "map": "station",
+   "income": 6
+  },
+  "city": {
+   "name": "campaign.kind.city",
+   "map": "station",
+   "income": 5
+  },
+  "capital": {
+   "name": "campaign.kind.capital",
+   "map": "station",
+   "income": 12
+  },
+  "river": {
+   "name": "campaign.kind.river",
+   "map": "hill",
+   "income": 2
+  },
+  "bridge": {
+   "name": "campaign.kind.bridge",
+   "map": "station",
+   "income": 3
+  },
+  "forest": {
+   "name": "campaign.kind.forest",
+   "map": "hill",
+   "income": 2
+  },
+  "snow": {
+   "name": "campaign.kind.snow",
+   "map": "hill",
+   "income": 1
+  },
+  "plains": {
+   "name": "campaign.kind.plains",
+   "map": "hill",
+   "income": 2
+  },
+  "trench": {
+   "name": "campaign.kind.trench",
+   "map": "trench",
+   "income": 2
+  },
+  "bunker": {
+   "name": "campaign.kind.bunker",
+   "map": "trench",
+   "income": 2
+  }
+ },
+ "fx": {
+  "hq": "campaign.fx.hq",
+  "capital": "campaign.fx.capital",
+  "hospital": "campaign.fx.hospital",
+  "recruit": "campaign.fx.recruit",
+  "workshop": "campaign.fx.workshop",
+  "artillery": "campaign.fx.artillery"
+ },
+ "hexes": [
+  {
+   "name": "campaign.hex.0",
+   "kind": "bunker"
+  },
+  {
+   "name": "campaign.hex.40",
+   "kind": "bunker"
+  },
+  {
+   "name": "campaign.hex.10",
+   "kind": "snow"
+  },
+  {
+   "name": "campaign.hex.3",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.4",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.41",
+   "kind": "city"
+  },
+  {
+   "name": "campaign.hex.42",
+   "kind": "city"
+  },
+  {
+   "name": "campaign.hex.43",
+   "kind": "city"
+  },
+  {
+   "name": "campaign.hex.8",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.9",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.44",
+   "kind": "snow"
+  },
+  {
+   "name": "campaign.hex.45",
+   "kind": "bunker"
+  },
+  {
+   "name": "campaign.hex.46",
+   "kind": "bunker"
+  },
+  {
+   "name": "campaign.hex.2",
+   "kind": "bunker",
+   "special": "b5"
+  },
+  {
+   "name": "campaign.hex.1",
+   "kind": "snow"
+  },
+  {
+   "name": "campaign.hex.47",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.48",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.5",
+   "kind": "trench"
+  },
+  {
+   "name": "campaign.hex.49",
+   "kind": "trench"
+  },
+  {
+   "name": "campaign.hex.6",
+   "kind": "capital",
+   "fx": "capital",
+   "special": "b7"
+  },
+  {
+   "name": "campaign.hex.7",
+   "kind": "trench",
+   "fx": "artillery"
+  },
+  {
+   "name": "campaign.hex.50",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.51",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.52",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.53",
+   "kind": "snow"
+  },
+  {
+   "name": "campaign.hex.54",
+   "kind": "bunker"
+  },
+  {
+   "name": "campaign.hex.12",
+   "kind": "snow"
+  },
+  {
+   "name": "campaign.hex.11",
+   "kind": "snow",
+   "special": "b3"
+  },
+  {
+   "name": "campaign.hex.13",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.14",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.16",
+   "kind": "plains",
+   "special": "b4"
+  },
+  {
+   "name": "campaign.hex.55",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.56",
+   "kind": "trench"
+  },
+  {
+   "name": "campaign.hex.57",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.58",
+   "kind": "trench"
+  },
+  {
+   "name": "campaign.hex.59",
+   "kind": "plains"
+  },
+  {
+   "name": "campaign.hex.60",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.61",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.62",
+   "kind": "snow"
+  },
+  {
+   "name": "campaign.hex.20",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.22",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.17",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.63",
+   "kind": "bridge"
+  },
+  {
+   "name": "campaign.hex.18",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.19",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.15",
+   "kind": "bridge",
+   "special": "b6"
+  },
+  {
+   "name": "campaign.hex.26",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.64",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.27",
+   "kind": "factory",
+   "fx": "workshop"
+  },
+  {
+   "name": "campaign.hex.65",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.66",
+   "kind": "bridge"
+  },
+  {
+   "name": "campaign.hex.67",
+   "kind": "river"
+  },
+  {
+   "name": "campaign.hex.28",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.21",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.23",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.34",
+   "kind": "village",
+   "fx": "hospital"
+  },
+  {
+   "name": "campaign.hex.24",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.25",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.68",
+   "kind": "hills"
+  },
+  {
+   "name": "campaign.hex.69",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.38",
+   "kind": "factory",
+   "fx": "workshop",
+   "special": "b2"
+  },
+  {
+   "name": "campaign.hex.29",
+   "kind": "city"
+  },
+  {
+   "name": "campaign.hex.70",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.39",
+   "kind": "hills"
+  },
+  {
+   "name": "campaign.hex.71",
+   "kind": "forest"
+  },
+  {
+   "name": "campaign.hex.30",
+   "kind": "harbor"
+  },
+  {
+   "name": "campaign.hex.72",
+   "kind": "beach"
+  },
+  {
+   "name": "campaign.hex.32",
+   "kind": "village",
+   "fx": "recruit"
+  },
+  {
+   "name": "campaign.hex.33",
+   "kind": "hills"
+  },
+  {
+   "name": "campaign.hex.31",
+   "kind": "beach",
+   "special": "b1"
+  },
+  {
+   "name": "campaign.hex.73",
+   "kind": "farm"
+  },
+  {
+   "name": "campaign.hex.35",
+   "kind": "sewer",
+   "fx": "hq"
+  },
+  {
+   "name": "campaign.hex.36",
+   "kind": "hills",
+   "fx": "artillery"
+  },
+  {
+   "name": "campaign.hex.37",
+   "kind": "hills"
+  },
+  {
+   "name": "campaign.hex.74",
+   "kind": "village"
+  },
+  {
+   "name": "campaign.hex.75",
+   "kind": "factory"
+  },
+  {
+   "name": "campaign.hex.76",
+   "kind": "beach"
+  },
+  {
+   "name": "campaign.hex.77",
+   "kind": "harbor"
+  }
+ ],
+ "specials": {
+  "b1": {
+   "name": "campaign.special.b1.name",
+   "kind": "defend",
+   "turn": 1,
+   "tpl": "mb1",
+   "obj": "elim",
+   "cats": 10,
+   "reward": 100,
+   "shells": 2,
+   "brief": "campaign.special.b1.brief",
+   "slides": [
+    {
+     "img": "b1_dunk_1",
+     "text": "campaign.special.b1.slide.0"
     },
-    "b2": {
-      "name": "campaign.special.b2.name", "kind": "defend", "turn": 4, "tpl": "m22", "obj": "elim", "cats": 13, "reward": 120,
-      "brief": "campaign.special.b2.brief",
-      "slides": [
-        { "img": "b2_stalgard_1", "text": "campaign.special.b2.slide.0" },
-        { "img": "b2_stalgard_2", "text": "campaign.special.b2.slide.1" },
-        { "img": "b2_stalgard_3", "text": "campaign.special.b2.slide.2" },
-        { "img": "b2_stalgard_4", "text": "campaign.special.b2.slide.3" }
-      ]
+    {
+     "img": "b1_dunk_2",
+     "text": "campaign.special.b1.slide.1"
     },
-    "b3": {
-      "name": "campaign.special.b3.name", "kind": "defend", "turn": 9, "tpl": "m2", "obj": "elim", "cats": 12, "reward": 120, "mirror": true,
-      "brief": "campaign.special.b3.brief",
-      "slides": [
-        { "img": "b3_arven_1", "text": "campaign.special.b3.slide.0" },
-        { "img": "b3_arven_2", "text": "campaign.special.b3.slide.1" },
-        { "img": "b3_arven_3", "text": "campaign.special.b3.slide.2" },
-        { "img": "b3_arven_4", "text": "campaign.special.b3.slide.3" }
-      ]
+    {
+     "img": "b1_dunk_3",
+     "text": "campaign.special.b1.slide.2"
     },
-    "b4": {
-      "name": "campaign.special.b4.name", "kind": "attack", "tpl": "m21", "obj": "reach", "cats": 12, "reward": 130,
-      "brief": "campaign.special.b4.brief",
-      "slides": [
-        { "img": "b4_kurk_1", "text": "campaign.special.b4.slide.0" },
-        { "img": "b4_kurk_2", "text": "campaign.special.b4.slide.1" },
-        { "img": "b4_kurk_3", "text": "campaign.special.b4.slide.2" },
-        { "img": "b4_kurk_4", "text": "campaign.special.b4.slide.3" }
-      ]
-    },
-    "b5": {
-      "name": "campaign.special.b5.name", "kind": "attack", "tpl": "mb1", "obj": "officer", "cats": 14, "reward": 150,
-      "brief": "campaign.special.b5.brief",
-      "slides": [
-        { "img": "b5_norman_1", "text": "campaign.special.b5.slide.0" },
-        { "img": "b5_norman_2", "text": "campaign.special.b5.slide.1" },
-        { "img": "b5_norman_3", "text": "campaign.special.b5.slide.2" },
-        { "img": "b5_norman_4", "text": "campaign.special.b5.slide.3" }
-      ]
-    },
-    "b6": {
-      "name": "campaign.special.b6.name", "kind": "attack", "tpl": "m3", "obj": "officer", "cats": 11, "reward": 150,
-      "brief": "campaign.special.b6.brief",
-      "slides": [
-        { "img": "b6_arn_1", "text": "campaign.special.b6.slide.0" },
-        { "img": "b6_arn_2", "text": "campaign.special.b6.slide.1" },
-        { "img": "b6_arn_3", "text": "campaign.special.b6.slide.2" },
-        { "img": "b6_arn_4", "text": "campaign.special.b6.slide.3" }
-      ]
-    },
-    "b7": {
-      "name": "campaign.special.b7.name", "kind": "attack", "tpl": "mb1", "obj": "officer", "cats": 16, "reward": 300, "shells": 3, "mirror": true,
-      "brief": "campaign.special.b7.brief",
-      "slides": [
-        { "img": "b7_felin_1", "text": "campaign.special.b7.slide.0" },
-        { "img": "b7_felin_2", "text": "campaign.special.b7.slide.1" },
-        { "img": "b7_felin_3", "text": "campaign.special.b7.slide.2" },
-        { "img": "b7_felin_4", "text": "campaign.special.b7.slide.3" }
-      ]
+    {
+     "img": "b1_dunk_4",
+     "text": "campaign.special.b1.slide.3"
     }
+   ]
   },
-  "prologue": [
-    { "img": "prologue_1", "text": "campaign.prologue.0" },
-    { "img": "prologue_2", "text": "campaign.prologue.1" },
-    { "img": "prologue_3", "text": "campaign.prologue.2" },
-    { "img": "prologue_4", "text": "campaign.prologue.3" }
-  ],
-  "victory": [
-    { "img": "epilogue_1", "text": "campaign.victory.0" },
-    { "img": "epilogue_2", "text": "campaign.victory.1" }
-  ],
-  "defeat": [
-    { "img": "epilogue_3", "text": "campaign.defeat.0" },
-    { "img": "epilogue_4", "text": "campaign.defeat.1" }
-  ]
+  "b2": {
+   "name": "campaign.special.b2.name",
+   "kind": "defend",
+   "turn": 4,
+   "tpl": "m22",
+   "obj": "elim",
+   "cats": 13,
+   "reward": 120,
+   "brief": "campaign.special.b2.brief",
+   "slides": [
+    {
+     "img": "b2_stalgard_1",
+     "text": "campaign.special.b2.slide.0"
+    },
+    {
+     "img": "b2_stalgard_2",
+     "text": "campaign.special.b2.slide.1"
+    },
+    {
+     "img": "b2_stalgard_3",
+     "text": "campaign.special.b2.slide.2"
+    },
+    {
+     "img": "b2_stalgard_4",
+     "text": "campaign.special.b2.slide.3"
+    }
+   ]
+  },
+  "b3": {
+   "name": "campaign.special.b3.name",
+   "kind": "defend",
+   "turn": 9,
+   "tpl": "m2",
+   "obj": "elim",
+   "cats": 12,
+   "reward": 120,
+   "mirror": true,
+   "brief": "campaign.special.b3.brief",
+   "slides": [
+    {
+     "img": "b3_arven_1",
+     "text": "campaign.special.b3.slide.0"
+    },
+    {
+     "img": "b3_arven_2",
+     "text": "campaign.special.b3.slide.1"
+    },
+    {
+     "img": "b3_arven_3",
+     "text": "campaign.special.b3.slide.2"
+    },
+    {
+     "img": "b3_arven_4",
+     "text": "campaign.special.b3.slide.3"
+    }
+   ]
+  },
+  "b4": {
+   "name": "campaign.special.b4.name",
+   "kind": "attack",
+   "tpl": "m21",
+   "obj": "reach",
+   "cats": 12,
+   "reward": 130,
+   "brief": "campaign.special.b4.brief",
+   "slides": [
+    {
+     "img": "b4_kurk_1",
+     "text": "campaign.special.b4.slide.0"
+    },
+    {
+     "img": "b4_kurk_2",
+     "text": "campaign.special.b4.slide.1"
+    },
+    {
+     "img": "b4_kurk_3",
+     "text": "campaign.special.b4.slide.2"
+    },
+    {
+     "img": "b4_kurk_4",
+     "text": "campaign.special.b4.slide.3"
+    }
+   ]
+  },
+  "b5": {
+   "name": "campaign.special.b5.name",
+   "kind": "attack",
+   "tpl": "mb1",
+   "obj": "officer",
+   "cats": 14,
+   "reward": 150,
+   "brief": "campaign.special.b5.brief",
+   "slides": [
+    {
+     "img": "b5_norman_1",
+     "text": "campaign.special.b5.slide.0"
+    },
+    {
+     "img": "b5_norman_2",
+     "text": "campaign.special.b5.slide.1"
+    },
+    {
+     "img": "b5_norman_3",
+     "text": "campaign.special.b5.slide.2"
+    },
+    {
+     "img": "b5_norman_4",
+     "text": "campaign.special.b5.slide.3"
+    }
+   ]
+  },
+  "b6": {
+   "name": "campaign.special.b6.name",
+   "kind": "attack",
+   "tpl": "m3",
+   "obj": "officer",
+   "cats": 11,
+   "reward": 150,
+   "brief": "campaign.special.b6.brief",
+   "slides": [
+    {
+     "img": "b6_arn_1",
+     "text": "campaign.special.b6.slide.0"
+    },
+    {
+     "img": "b6_arn_2",
+     "text": "campaign.special.b6.slide.1"
+    },
+    {
+     "img": "b6_arn_3",
+     "text": "campaign.special.b6.slide.2"
+    },
+    {
+     "img": "b6_arn_4",
+     "text": "campaign.special.b6.slide.3"
+    }
+   ]
+  },
+  "b7": {
+   "name": "campaign.special.b7.name",
+   "kind": "attack",
+   "tpl": "mb1",
+   "obj": "officer",
+   "cats": 16,
+   "reward": 300,
+   "shells": 3,
+   "mirror": true,
+   "brief": "campaign.special.b7.brief",
+   "slides": [
+    {
+     "img": "b7_felin_1",
+     "text": "campaign.special.b7.slide.0"
+    },
+    {
+     "img": "b7_felin_2",
+     "text": "campaign.special.b7.slide.1"
+    },
+    {
+     "img": "b7_felin_3",
+     "text": "campaign.special.b7.slide.2"
+    },
+    {
+     "img": "b7_felin_4",
+     "text": "campaign.special.b7.slide.3"
+    }
+   ]
+  }
+ },
+ "prologue": [
+  {
+   "img": "prologue_1",
+   "text": "campaign.prologue.0"
+  },
+  {
+   "img": "prologue_2",
+   "text": "campaign.prologue.1"
+  },
+  {
+   "img": "prologue_3",
+   "text": "campaign.prologue.2"
+  },
+  {
+   "img": "prologue_4",
+   "text": "campaign.prologue.3"
+  }
+ ],
+ "victory": [
+  {
+   "img": "epilogue_1",
+   "text": "campaign.victory.0"
+  },
+  {
+   "img": "epilogue_2",
+   "text": "campaign.victory.1"
+  }
+ ],
+ "defeat": [
+  {
+   "img": "epilogue_3",
+   "text": "campaign.defeat.0"
+  },
+  {
+   "img": "epilogue_4",
+   "text": "campaign.defeat.1"
+  }
+ ]
 }

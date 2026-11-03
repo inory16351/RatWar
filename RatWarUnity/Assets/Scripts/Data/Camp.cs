@@ -37,9 +37,10 @@ public class Bond { public string kind, id; public int n; }
 [Serializable]
 public class CampData
 {
-    public int v = 2, supplies = 60, battles, made, recruited, diff = RULES.defaultDiff; // recruited = 이번 전쟁에서 모집한 수 (모집 값이 오름)
+    public int v = 2, supplies = 60, battles, made, recruited, rerolls, limbs, diff = RULES.defaultDiff; // recruited = 이번 전쟁에서 모집한 수 (모집 값이 오름) · rerolls = 지원자 새로 받은 수 · limbs = 단 의수 · 의족 수 (값이 오름)
     public List<string> done = new List<string>(), deploy = new List<string>();
     public List<RatRecord> squad = new List<RatRecord>(), fallen = new List<RatRecord>(), recruits = new List<RatRecord>();
+    public List<int> hired = new List<int>(); // 이번 턴에 뽑아서 잠긴 지원자 칸 (턴이 넘어가면 새 지원자로 열림)
     public WarState war = new WarState();
 }
 
@@ -74,7 +75,7 @@ public static class CampRules
     // 털 · 이름 · 고향 · 사연 = 글자 테이블 키 (Tables/ko/camp.json). 쥐 기록엔 키를 저장
     static string[] Keys(string pre, int n) => Enumerable.Range(0, n).Select(i => pre + i).ToArray();
     public static readonly string[] FURS = Keys("camp.fur.", 6);
-    public static readonly string[] NAMES = Keys("camp.name.", 30);
+    public static readonly string[] NAMES = Keys("camp.name.", 80);
     public static readonly string[] HOMES = Keys("camp.home.", 10);
     public static readonly string[] STORIES = Keys("camp.story.", 12);
 
@@ -172,9 +173,11 @@ public static class CampRules
         return (Loc.T("camp.stress.0"), SkillsData.Hex("#9fd6a0"));
     }
 
-    public const int RECRUIT_COST = 35, REFRESH_COST = 8, LIMB_COST = 50, SQUAD_MAX = 12, DEPLOY_MAX = 6;
+    public const int RECRUIT_COST = 35, REFRESH_COST = 8, LIMB_COST = 50, LIMB_PER_FIT = 15, SQUAD_MAX = 12, DEPLOY_MAX = 6;
+    public const int KILL_XP_MAX = 3; // 한 판 처치 경험치 상한 (한 마리가 처치를 몰아 먹어 급성장하는 것 막기)
     // 모집 값 = 기본 + 위협 단계마다 + 모집할 때마다 누적 + 지원자 계급마다
     public const int RECRUIT_PER_TIER = 10, RECRUIT_PER_HIRE = 3, RECRUIT_PER_RANK = 15;
+    public const int REFRESH_PER_ROLL = 4, REFRESH_PER_TIER = 5; // 지원자 새로 받기 값 = 기본 + 이번 전쟁에서 받은 횟수마다 + 위협 단계마다
     public const float VET_PER_TIER = 0.15f; // 위협 2단계부터 단계마다 지원자가 계급을 달고 올 확률 +15%
 }
 
@@ -191,7 +194,9 @@ public static class Camp
         // 이름 겹침 검사는 키 · 글자 둘 다 (예전 저장은 한국어 이름)
         var used = new HashSet<string>(c.squad.Concat(c.fallen).Concat(c.recruits).SelectMany(r => new[] { r.name, r.Name }));
         bool Free(string n) => !used.Contains(n) && !used.Contains(Loc.T(n));
-        var name = CampRules.NAMES.FirstOrDefault(n => Free(n) && Rnd < 0.5f) ?? CampRules.NAMES.FirstOrDefault(Free) ?? Loc.F("camp.name.recruit", c.made + 1);
+        // 분대 · 추모비 · 지원자와 겹치지 않는 이름 중 아무거나. 80개가 다 쓰이면 '신병 n'
+        var free = CampRules.NAMES.Where(Free).ToList();
+        var name = free.Count > 0 ? Pick(free) : Loc.F("camp.name.recruit", c.made + 1);
         var traits = new List<string>();
         if (psychic || Rnd < 0.15f) traits.Add("psychic");
         var pool = CampRules.TRAITS.Keys.Where(t => !CampRules.TRAITS[t].rare && !CampRules.TRAITS[t].acq && t != "sibling").ToList();
@@ -241,12 +246,20 @@ public static class Camp
             r.traits.RemoveAll(t => !CampRules.TRAITS.ContainsKey(t));
             if (r.bonds == null) r.bonds = new List<Bond>();
         }
+        if (c.hired == null) c.hired = new List<int>();
         War.Ensure(c); // 예전 저장 = 전략 지도 새로 시작
         return c;
     }
     public static void Save(CampData c) { try { File.WriteAllText(PathOf, JsonUtility.ToJson(c)); } catch (Exception e) { Debug.LogWarning("저장 실패 " + e.Message); } }
     public static void Reset() { try { if (File.Exists(PathOf)) File.Delete(PathOf); } catch { /* 무시 */ } }
-    public static void RollRecruits(CampData c) => c.recruits = new List<RatRecord> { NewRecruit(c), NewRecruit(c), NewRecruit(c) };
+    public static void RollRecruits(CampData c) { c.recruits = new List<RatRecord> { NewRecruit(c), NewRecruit(c), NewRecruit(c) }; c.hired = new List<int>(); }
+    // 턴 넘김: 뽑아서 잠긴 칸만 새 지원자로 열림 (모병소를 쥐고 있으면 전부 새로)
+    public static void Unlock(CampData c)
+    {
+        foreach (var i in c.hired) if (i < c.recruits.Count) c.recruits[i] = NewRecruit(c);
+        c.hired = new List<int>();
+    }
+    public static bool Locked(CampData c, int i) => c.hired != null && c.hired.Contains(i);
     // 모집 지원자: 위협 단계가 높을수록 계급을 단 고참이 옴 (단계 t → 일병 ~ 최대 t 계급, 하사까지). 대신 더 비쌈
     static RatRecord NewRecruit(CampData c)
     {
@@ -339,26 +352,38 @@ public static class Camp
     // ── 모집 · 치료 ──
     public static bool Recruit(CampData c, int i)
     {
-        if (i >= c.recruits.Count || c.squad.Count >= CampRules.SQUAD_MAX) return false;
+        if (i >= c.recruits.Count || Locked(c, i) || c.squad.Count >= CampRules.SQUAD_MAX) return false;
         int cost = RecruitCost(c, c.recruits[i]);
         if (c.supplies < cost) return false;
         c.supplies -= cost; c.recruited++;
         c.squad.Add(c.recruits[i]);
-        c.recruits[i] = NewRecruit(c);
+        c.recruits[i] = NewRecruit(c); // 자리 채움 (잠겨 있어 이번 턴엔 못 뽑음)
+        c.hired.Add(i);
         Save(c);
         return true;
     }
+    public static int RefreshCost(CampData c)
+    {
+        int tier = c.war != null && c.war.own.Count == War.N ? War.Threat(c) : 1;
+        return CampRules.REFRESH_COST + c.rerolls * CampRules.REFRESH_PER_ROLL + (tier - 1) * CampRules.REFRESH_PER_TIER;
+    }
+    // 지원자 새로 받기: 잠긴 칸도 다시 열림
     public static bool Refresh(CampData c)
     {
-        if (c.supplies < CampRules.REFRESH_COST) return false;
-        c.supplies -= CampRules.REFRESH_COST; RollRecruits(c); Save(c); return true;
+        int cost = RefreshCost(c);
+        if (c.supplies < cost) return false;
+        c.supplies -= cost; c.rerolls++; RollRecruits(c); Save(c); return true;
     }
-    // 의수 · 의족 값 (전략 지도에서 공방을 쥐고 있으면 절반)
-    public static int LimbCost(CampData c) => War.Holds(c, "workshop") ? CampRules.LIMB_COST / 2 : CampRules.LIMB_COST;
+    // 의수 · 의족 값: 이번 전쟁에서 달 때마다 +15 (전략 지도에서 공방을 쥐고 있으면 절반)
+    public static int LimbCost(CampData c)
+    {
+        int cost = CampRules.LIMB_COST + c.limbs * CampRules.LIMB_PER_FIT;
+        return War.Holds(c, "workshop") ? cost / 2 : cost;
+    }
     public static bool FitLimb(CampData c, RatRecord r)
     {
         if (c.supplies < LimbCost(c) || r.lost.Count == 0) return false;
-        c.supplies -= LimbCost(c);
+        c.supplies -= LimbCost(c); c.limbs++;
         r.prosthetic = r.prosthetic.Concat(r.lost).Distinct().ToList();
         r.lost.Clear();
         Save(c);
@@ -466,7 +491,7 @@ public static class Camp
             }
             int before = RankIdx(r);
             float pupilMul = Partners(r, "mentor").Any(deployed.Contains) ? 1.5f : 1;
-            r.xp += Mathf.RoundToInt((x.kills + 1 + (win ? 1 : 0)) * XpMul(r) * pupilMul);
+            r.xp += Mathf.RoundToInt((Mathf.Min(x.kills, CampRules.KILL_XP_MAX) + 1 + (win ? 1 : 0)) * XpMul(r) * pupilMul);
             r.kills += x.kills; r.missions++;
             r.stress = Mathf.Clamp(x.stress + (win ? CampRules.STRESS.win : 0) - (int)TraitSum(r, "unwind"), 0, 99);
             if (!string.IsNullOrEmpty(x.broke)) r.afflicted = x.broke;

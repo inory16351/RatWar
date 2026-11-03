@@ -29,6 +29,7 @@
   "ui.diff.battle": "Battle",
   "ui.diff.war": "War",
   "ui.diff.threat": "Threat rises every {0:0.#} turns",
+  "ui.diff.land": "Starting territory {0} regions",
   "ui.diff.supplies": "Starting supplies {0}",
   "ui.diff.income": "Income per turn ×{0:0.##}",
   "ui.diff.invade.less": "Invasions per turn −1",
@@ -97,6 +98,7 @@
   "ui.hex.fort": "▣ Fortress: auto-defense +{0}%",
   "ui.hex.threat": "Cats are invading! If you don't stop them yourself, the garrison tries to hold based on the odds",
   "ui.hex.attackable": "Borders our territory, so it can be attacked",
+  "ui.hex.siege": "The capital can only be attacked once fully surrounded ({0}/{1} adjacent regions held)",
   "ui.info.rat": "Republic {0} tiles",
   "ui.info.cat": "Empire {0} tiles",
   "ui.info.income": "Income +{0}/turn",
@@ -153,7 +155,10 @@
   "ui.recruit.refresh": "Other Volunteers ({0} supplies)",
   "ui.recruit.btn": "Recruit ({0} supplies)",
   "ui.recruit.joined": "{0} enlisted",
+  "ui.recruit.locked": "You took this volunteer this turn.\nA new one arrives next turn, or with Other Volunteers.",
+  "ui.recruit.locked_btn": "Next Turn",
   "ui.memorial.empty": "No names carved here yet.",
   "ui.memorial.head": "Memorial",
-  "ui.memorial.line": "{0}, {1} · Missions {2} · Kills {3}"
+  "ui.memorial.line": "{0}, {1} · Missions {2} · Kills {3}",
+  "ui.diff.locked": "Locked\n\nWin a war on {0} difficulty or higher to unlock."
 }

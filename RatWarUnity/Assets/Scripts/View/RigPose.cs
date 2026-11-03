@@ -83,6 +83,23 @@ public static class RigPose
             if (side) { a["arm"] = A("arm") - 7 * r; P.off["arm"] = new Vector2(-10 * r, 0); a["torso"] -= 2 * r; }
             else P.dy += 6 * r;
         }
+        // 칼 찌르기 (stab 1 → 0): 처음 30% 팔을 뒤로 당겼다가 몸을 실어 앞으로 쭉 · 돌아옴
+        if (st.stab > 0 && side)
+        {
+            float q = 1 - st.stab;
+            float e = q < 0.3f ? -q / 0.3f * 0.4f : Mathf.Sin((q - 0.3f) / 0.7f * Mathf.PI);
+            a["arm"] = A("arm") - 14 * e; P.off["arm"] = new Vector2(16 * e, 0);
+            a["torso"] += 10 * e; a["head"] -= 5 * e; P.dx += 40 * e;
+            a["thighN"] = A("thighN") - 14 * Mathf.Max(0, e); a["shinN"] = A("shinN") + 10 * Mathf.Max(0, e);
+        }
+        // 화염방사: 앞으로 겨눈 채 뿜는 반동으로 덜덜
+        if (st.flame > 0 && side)
+        {
+            float k = st.flame, j = Mathf.Sin(t * 47) * 0.5f + Mathf.Sin(t * 31) * 0.5f;
+            a["arm"] = A("arm") - 6 * k + j * 1.5f * k; P.off["arm"] = new Vector2(-4 * k + j * 3 * k, 0);
+            a["torso"] -= 3 * k; a["head"] += 3 * k;
+            a["thighN"] = A("thighN") - 10 * k; a["thighF"] = A("thighF") + 8 * k; // 다리를 벌려 버팀
+        }
         if (st.throwK > 0 && side)
         {
             float k = st.throwK;

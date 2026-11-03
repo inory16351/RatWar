@@ -16,6 +16,7 @@ public static class DiffPicker
         var start = UIK.B(root, "Start");
         void Select(int i)
         {
+            if (!RULES.Unlocked(i)) return;
             pick = i;
             for (int k = 0; k < RULES.DIFFS.Length; k++)
             {
@@ -31,12 +32,14 @@ public static class DiffPicker
             UIK.T(card, "Name").text = Loc.T(D.name);
             UIK.T(card, "Name").color = i == RULES.DIFFS.Length - 1 ? UIK.CAT : UIK.GOLD;
             UIK.T(card, "Tag").text = Loc.T(D.tag);
-            UIK.T(card, "Body").text = Body(D);
+            UIK.T(card, "Body").text = RULES.Unlocked(i) ? Body(D) : UIK.Dim(Loc.F("ui.diff.locked", Loc.T(RULES.DIFFS[RULES.defaultDiff].name)));
             UIK.OnClick(card.GetComponent<Button>(), () => Select(n));
         }
         UIK.OnClick(start, () => { Menus.Show("DiffPicker", false); onStart(pick); });
         UIK.OnClick(UIK.B(root, "Back"), Back);
-        Select(Mathf.Clamp(pick, 0, RULES.DIFFS.Length - 1));
+        pick = Mathf.Clamp(pick, 0, RULES.DIFFS.Length - 1);
+        if (!RULES.Unlocked(pick)) pick = RULES.defaultDiff;
+        Select(pick);
         Menus.Show("DiffPicker", true);
     }
 
@@ -50,6 +53,7 @@ public static class DiffPicker
         string inv = Loc.T(D.invade < 0 ? "ui.diff.invade.less" : D.invade > 0 ? "ui.diff.invade.more" : "ui.diff.invade.base");
         return $"{UIK.Col($"<b>{Loc.T("ui.diff.battle")}</b>", UIK.GOLD)}\n{Loc.T(D.desc).Replace(" · ", "\n")}\n\n{UIK.Col($"<b>{Loc.T("ui.diff.war")}</b>", UIK.GOLD)}\n"
             + V(Loc.F("ui.diff.threat", D.threatStep), D.threatStep != B.threatStep, D.threatStep > B.threatStep) + "\n"
+            + V(Loc.F("ui.diff.land", D.land), D.land != B.land, D.land > B.land) + "\n"
             + V(Loc.F("ui.diff.supplies", D.supplies), D.supplies != B.supplies, D.supplies > B.supplies) + "\n"
             + V(Loc.F("ui.diff.income", D.income), D.income != B.income, D.income > B.income) + "\n"
             + V(inv, D.invade != 0, D.invade < 0) + "\n"

@@ -8,6 +8,7 @@ public class AnimState
     public float seed = Random.value * 6;
     public float? walk, death;
     public float crouch, aim, recoil, throwK, hit;
+    public float stab, flame; // 칼 찌르기 (1 → 0) · 화염방사 중 (1 = 뿜는 중)
 }
 
 // 전투 저장(BattleSave)은 이 객체를 그대로 JSON 으로 씀. [JsonIgnore] = 실행 중에만 쓰는 참조 (불러올 때 다시 이어 붙임)

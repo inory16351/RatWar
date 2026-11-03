@@ -29,6 +29,7 @@
   "ui.diff.battle": "戦闘",
   "ui.diff.war": "戦争",
   "ui.diff.threat": "脅威レベル：{0:0.#}ターンごと",
+  "ui.diff.land": "初期領土 {0}マス",
   "ui.diff.supplies": "初期補給品 {0}",
   "ui.diff.income": "ターン収入 ×{0:0.##}",
   "ui.diff.invade.less": "ターンごとの侵攻 −1",
@@ -97,6 +98,7 @@
   "ui.hex.fort": "▣ 要塞：自動防衛 +{0}%",
   "ui.hex.threat": "猫が侵攻中！ 直接防がなければ守備隊が確率で防ぐ",
   "ui.hex.attackable": "自領に隣接しているので攻撃できる",
+  "ui.hex.siege": "首都は隣接する地域をすべて占領して包囲しないと攻撃できません（{0}/{1}）",
   "ui.info.rat": "共和国 {0}マス",
   "ui.info.cat": "帝国 {0}マス",
   "ui.info.income": "収入 +{0}/ターン",
@@ -153,7 +155,10 @@
   "ui.recruit.refresh": "別の志願者（補給品 {0}）",
   "ui.recruit.btn": "募集（補給品 {0}）",
   "ui.recruit.joined": "{0} 入隊",
+  "ui.recruit.locked": "このターンはこの枠の志願者をもう受け入れました。\n次のターンか「別の志願者」で新しい志願者が来ます。",
+  "ui.recruit.locked_btn": "次のターン",
   "ui.memorial.empty": "まだ刻まれた名はない。",
   "ui.memorial.head": "慰霊碑",
-  "ui.memorial.line": "{0}、{1} · 出撃 {2} · 撃破 {3}"
+  "ui.memorial.line": "{0}、{1} · 出撃 {2} · 撃破 {3}",
+  "ui.diff.locked": "ロック中\n\n{0}以上の難易度で戦争に勝つと解放されます。"
 }

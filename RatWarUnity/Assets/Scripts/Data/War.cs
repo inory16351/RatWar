@@ -67,14 +67,17 @@ public static class War
         }
     }
 
+    // 처음 가진 땅: 난이도마다 사령부에서 가까운 칸부터 몇 칸
+    public static int[] Start(CampData c) => D.start.Take(Mathf.Clamp(RULES.DiffOf(c.diff).land, 1, D.start.Length)).ToArray();
     public static bool Rat(CampData c, int i) => c.war.own.Count == N && c.war.own[i] == "rat";
     public static bool Holds(CampData c, string fx) => c?.war != null && c.war.own.Count == N && Enumerable.Range(0, N).Any(i => D.hexes[i].fx == fx && Rat(c, i));
     public static int HoldCount(CampData c, string fx) => c?.war == null || c.war.own.Count != N ? 0 : Enumerable.Range(0, N).Count(i => D.hexes[i].fx == fx && Rat(c, i));
     public static int Income(CampData c) => Enumerable.Range(0, N).Where(i => Rat(c, i)).Sum(i => KindOf(i).income);
     public static int Count(CampData c, string side) => c.war.own.Count(o => o == side);
 
-    // 공격할 수 있는 칸 = 내 땅에 붙은 고양이 땅
-    public static bool CanAttack(CampData c, int i) => !Rat(c, i) && Neighbors(i).Any(n => Rat(c, n));
+    // 공격할 수 있는 칸 = 내 땅에 붙은 고양이 땅. 고양이 수도는 붙은 칸을 전부 먹어 포위해야
+    public static bool CanAttack(CampData c, int i) => !Rat(c, i) && (D.hexes[i].fx == "capital" ? Sieged(c, i) : Neighbors(i).Any(n => Rat(c, n)));
+    public static bool Sieged(CampData c, int i) => Neighbors(i).All(n => Rat(c, n));
     public static bool CanDefend(CampData c, int i) => Rat(c, i) && c.war.threats.Contains(i);
 
     // ── 시작 ──
@@ -86,7 +89,8 @@ public static class War
         if (c.war.turn > 0 && c.war.own.Count == N) return;
         var w = c.war;
         w.turn = 1; w.over = ""; w.battleHex = -1; w.battleKind = ""; w.posts = new List<Post>(); w.forts = new List<int>();
-        w.own = Enumerable.Range(0, N).Select(i => D.start.Contains(i) ? "rat" : "cat").ToList();
+        var start = Start(c);
+        w.own = Enumerable.Range(0, N).Select(i => start.Contains(i) ? "rat" : "cat").ToList();
         w.threats = new List<int>(); w.news = new List<string>();
         // 시작한 다음 사령부가 컷씬을 봤는지만 남김 (새 전쟁이면 다시 봄)
         w.seen = new List<string>();
@@ -130,7 +134,7 @@ public static class War
     //   진척 = (턴 − 1) + 늘어난 내 땅, 난이도 threatStep 마다 한 단계 (병장 3)
     public static int Threat(CampData c, int hex = -1)
     {
-        int gained = Mathf.Max(0, Count(c, "rat") - D.start.Length);
+        int gained = Mathf.Max(0, Count(c, "rat") - Start(c).Length);
         float prog = (c.war.turn - 1) + gained;
         int t = 1 + Mathf.FloorToInt(prog / RULES.DiffOf(c.diff).threatStep);
         if (hex >= 0 && D.hexes[hex].kind == "capital") t++;
@@ -187,7 +191,7 @@ public static class War
 
     // 출격 전에 고른 칸을 적어 둠 (정산 · 이어하기용)
     // ── 자동 방어 확률 (직접 싸우지 않은 침공) ──
-    //   기본 = 50% + 붙은 내 땅마다 8% − 턴마다 1.5% + 난이도 보정 → 15~85% 로 자름
+    //   기본 = 30% + 붙은 내 땅마다 8% − 턴마다 1.5% + 난이도 보정 → 10~75% 로 자름
     //   그 위에 수비대(쥐마다 12% + 계급마다 1%) · 요새(+20%) → 최대 95%
     public const float GARRISON_PER = 0.12f, GARRISON_RANK = 0.01f, FORT_BONUS = 0.20f, HOLD_MAX = 0.95f;
     public const int GARRISON_MAX = 3, FORT_COST = 45;
@@ -196,7 +200,7 @@ public static class War
     public static float BaseHold(CampData c, int hex)
     {
         int friends = Neighbors(hex).Count(n => Rat(c, n));
-        return Mathf.Clamp(0.5f + 0.08f * friends - 0.015f * c.war.turn + RULES.DiffOf(c.diff).hold, 0.15f, 0.85f);
+        return Mathf.Clamp(0.3f + 0.08f * friends - 0.015f * c.war.turn + RULES.DiffOf(c.diff).hold, 0.10f, 0.75f);
     }
     public static IEnumerable<RatRecord> Garrison(CampData c, int hex) =>
         c.war.posts.Where(p => p.hex == hex).Select(p => c.squad.FirstOrDefault(r => r.id == p.rat)).Where(r => r != null);
@@ -308,14 +312,14 @@ public static class War
         w.battleHex = -1; w.battleKind = "";
         // 승패
         int hq = Array.FindIndex(D.hexes, h => h.fx == "hq"), cap = Array.FindIndex(D.hexes, h => h.fx == "capital");
-        if (cap >= 0 && Rat(c, cap)) { w.over = "win"; w.news.Add(UIK.Col(Loc.F("war.news.win", Loc.T(D.hexes[cap].name)), UIK.GOLD)); return; }
+        if (cap >= 0 && Rat(c, cap)) { w.over = "win"; RULES.Cleared(c.diff); w.news.Add(UIK.Col(Loc.F("war.news.win", Loc.T(D.hexes[cap].name)), UIK.GOLD)); return; }
         if (hq >= 0 && !Rat(c, hq) || Count(c, "rat") == 0) { w.over = "lose"; w.news.Add(UIK.Col(Loc.F("war.news.lose", Loc.T(D.hexes[Mathf.Max(0, hq)].name)), UIK.NEG)); return; }
         // 수입 · 땅 효과
         int inc = Mathf.RoundToInt(Income(c) * RULES.DiffOf(c.diff).income);
         c.supplies += inc;
         w.news.Add(UIK.Col(Loc.F("war.news.income", inc, Count(c, "rat")), UIK.GOLD));
         if (Holds(c, "hospital")) foreach (var r in c.squad) r.stress = Mathf.Max(0, r.stress - 10);
-        if (Holds(c, "recruit")) Camp.RollRecruits(c);
+        if (Holds(c, "recruit")) Camp.RollRecruits(c); else Camp.Unlock(c);
         w.turn++;
         Invade(c);
     }
