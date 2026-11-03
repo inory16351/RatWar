@@ -196,7 +196,7 @@ public class UnitView : MonoBehaviour
         S.armBase = (arm.sr.sprite, new Vector4(p.x - p.pivot.x, p.y - p.pivot.y, p.w, p.h));
         if (u.Weapon == "flamer")
         {
-            var f = Fit("arm_flame", 1.69f, -13, -31); if (f.Item1) S.armBase = f; // 두 아래팔로 허리에 비스듬히 든 분사관 (M2-2, art_requests/flame_arm2). 위팔은 몸통 그림에 있으니 왼쪽 끝 소매를 그 끝(가슴 앞)에 붙임
+            var f = Fit("arm_flame", 0.82f, -9, -2); if (f.Item1) S.armBase = f; // 고양이 화방 팔 느낌으로 가슴 앞에 짧게 든 분사관 (art_requests/flame_arm3). 소총 팔처럼 왼쪽 끝 분홍 아래팔을 몸통 소매 끝에 붙임
             // 연료 배낭: 몸통 등 쪽(왼쪽)에, 몸통 뒤로
             var tank = ArtLib.Sprite("out/fx/tank.png");
             if (tank && S.joints.TryGetValue("torso", out var to))
@@ -367,8 +367,8 @@ public class UnitView : MonoBehaviour
         get
         {
             var p = transform.position;
-            bool wand = u.r != null && u.Weapon == "flamer"; // 화방 쥐는 긴 분사관 끝 (그림으로 잰 자리)
-            if (curView == "side") return p + new Vector3((curFlip ? -1 : 1) * UNIT_H * (wand ? 0.8f : 0.55f), UNIT_H * (wand ? 0.72f : 0.55f) * BodyK, -0.05f);
+            bool wand = u.r != null && u.Weapon == "flamer"; // 화방 쥐는 분사관 끝 (그림으로 잰 자리, 소총보다 조금 앞 · 위)
+            if (curView == "side") return p + new Vector3((curFlip ? -1 : 1) * UNIT_H * (wand ? 0.6f : 0.55f), UNIT_H * (wand ? 0.67f : 0.55f) * BodyK, -0.05f);
             if (u.st.throwK > 0) return p + new Vector3((curView == "front" ? -1 : 1) * UNIT_H * 0.2f, UNIT_H * 0.95f, -0.05f);
             return p + new Vector3(curView == "front" ? 0.07f : -0.07f, UNIT_H * (curView == "front" ? 0.5f : 0.75f) * BodyK, curView == "front" ? -0.1f : 0.1f);
         }

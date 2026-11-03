@@ -58,7 +58,7 @@
 
 ## 화방 · 칼 · 부비트랩 그림 (2026-11-03)
 - `art_requests/melee_flame/` (코덱스, `tools/gen_art.ps1 . sheet.png SHEET`) → `out/fx/arm_knife · tank · jet · slash · trap`. 배낭은 2차(`tank2.png`, M2 옆모습)
-- 화방 팔은 `art_requests/flame_arm2/` 4차: 두 손으로 허리에 비스듬히 든 M2-2 분사관 (`arm.png` → `out/fx/arm_flame.png`). 먼 쪽 소매가 떠 보여 `far_sleeve.py` 로 몸 쪽까지 이은 `arm_flame_far.png` 를 몸통 바로 뒤에 그림
+- 화방 팔은 `art_requests/flame_arm3/` 7차: 고양이 화방 팔(`rigs/cat_catflame/parts/side/arm.png`) 느낌으로 가슴 앞에 짧게 든 분사관, 분홍 아래팔이 소총 팔처럼 몸통 소매 끝에서 이어짐 (`arm.png` → 마젠타 빼서 폭 640 → `out/fx/arm_flame.png`, 자리 `UnitView.ArmSwap` Fit 0.82 · −9 · −2). 예전 허리에 비스듬히 든 긴 분사관(`flame_arm2/`)은 팔이 몸통과 따로 놀아 버림
 - **코덱스 심의**: 팔 + 군복 + 무기(화염방사기 · 분무기 문구, 총 든 팔 참조 그림)는 출력 심의(violence)에 걸림 → 총 참조 없이 "분무기 막대를 두 손으로 든 쥐 팔"로, 분사관 · 배낭은 따로 받음
 - 쥐 옆모습: 화방 쥐는 팔 그림을 `arm_flame` 으로 바꾸고 몸통 뒤에 `tank` (`UnitView.ArmSwap`). 칼 찌를 땐(`AnimState.stab`) `arm_knife`. 앞 · 뒤 모습엔 배낭 없음 (찌르기 · 뿜기 중엔 옆모습으로 돌림)
 - 자세: `RigPose` stab(당겼다 쭉) · flame(겨누고 덜덜). 불줄기 `jet` 은 분사관 끝(`UnitView.Muzzle`) → 표적, 그림 왼쪽 끝이 흐려 18% 뒤로 물림 (`BoardView.Flame`). 칼 궤적 `slash`, 부비트랩 표시는 `trap`
