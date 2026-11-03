@@ -1144,14 +1144,15 @@ public static class Battle
         FaceToward(u, target.x, target.z);
         View.FocusPair(u, target.x, target.z);
         u.face = "attack"; u.faceT = 1.2f;
-        u.st.recoil = 1;
         var info = GetHitInfo(u, target, knife: true);
         bool hit = R100 < info.hit;
         bool crit = hit && R100 < info.crit + 20;
         bool cine = hit && (crit || 5 >= target.hp);
         if (cine) await View.Cinematic(u, target, true);
+        u.st.stab = 1; // 찌르는 자세 (당겼다가 쭉) → 팔이 다 뻗을 때 베기 효과
+        await Sleep(200);
         View.Slash(u, target);
-        await Sleep(220);
+        await Sleep(160);
         if (hit) await Damage(target, Rnd(4, 6) + (crit ? 2 : 0), crit, u, "knife", crit ? "head" : "torso", quiet: true);
         else View.Popup(target, Loc.T("battle.pop.miss"), "#d8d0b8");
         if (cine) View.EndCinematic();

@@ -29,6 +29,7 @@
   "ui.diff.battle": "Gefecht",
   "ui.diff.war": "Krieg",
   "ui.diff.threat": "Bedrohungsstufe: alle {0:0.#} Runden",
+  "ui.diff.land": "Startgebiet {0} Felder",
   "ui.diff.supplies": "Start-Nachschub {0}",
   "ui.diff.income": "Einkommen pro Runde ×{0:0.##}",
   "ui.diff.invade.less": "Angriffe pro Runde −1",
@@ -97,6 +98,7 @@
   "ui.hex.fort": "▣ Festung: Auto-Verteidigung +{0}%",
   "ui.hex.threat": "Katzenangriff! Ohne dein Eingreifen wehrt die Besatzung nach Wahrscheinlichkeit ab",
   "ui.hex.attackable": "Grenzt an unser Gebiet – Angriff möglich",
+  "ui.hex.siege": "Die Hauptstadt kann erst angegriffen werden, wenn sie vollständig eingekesselt ist ({0}/{1} angrenzende Gebiete)",
   "ui.info.rat": "Republik: {0} Gebiete",
   "ui.info.cat": "Kaiserreich: {0} Gebiete",
   "ui.info.income": "Einkommen +{0}/Runde",
@@ -153,7 +155,10 @@
   "ui.recruit.refresh": "Andere Freiwillige (Nachschub {0})",
   "ui.recruit.btn": "Rekrutieren (Nachschub {0})",
   "ui.recruit.joined": "{0} rekrutiert",
+  "ui.recruit.locked": "Diesen Freiwilligen hast du diese Runde schon aufgenommen.\nNächste Runde oder mit „Andere Freiwillige“ kommt ein neuer.",
+  "ui.recruit.locked_btn": "Nächste Runde",
   "ui.memorial.empty": "Noch ist kein Name eingraviert.",
   "ui.memorial.head": "Ehrenmal",
-  "ui.memorial.line": "{0}, {1} · Einsätze {2} · Abschüsse {3}"
+  "ui.memorial.line": "{0}, {1} · Einsätze {2} · Abschüsse {3}",
+  "ui.diff.locked": "Gesperrt\n\nGewinne einen Krieg auf Schwierigkeit {0} oder höher, um freizuschalten."
 }

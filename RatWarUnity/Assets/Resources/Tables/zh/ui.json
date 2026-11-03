@@ -29,6 +29,7 @@
   "ui.diff.battle": "战斗",
   "ui.diff.war": "战争",
   "ui.diff.threat": "威胁等级：每 {0:0.#} 回合",
+  "ui.diff.land": "初始领土 {0}格",
   "ui.diff.supplies": "初始补给 {0}",
   "ui.diff.income": "回合收入 ×{0:0.##}",
   "ui.diff.invade.less": "每回合进攻 −1",
@@ -97,6 +98,7 @@
   "ui.hex.fort": "▣ 要塞：自动防御 +{0}%",
   "ui.hex.threat": "猫军正在入侵！若不亲自阻击，将由守军按几率抵挡",
   "ui.hex.attackable": "与我方领土相邻，可以进攻",
+  "ui.hex.siege": "必须占领所有相邻地区、包围首都后才能进攻（{0}/{1}）",
   "ui.info.rat": "共和国 {0} 格",
   "ui.info.cat": "帝国 {0} 格",
   "ui.info.income": "收入 +{0}/回合",
@@ -153,7 +155,10 @@
   "ui.recruit.refresh": "换一批志愿兵（补给 {0}）",
   "ui.recruit.btn": "招募（补给 {0}）",
   "ui.recruit.joined": "{0} 入伍",
+  "ui.recruit.locked": "本回合已接收这个位置的志愿兵。\n下回合或点击“换一批志愿兵”会有新的志愿兵。",
+  "ui.recruit.locked_btn": "下回合",
   "ui.memorial.empty": "尚未刻有名字。",
   "ui.memorial.head": "纪念碑",
-  "ui.memorial.line": "{0}，{1} · 出战 {2} · 击杀 {3}"
+  "ui.memorial.line": "{0}，{1} · 出战 {2} · 击杀 {3}",
+  "ui.diff.locked": "未解锁\n\n以{0}或更高难度赢得战争后解锁。"
 }

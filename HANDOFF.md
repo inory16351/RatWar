@@ -48,6 +48,30 @@
 - 새 글자를 넣으면 ko 테이블에 키 추가 → `translate` 로 다른 언어 채움 (이미 있는 키도 다시 번역하므로 필요하면 손으로)
 - 숨은 병종 조합(통신병 · 주술사 등) 조건은 화면에 쓰지 않음
 
+## 밸런스 손본 것 (2026-11-03)
+- 자동 방어 기본 30% (붙은 내 땅 +8% · 턴마다 −1.5%, 10~75%). 수비대 계급 보너스는 그대로(+1%/계급)
+- 땅 수입 절반 (`campaign.json` kinds.income). 전투 보상은 그대로
+- 한 판 처치 경험치 최대 3 (`CampRules.KILL_XP_MAX`). 계급 문턱은 그대로
+- 의수 · 의족 값 50 + 이번 전쟁에서 단 수 × 15 (`CampData.limbs`), 공방이면 절반
+- 모집: 뽑은 지원자 칸은 다음 턴까지 잠김 (`CampData.hired`, 턴 넘김 `Camp.Unlock`). '다른 지원자'는 잠긴 칸까지 새로 받음, 값 = 8 + 받은 횟수 × 4 + (위협 단계 − 1) × 5 (`CampData.rerolls`)
+- 쥐 이름 80개 (`camp.name.0~79`), 분대 · 추모비 · 지원자와 안 겹치게 무작위. 다 쓰이면 '신병 n'
+
+## 화방 · 칼 · 부비트랩 그림 (2026-11-03)
+- `art_requests/melee_flame/` (코덱스, `tools/gen_art.ps1 . sheet.png SHEET`) → `out/fx/arm_knife · tank · jet · slash · trap`. 배낭은 2차(`tank2.png`, M2 옆모습)
+- 화방 팔은 `art_requests/flame_arm3/` 7차: 고양이 화방 팔(`rigs/cat_catflame/parts/side/arm.png`) 느낌으로 가슴 앞에 짧게 든 분사관, 분홍 아래팔이 소총 팔처럼 몸통 소매 끝에서 이어짐 (`arm.png` → 마젠타 빼서 폭 640 → `out/fx/arm_flame.png`, 자리 `UnitView.ArmSwap` Fit 0.82 · −9 · −2). 예전 허리에 비스듬히 든 긴 분사관(`flame_arm2/`)은 팔이 몸통과 따로 놀아 버림
+- **코덱스 심의**: 팔 + 군복 + 무기(화염방사기 · 분무기 문구, 총 든 팔 참조 그림)는 출력 심의(violence)에 걸림 → 총 참조 없이 "분무기 막대를 두 손으로 든 쥐 팔"로, 분사관 · 배낭은 따로 받음
+- 쥐 옆모습: 화방 쥐는 팔 그림을 `arm_flame` 으로 바꾸고 몸통 뒤에 `tank` (`UnitView.ArmSwap`). 칼 찌를 땐(`AnimState.stab`) `arm_knife`. 앞 · 뒤 모습엔 배낭 없음 (찌르기 · 뿜기 중엔 옆모습으로 돌림)
+- 자세: `RigPose` stab(당겼다 쭉) · flame(겨누고 덜덜). 불줄기 `jet` 은 분사관 끝(`UnitView.Muzzle`) → 표적, 그림 왼쪽 끝이 흐려 18% 뒤로 물림 (`BoardView.Flame`). 칼 궤적 `slash`, 부비트랩 표시는 `trap`
+
+## 전략 지도 13×6 · 수도 포위 · 난이도 (2026-11-03)
+- 지도 78칸: `tools/campaign/layout.py`(지형 · 예전 칸 이름 재사용) + `names.py`(새 이름 38개 × 8개 언어) → `build.py` 가 `campaign.json` · 이름 테이블 · 그림 배치 안내(`art_requests/war_map2/ref_layout2.png`)를 만듦. 그림은 `art_requests/war_map2/map.png` → `out/war_map.jpg`. 예전 10×4 는 `art_requests/war_map/`
+- 예전 저장(40칸)은 불러오면 전략 지도가 새로 시작됨 (`War.Ensure`)
+- 시작 땅 = 난이도 `land` (신병 16 · 병장 12 · 원사 9 · 참호의 악몽 6) 칸을 `start`(사령부에서 가까운 순, 강 남쪽 두 줄) 앞에서부터
+- 고양이 수도는 붙은 칸을 전부 먹어 포위해야 공격 (`War.Sieged`)
+- 참호의 악몽은 병장 이상으로 전쟁을 이기면 열림 (`RULES.Unlocked` · PlayerPrefs `diffClear`)
+- 스트레스는 '지금/무너지는 기준'으로 보임 (신경과민 80 · 망가짐 85 · 강철 의지 120, 막대도 기준에서 꽉 참)
+- 승리 에필로그 2컷(무덤 앞) 다시 그림: `art_requests/epilogue_fix/`
+
 ## 에필로그 · 타이틀
 - 전쟁이 끝나면 승리/패배 컷씬 뒤 `Epilogue.Build` → 살아남은 쥐마다 '그 뒤의 이야기' (사연 · 고향 · 잃은 팔다리 · 형제 · 전우 · 앙숙 · 스트레스 · 계급 · 처치 수로 문장을 고름) → 전사자 이름 → 마지막 한마디. 쥐 장면은 검은 바탕 + 왼쪽 초상(`Cutscene/Portrait`)
 - 타이틀: `Resources/Art/out/ui/title_bg.png`(키 아트) + `logo.png`(마젠타 빼서 씀). 요청서 `art_requests/title/`

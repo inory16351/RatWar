@@ -222,9 +222,9 @@ public class Hud : MonoBehaviour
             string hp = new string('■', Mathf.Max(0, x.hp)) + UIK.Dim(new string('□', Mathf.Max(0, x.maxHp - x.hp)));
             UIK.T(c, "Info").text = x.alive ? $"{UIK.Col(hp, UIK.RAT)}\n{UIK.Col(new string('●', x.ap), UIK.GOLD)}{UIK.Dim(new string('○', Mathf.Max(0, 2 - x.ap)))} {Loc.F("hud.card.ammo", x.ammo)}" + (x.wounds.Count > 0 ? " " + UIK.Col(Loc.T("hud.card.wounded"), UIK.NEG) : "")
                 : x.downed ? UIK.Col(Loc.T("hud.card.downed"), UIK.NEG) : UIK.Dim(Loc.T("hud.card.dead"));
-            UIK.Bar(UIK.F(c, "SBar"), x.stress / 100f, ss.c);
+            UIK.Bar(UIK.F(c, "SBar"), x.stress / (float)Camp.BreakAt(x.r), ss.c); // 무너지는 기준(특성마다 다름)에서 꽉 참
             c.GetComponent<Image>().color = x == u ? UIK.GOLD : done ? new Color(0.55f, 0.55f, 0.55f) : x.alive ? Color.white : new Color(0.4f, 0.35f, 0.35f);
-            UIK.Tip(c.GetComponent<Button>(), Loc.F("hud.card.tip", $"{Loc.T(CampRules.RANKS[CampRules.RankOf(x.xp)].name)} {Loc.T(x.name)}", Loc.T(x.def.name), x.hp, x.maxHp, x.ammo, x.clip, x.ap, UIK.Col($"{x.stress} · {Loc.T(ss.t)}", ss.c))
+            UIK.Tip(c.GetComponent<Button>(), Loc.F("hud.card.tip", $"{Loc.T(CampRules.RANKS[CampRules.RankOf(x.xp)].name)} {Loc.T(x.name)}", Loc.T(x.def.name), x.hp, x.maxHp, x.ammo, x.clip, x.ap, UIK.Col($"{x.stress}/{Camp.BreakAt(x.r)} · {Loc.T(ss.t)}", ss.c))
                 + (x.wounds.Count > 0 ? "\n" + UIK.Col(string.Join(" · ", x.wounds.Select(w => Loc.F(w.Value > 1 ? "hud.wound.severed" : "hud.wound.hurt", Loc.T(Battle.PART_NAME[w.Key])))), UIK.NEG) : ""));
         }
 
@@ -236,7 +236,7 @@ public class Hud : MonoBehaviour
         {
             var ss = u.r != null ? CampRules.StressState(u.stress, Camp.BreakAt(u.r)) : ("", Color.white);
             UIK.T(selInfo, "Text").text = u.r != null
-                ? Loc.F("hud.sel.info", $"{Loc.T(CampRules.RANKS[CampRules.RankOf(u.xp)].name)} {Loc.T(u.name)}", UIK.Dim(Loc.T(u.def.name)), u.hp, u.maxHp, u.ammo, u.clip, u.psi > 0 ? Loc.F("hud.sel.psi", u.psi) : "", u.ap, UIK.Col($"{u.stress} {Loc.T(ss.Item1)}", ss.Item2)) + "\n"
+                ? Loc.F("hud.sel.info", $"{Loc.T(CampRules.RANKS[CampRules.RankOf(u.xp)].name)} {Loc.T(u.name)}", UIK.Dim(Loc.T(u.def.name)), u.hp, u.maxHp, u.ammo, u.clip, u.psi > 0 ? Loc.F("hud.sel.psi", u.psi) : "", u.ap, UIK.Col($"{u.stress}/{Camp.BreakAt(u.r)} {Loc.T(ss.Item1)}", ss.Item2)) + "\n"
                   + string.Join(" ", u.r.traits.Select(tr => UIK.Col("[" + Loc.T(CampRules.TRAITS[tr].name) + "]", CampRules.TRAITS[tr].rare ? UIK.PSY : UIK.DIM)))
                 : $"<b>{Loc.T(u.name)}</b>  {UIK.Col(Loc.F("hud.sel.controlled", u.controlled), UIK.PSY)}";
             var pslot = (RectTransform)UIK.F(selInfo, "Portrait");
@@ -338,7 +338,7 @@ public class Hud : MonoBehaviour
                 + (u.overwatch ? UIK.Col(" ◉", UIK.RAT) : "") + (u.hunker ? UIK.Col(" ▼", UIK.RAT) : "") + (u.ward > 0 ? UIK.Col(" ⛨", UIK.PSY) : "") + (u.marked ? UIK.Col(" ◎", UIK.GOLD) : "") + (u.suppressedBy != null ? UIK.Col(" 〰", UIK.GOLD) : "");
             var bar = UIK.F(rt, "SBar");
             UIK.Show(bar, u.side == "rat" && u.r != null);
-            if (u.r != null) UIK.Bar(bar, u.stress / 100f, u.stress >= 60 ? UIK.PSY : SkillsData.Hex("#8a77b8"));
+            if (u.r != null) UIK.Bar(bar, u.stress / (float)Camp.BreakAt(u.r), u.stress >= 60 ? UIK.PSY : SkillsData.Hex("#8a77b8"));
             var arrow = UIK.T(rt, "Arrow");
             arrow.enabled = selU;
             if (selU) arrow.rectTransform.anchoredPosition = new Vector2(0, 46 + Mathf.Abs(Mathf.Sin(Time.unscaledTime * 4)) * 8);

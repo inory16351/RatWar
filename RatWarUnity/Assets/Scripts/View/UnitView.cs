@@ -17,6 +17,8 @@ public class UnitView : MonoBehaviour
         public GameObject crouch; public Transform crouchHead; public RigComposite crouchC;
         public GameObject[] throwG; public Transform[] throwHead;
         public float legK = 1;
+        // 옆모습 팔 그림 바꿔 끼우기: 평소(화방 쥐면 화염방사기 팔) · 칼 찌를 때
+        public (Sprite s, Vector4 r) armBase, armKnife;
     }
 
     public Unit u;
@@ -152,6 +154,7 @@ public class UnitView : MonoBehaviour
             return S.joints[n] = j;
         }
         foreach (var n in V.parts.Keys) Make(n);
+        if (vn == "side" && u.r != null && S.joints.TryGetValue("arm", out var arm)) ArmSwap(S, arm);
         // 앞 · 뒤 웅크림: 웅크린 몸 그림 + 목에 머리 파츠 (병종 것 → 없으면 같은 종 기본 리그 것)
         var CB = B.views.TryGetValue(vn, out var bv) && bv.crouch != null ? B : ArtLib.Rig(R.kind)?.views.TryGetValue(vn, out var kv) == true && kv.crouch != null ? ArtLib.Rig(R.kind) : null;
         if (CB != null)
@@ -178,6 +181,42 @@ public class UnitView : MonoBehaviour
         return S;
     }
 
+    // 쥐 옆모습 팔: 화방 쥐는 화염방사기 팔 + 등에 연료 배낭, 칼 찌를 땐 칼 든 팔 (그림 out/fx/arm_flame · arm_knife · tank)
+    //   새 팔 그림은 왼쪽 끝이 어깨 → 원래 팔 상자 왼쪽 위에 맞추고 높이만 소매 굵기에 맞춰 늘임
+    void ArmSwap(ViewSet S, Joint arm)
+    {
+        var p = arm.p;
+        (Sprite, Vector4) Fit(string img, float hk, float dx = -6, float dy = -4)
+        {
+            var s = ArtLib.Sprite("out/fx/" + img + ".png");
+            if (!s) return (null, Vector4.zero);
+            float h = p.h * hk, w = h * s.bounds.size.x / s.bounds.size.y;
+            return (s, new Vector4(p.x - p.pivot.x + dx, p.y - p.pivot.y + dy, w, h));
+        }
+        S.armBase = (arm.sr.sprite, new Vector4(p.x - p.pivot.x, p.y - p.pivot.y, p.w, p.h));
+        if (u.Weapon == "flamer")
+        {
+            var f = Fit("arm_flame", 0.82f, -9, -2); if (f.Item1) S.armBase = f; // 고양이 화방 팔 느낌으로 가슴 앞에 짧게 든 분사관 (art_requests/flame_arm3). 소총 팔처럼 왼쪽 끝 분홍 아래팔을 몸통 소매 끝에 붙임
+            // 연료 배낭: 몸통 등 쪽(왼쪽)에, 몸통 뒤로
+            var tank = ArtLib.Sprite("out/fx/tank.png");
+            if (tank && S.joints.TryGetValue("torso", out var to))
+            {
+                var tp = to.p; float th = tp.h * 0.92f, tw = th * tank.bounds.size.x / tank.bounds.size.y;
+                Img(to.t, tank, tp.x - tp.pivot.x - tw * 0.5f, tp.y - tp.pivot.y - tp.h * 0.06f, tw, th, -1);
+            }
+        }
+        S.armKnife = Fit("arm_knife", 0.95f, -26, -14); // 칼 팔은 소매가 짧아 어깨 쪽으로 당겨 붙임
+        SetArm(arm, S.armBase);
+    }
+    static void SetArm(Joint arm, (Sprite s, Vector4 r) a)
+    {
+        if (!a.s || arm.sr.sprite == a.s) return;
+        arm.sr.sprite = a.s;
+        var sz = a.s.bounds.size;
+        arm.sr.transform.localPosition = new Vector3(a.r.x + a.r.z / 2, a.r.y + a.r.w / 2, 0);
+        arm.sr.transform.localScale = new Vector3(a.r.z / sz.x, -a.r.w / sz.y, 1);
+    }
+
     // 목 자리(neck)에 개체 머리 파츠
     Transform HeadOn(Transform parent, Vector2 neck, string hv, int order)
     {
@@ -194,7 +233,7 @@ public class UnitView : MonoBehaviour
     {
         float dx = u.fdx, dz = u.fdz;
         bool hasThrow = sets.TryGetValue(dz > 0 ? "front" : "back", out var ts) && ts.throwG != null;
-        if (u.forceSide || (u.st.throwK > 0 && !hasThrow) || u.mortarT) return ("side", dx < 0 || (dx == 0 && dz < 0));
+        if (u.forceSide || (u.st.throwK > 0 && !hasThrow) || u.mortarT || u.st.stab > 0 || u.st.flame > 0) return ("side", dx < 0 || (dx == 0 && dz < 0));
         if (Mathf.Abs(dx) >= Mathf.Abs(dz) * 0.75f) return ("side", dx < 0);
         return (dz > 0 ? "front" : "back", false);
     }
@@ -208,6 +247,7 @@ public class UnitView : MonoBehaviour
         // 동작 상태 감쇠 (웹 view.js 루프)
         st.recoil = Mathf.Max(0, st.recoil - dt * 7);
         st.hit = Mathf.Max(0, st.hit - dt * 3.5f);
+        st.stab = Mathf.Max(0, st.stab - dt * 2.2f);
         st.aim = Mathf.Clamp01(st.aim + (aiming ? dt * 6 : -dt * 2.5f));
         if (u.faceT > 0) { u.faceT -= dt; if (u.faceT <= 0 && u.alive) u.face = null; }
         float wantCrouch = (u.alive && u.inCover && st.walk == null && !aiming) || u.mortarT ? 1 : 0;
@@ -225,6 +265,7 @@ public class UnitView : MonoBehaviour
         rig.localScale = new Vector3(flip ? -k : k, -k, 1);
         foreach (var kv in sets) kv.Value.root.SetActive(kv.Key == vn);
         var S = sets[vn];
+        if (S.armBase.s && S.joints.TryGetValue("arm", out var armJ)) SetArm(armJ, st.stab > 0 && S.armKnife.s ? S.armKnife : S.armBase);
 
         // 어느 그림으로: 던지기(앞 · 뒤) → 웅크림(앞 · 뒤) → 리그
         bool throwMode = st.throwK > 0 && vn != "side" && S.throwG != null && st.death == null;
@@ -326,7 +367,8 @@ public class UnitView : MonoBehaviour
         get
         {
             var p = transform.position;
-            if (curView == "side") return p + new Vector3((curFlip ? -1 : 1) * UNIT_H * 0.55f, UNIT_H * 0.55f * BodyK, -0.05f);
+            bool wand = u.r != null && u.Weapon == "flamer"; // 화방 쥐는 분사관 끝 (그림으로 잰 자리, 소총보다 조금 앞 · 위)
+            if (curView == "side") return p + new Vector3((curFlip ? -1 : 1) * UNIT_H * (wand ? 0.6f : 0.55f), UNIT_H * (wand ? 0.67f : 0.55f) * BodyK, -0.05f);
             if (u.st.throwK > 0) return p + new Vector3((curView == "front" ? -1 : 1) * UNIT_H * 0.2f, UNIT_H * 0.95f, -0.05f);
             return p + new Vector3(curView == "front" ? 0.07f : -0.07f, UNIT_H * (curView == "front" ? 0.5f : 0.75f) * BodyK, curView == "front" ? -0.1f : 0.1f);
         }

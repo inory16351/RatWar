@@ -743,7 +743,19 @@ public class BoardView : MonoBehaviour
         Stain(TilePos(x, z), FX("smoke"), 0.9f, new Color(0.12f, 0.09f, 0.06f, 0.95f)); // 땅굴 입구
     }
 
-    public void Slash(Unit a, Unit b) { if (!b.view) return; var s = Spawn(FX("spark"), b.view.Chest, 1.1f, 0.28f, Col("#ffe9b0")); if (s != null) s.size1 = 1.6f; CameraRig.I.Shake(6); }
+    // 칼: 반짝 + 초승달 칼 궤적 (찌르는 쪽으로 뒤집음)
+    public void Slash(Unit a, Unit b)
+    {
+        if (!b.view) return;
+        var s = Spawn(FX("spark"), b.view.Chest, 1.1f, 0.28f, Col("#ffe9b0")); if (s != null) s.size1 = 1.6f;
+        var arc = Spawn(new[] { ArtLib.Sprite("out/fx/slash.png") }, b.view.Chest + Vector3.back * 0.05f, 0.7f, 0.3f, Color.white);
+        if (arc != null)
+        {
+            arc.size1 = 0.95f;
+            arc.sr.flipX = a.view && b.view.transform.position.x < a.view.transform.position.x;
+        }
+        CameraRig.I.Shake(6);
+    }
     public void Ring(Unit u, Color c, float size)
     {
         if (!u.view) return;
@@ -843,8 +855,32 @@ public class BoardView : MonoBehaviour
     {
         var m = a.view ? a.view.Muzzle : Foot(a.px, a.pz); var e = TilePos(tx, tz) + Vector3.up * 0.3f;
         var fire = FX("fire");
+        a.st.flame = 1;
+        // 불줄기 한 장: 총구 → 표적 사이에 화면 방향대로 눕혀 늘이고 깜빡임 (그림은 왼쪽 = 총구, 오른쪽 = 끝)
+        var jetS = ArtLib.Sprite("out/fx/jet.png");
+        SpriteRenderer jet = null; float sx = 0, sy = 0, jx = 0;
+        if (jetS && Camera.main)
+        {
+            var cam = Camera.main;
+            var m0 = m; m = m - (e - m) * 0.18f; // 불줄기 그림 왼쪽 끝은 가늘고 흐려 안 보임 → 그만큼 뒤로 물려 보이는 시작이 총구에 오게
+            var mid = (m + e) / 2;
+            Vector2 d = cam.WorldToScreenPoint(e) - cam.WorldToScreenPoint(m);
+            float ppu = ((Vector2)(cam.WorldToScreenPoint(mid + Vector3.right) - cam.WorldToScreenPoint(mid))).magnitude;
+            float len = d.magnitude / Mathf.Max(1, ppu), ang = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
+            jet = Tpl.Spawn<SpriteRenderer>("SpriteTpl", fxRoot);
+            jet.sprite = jetS; jet.sortingOrder = DepthOrder(Mathf.Min(m.z, e.z)) + 6;
+            jet.transform.position = mid; jet.transform.rotation = Quaternion.Euler(0, 0, ang);
+            bool left = Mathf.Abs(ang) > 90; // 왼쪽으로 뿜으면 위아래가 뒤집히지 않게
+            sx = len * 1.08f / jetS.bounds.size.x;
+            jet.flipY = left;
+            sy = sx * 0.55f; jx = sx;
+            var jm = m;
+            await View.Tween(160, k => { if (jet) { jet.transform.localScale = new Vector3(sx * k, sy * (0.6f + 0.4f * k), 1); jet.transform.position = Vector3.Lerp(jm, mid, k); } });
+            m = m0; // 불똥 입자는 진짜 총구부터
+        }
         await View.Tween(650, k =>
         {
+            if (jet) { float f = 1 + Mathf.Sin(Time.time * 53) * 0.06f; jet.transform.localScale = new Vector3(jx, sy * f, 1); jet.color = new Color(1, 1, 1, k > 0.8f ? (1 - k) / 0.2f : 1); }
             for (int i = 0; i < 2; i++)
             {
                 float q = Random.value;
@@ -853,6 +889,8 @@ public class BoardView : MonoBehaviour
             }
             CameraRig.I.Shake(3);
         });
+        if (jet) Destroy(jet.gameObject);
+        a.st.flame = 0;
     }
 
     public async Awaitable Psi(Unit a, Unit b, Color col)
@@ -918,7 +956,7 @@ public class BoardView : MonoBehaviour
             var ring = FX("shield");
             if (ring.Length > 0) { var r = Mark(ring[0], TilePos(f.x, f.z) + Vector3.up * 0.04f, GameData.ABILITIES["flare"].radius * 2, new Color(1f, 0.8f, 0.4f, 0.25f), 1); r.transform.rotation = Quaternion.Euler(90, 0, 0); }
         }
-        foreach (var t in Battle.traps) Mark(ArtLib.Icon("trap"), TilePos(t.x, t.z) + new Vector3(0, 0.2f, 0), 0.4f, new Color(1, 1, 1, 0.85f), 2);
+        foreach (var t in Battle.traps) Mark(ArtLib.Sprite("out/fx/trap.png") ?? ArtLib.Icon("trap"), TilePos(t.x, t.z) + new Vector3(0, 0.12f, 0), 0.75f, new Color(1, 1, 1, 0.92f), 2);
         foreach (var t in Battle.strikes)
         {
             var ring = FX("shield");

@@ -29,6 +29,7 @@
   "ui.diff.battle": "Combate",
   "ui.diff.war": "Guerra",
   "ui.diff.threat": "Nivel de amenaza: cada {0:0.#} turnos",
+  "ui.diff.land": "Territorio inicial: {0} regiones",
   "ui.diff.supplies": "Suministros iniciales: {0}",
   "ui.diff.income": "Ingresos por turno ×{0:0.##}",
   "ui.diff.invade.less": "Invasiones por turno −1",
@@ -97,6 +98,7 @@
   "ui.hex.fort": "▣ Fortificada: defensa automática +{0}%",
   "ui.hex.threat": "¡Invasión felina! Si no la detienes tú, la guarnición lo intentará según su probabilidad",
   "ui.hex.attackable": "Contigua a nuestro territorio: se puede atacar",
+  "ui.hex.siege": "La capital solo puede atacarse cuando esté totalmente rodeada ({0}/{1} territorios adyacentes)",
   "ui.info.rat": "República: {0} casillas",
   "ui.info.cat": "Imperio: {0} casillas",
   "ui.info.income": "Ingresos +{0}/turno",
@@ -153,7 +155,10 @@
   "ui.recruit.refresh": "Otros voluntarios ({0} suministros)",
   "ui.recruit.btn": "Reclutar ({0} suministros)",
   "ui.recruit.joined": "{0} se alista",
+  "ui.recruit.locked": "Ya aceptaste a este voluntario este turno.\nLlegará uno nuevo el próximo turno o con «Otros voluntarios».",
+  "ui.recruit.locked_btn": "Próximo turno",
   "ui.memorial.empty": "Todavía no hay ningún nombre grabado.",
   "ui.memorial.head": "Memorial",
-  "ui.memorial.line": "{0}, {1} · Misiones {2} · Bajas {3}"
+  "ui.memorial.line": "{0}, {1} · Misiones {2} · Bajas {3}",
+  "ui.diff.locked": "Bloqueado\n\nGana una guerra en dificultad {0} o superior para desbloquear."
 }

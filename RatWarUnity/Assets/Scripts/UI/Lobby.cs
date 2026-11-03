@@ -100,7 +100,7 @@ public class Lobby : MonoBehaviour
     static string StressLine(RatRecord r)
     {
         var ss = StressState(r.stress, Camp.BreakAt(r));
-        return Loc.F("ui.lobby.stress", UIK.Col($"{r.stress} · {Loc.T(ss.t)}", ss.c));
+        return Loc.F("ui.lobby.stress", UIK.Col($"{r.stress}/{Camp.BreakAt(r)} · {Loc.T(ss.t)}", ss.c)); // 무너지는 기준(특성마다 다름)도 같이
     }
     static string TraitText(RatRecord r) => string.Join(" ", r.traits.Select(t => UIK.Col("[" + Loc.T(TRAITS[t].name) + "]", TRAITS[t].rare ? UIK.PSY : UIK.GOLD)));
     // 관계 특성은 상대 이름도 (전우 · 멘토 · 제자 · 앙숙)
@@ -271,6 +271,7 @@ public class Lobby : MonoBehaviour
         if (C.war.forts.Contains(i)) lines.Add(UIK.Col(Loc.F("ui.hex.fort", Mathf.RoundToInt(War.FORT_BONUS * 100)), UIK.RAT));
         if (C.war.threats.Contains(i)) lines.Add(UIK.Col(Loc.T("ui.hex.threat"), UIK.CAT) + "\n" + HoldLine(i));
         else if (War.CanAttack(C, i)) lines.Add(UIK.Dim(Loc.T("ui.hex.attackable")));
+        else if (h.fx == "capital" && !rat) lines.Add(UIK.Col(Loc.F("ui.hex.siege", War.Neighbors(i).Count(n => War.Rat(C, n)), War.Neighbors(i).Count()), UIK.CAT)); // 수도: 포위해야 공격
         return string.Join("\n", lines);
     }
 
@@ -433,8 +434,9 @@ public class Lobby : MonoBehaviour
             + UIK.Dim(Loc.F("ui.recruit.cost", RECRUIT_COST, tier, (tier - 1) * RECRUIT_PER_TIER, C.recruited, C.recruited * RECRUIT_PER_HIRE, RECRUIT_PER_RANK))
             + (tier > 1 ? "\n" + UIK.Col(Loc.F("ui.recruit.vet", Mathf.RoundToInt((tier - 1) * VET_PER_TIER * 100)), UIK.GOLD) : "");
         var refresh = UIK.B(recruit, "Refresh");
-        refresh.interactable = C.supplies >= REFRESH_COST;
-        UIK.T(refresh.transform, "Text").text = Loc.F("ui.recruit.refresh", REFRESH_COST);
+        int rc = Camp.RefreshCost(C);
+        refresh.interactable = C.supplies >= rc;
+        UIK.T(refresh.transform, "Text").text = Loc.F("ui.recruit.refresh", rc);
         UIK.OnClick(refresh, () => { if (Camp.Refresh(C)) Render(); });
         var box = UIK.F(recruit, "Cands");
         Tpl.Clear(box);
@@ -442,6 +444,15 @@ public class Lobby : MonoBehaviour
         {
             var r = C.recruits[i]; int idx = i;
             var c = Tpl.Spawn("CandCard", box).transform;
+            // 이번 턴에 뽑은 칸: 다음 턴까지 잠김
+            if (Camp.Locked(C, i))
+            {
+                UIK.F(c, "Portrait").gameObject.SetActive(false);
+                UIK.T(c, "Text").text = UIK.Dim(Loc.T("ui.recruit.locked"));
+                var lb = UIK.B(c, "Btn"); lb.interactable = false;
+                UIK.T(lb.transform, "Text").text = Loc.T("ui.recruit.locked_btn");
+                continue;
+            }
             UIK.Portrait((RectTransform)UIK.F(c, "Portrait"), r, full: true);
             int rk = Camp.RankIdx(r), cost = Camp.RecruitCost(C, r);
             UIK.T(c, "Text").text = $"<size=28><b>{(rk > 0 ? UIK.Col(Loc.T(RANKS[rk].name) + " ", UIK.GOLD) : "")}{r.Name}</b></size>\n{UIK.Dim(Loc.F("ui.common.from", r.Home))}{(rk > 0 ? UIK.Col(" · " + Loc.F("ui.recruit.vet_tag", Camp.Points(r)), UIK.GOLD) : "")}\n<i>“{r.Story}”</i>\n{TraitText(r)}\n{UIK.Dim(string.Join(" / ", r.traits.Select(t => Loc.T(TRAITS[t].desc))))}";
