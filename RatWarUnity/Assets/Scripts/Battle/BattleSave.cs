@@ -29,7 +29,7 @@ public static class BattleSave
     public static void Delete() { try { if (Exists) File.Delete(PathOf); } catch { /* 무시 */ } }
 
     // 지금 저장할 수 있나 (아군 차례 · 동작 없음 · 끝나지 않음)
-    public static bool CanSave => Battle.world != null && Battle.over == null && Battle.turn == "rat" && Battle.mode != "busy";
+    public static bool CanSave => Battle.world != null && !Tutorial.On &&Battle.over == null && Battle.turn == "rat" && Battle.mode != "busy";
 
     public static bool Save()
     {

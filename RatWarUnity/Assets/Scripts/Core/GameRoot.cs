@@ -15,7 +15,7 @@ public class GameRoot : MonoBehaviour
 
     public static bool TypingBlocked => false;
     // 마우스가 전장 위 (UI 위가 아님, 전투 중)
-    public static bool PointerOnBoard => I && I.mode == "battle" && Battle.over == null && !Menus.Blocking && !(EventSystem.current && EventSystem.current.IsPointerOverGameObject());
+    public static bool PointerOnBoard => I && I.mode == "battle" && Battle.over == null && !Menus.Blocking && !Tutorial.Blocking &&!(EventSystem.current && EventSystem.current.IsPointerOverGameObject());
 
     void Awake()
     {

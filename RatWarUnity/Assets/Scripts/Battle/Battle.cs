@@ -537,6 +537,8 @@ public static class Battle
         BattleSave.Delete(); // 끝난 전투는 이어할 것 없음
         // 지배당한 고양이는 원래대로
         foreach (var u in units) if (u.controlled > 0) { u.side = "cat"; u.controlled = 0; }
+        // 훈련: 사령부 기록(보상 · 경험치 · 부상 · 전사)에 안 남김
+        if (mission.id == Tutorial.ID) { version++; Tutorial.Finished(result); return; }
         var res = units.Where(u => u.side == "rat" && u.r != null).Select(u => new Camp.BattleResult
         {
             id = u.rosterId, alive = u.alive, downed = u.downed, kills = u.kills, stress = u.stress, broke = u.brokeName,
@@ -754,6 +756,9 @@ public static class Battle
             u.used.Add("lucky"); dmg = Mathf.Max(0, u.hp - 1); part = "torso";
             View.Popup(u, Loc.T("battle.pop.lucky"), "#ffcf4a"); Say(Loc.F("battle.log.lucky", u.name), "good");
         }
+        // 훈련: 쥐는 죽거나 쓰러지지 않음 (체력 1 · 머리 대신 몸통)
+        bool spared = u.side == "rat" && mission?.id == Tutorial.ID;
+        if (spared && (dmg >= u.hp || part == "head")) { dmg = Mathf.Max(0, Mathf.Min(dmg, u.hp - 1)); part = "torso"; }
         // 전차: 폭발 아닌 피해는 장갑만큼 깎임 (최소 1), 부위 부상 없음
         if (u.def.vehicle)
         {
@@ -777,7 +782,7 @@ public static class Battle
         if (part == "head") { await Kill(u, from, kind, true, crit); return; }
         if (part == "arm" || part == "leg")
         {
-            bool severed = crit && R01 < RULES.severOnCrit;
+            bool severed = crit && !spared && R01 < RULES.severOnCrit;
             u.wounds[part] = Mathf.Max(u.wounds.TryGetValue(part, out var wv) ? wv : 0, severed ? 2 : 1);
             if (part == "leg" && !u.painkiller) u.mob = Mathf.Max(2, Mathf.FloorToInt(u.baseMob * RULES.legWoundMob));
             if (severed || u.hp <= 0) { await DownUnit(u, from, part, severed); return; }

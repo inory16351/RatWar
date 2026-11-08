@@ -131,7 +131,7 @@ public class Lobby : MonoBehaviour
     {
         var w = C.war;
         // 처음 들어오면 프롤로그, 전쟁이 끝났으면 결말
-        if (!w.seen.Contains("prologue")) { w.seen.Add("prologue"); Camp.Save(C); Cutscene.I.Play(Loc.T("ui.lobby.cut.prologue"), War.D.prologue, Render); }
+        if (!w.seen.Contains("prologue")) { w.seen.Add("prologue"); Camp.Save(C); Cutscene.I.Play(Loc.T("ui.lobby.cut.prologue"), War.D.prologue, () => { Render(); Tutorial.Offer(C); }); }
         else if (w.over != "" && !w.seen.Contains("ending")) { w.seen.Add("ending"); Camp.Save(C); Cutscene.I.Play(Loc.T(w.over == "win" ? "ui.common.win" : "ui.common.lose"), w.over == "win" ? War.D.victory : War.D.defeat, () => Cutscene.I.Play(Loc.T("epi.head"), Epilogue.Build(C, w.over == "win"), Render)); }
         // 고른 칸이 없거나 할 일 없는 고양이 땅이면 첫 침공 칸으로 (내 땅은 요새화할 수 있으니 그대로)
         if (selHex < 0 || ActionOf(selHex) == null && !War.Rat(C, selHex)) selHex = w.threats.Count > 0 ? w.threats[0] : selHex;

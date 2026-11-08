@@ -161,7 +161,7 @@ public class Hud : MonoBehaviour
         float dt = Time.unscaledDeltaTime;
         // 입력 (UI 위가 아닐 때만 전장 클릭)
         var ms = Mouse.current;
-        if (ms != null && Battle.over == null && !Menus.Blocking)
+        if (ms != null && Battle.over == null && !Menus.Blocking && !Tutorial.Blocking)
         {
             var mp = ms.position.ReadValue();
             BoardView.I.hoverTile = GameRoot.PointerOnBoard ? BoardView.I.PickTile(mp) : null;

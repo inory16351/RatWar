@@ -425,6 +425,8 @@ public class BoardView : MonoBehaviour
         hiUsed = 0;
         var w = W; var u = Battle.sel;
         if (w.goal != null) foreach (var t in w.tiles) if (World.Dist(t.x, t.z, w.goal.x, w.goal.z) <= w.goal.r) Hi(TilePos(t.x, t.z), C_GOAL);
+        // 튜토리얼이 가리키는 칸: 금색 깜빡임
+        if (Battle.turn == "rat") foreach (var p in Tutorial.Marks) Hi(TilePos(p.x, p.z), new Color(1f, 0.81f, 0.29f, 0.35f + 0.3f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 3))), 0.9f);
         bool myTurn = Battle.turn == "rat" && Battle.over == null && u != null;
         List<Pt> path = null; bool noGoHover = false;
         if (myTurn && Battle.mode == "move" && u.ap > 0)

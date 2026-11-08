@@ -72,6 +72,13 @@
 - 스트레스는 '지금/무너지는 기준'으로 보임 (신경과민 80 · 망가짐 85 · 강철 의지 120, 막대도 기준에서 꽉 참)
 - 승리 에필로그 2컷(무덤 앞) 다시 그림: `art_requests/epilogue_fix/`
 
+## 튜토리얼 (기초 훈련, 2026-11-08)
+- NKK 튜토리얼 방식(단계 = 대사 → 할 일 → 해내면 다음, 하단 대사 상자 + 초상)을 전투에 맞게: `Scripts/UI/Tutorial.cs`, 화면 `Canvas/Hud/Tutorial` (Blocker · Marker · Goal · Box/Portrait · Name · Body · Hint · Skip, MCP 로 만듦), 대사 `Tables/ko/tutorial.json`
+- 그레이 상사(무전)가 지시, 출전한 신병 3마리가 대답. 순서: 카메라 → 이동 · 엄폐 → (안 보이면 정찰) → 사격(자는 고양이 기습) → 깨어남 → 경계 → 차례 끝 → 체력 · 스트레스 → 수류탄 → 재장전 · 측면 · 마무리 → 끝 대사 → 사령부
+- 맵 `drill` 16×20 (`build_maps.js`, 임무는 코드 `Tutorial.MISSION`, MISSIONS 에 안 넣음). 훈련 쥐는 안 죽음(`Battle.Damage` spared) · 정산 안 함(`Battle.Finish`) · 중간 저장 안 됨
+- 새 전쟁 프롤로그 뒤 (전쟁마다 한 번): 이 PC 에서 처음이면 바로 훈련, 본 뒤로는(PlayerPrefs `tutSeen`) "튜토리얼을 진행하시겠습니까?" 예/아니오. 훈련 중 '훈련 건너뛰기' 버튼
+- 다른 언어 번역은 아직 (한국어로 보임) → `tools/loc_pipe.py translate`
+
 ## 에필로그 · 타이틀
 - 전쟁이 끝나면 승리/패배 컷씬 뒤 `Epilogue.Build` → 살아남은 쥐마다 '그 뒤의 이야기' (사연 · 고향 · 잃은 팔다리 · 형제 · 전우 · 앙숙 · 스트레스 · 계급 · 처치 수로 문장을 고름) → 전사자 이름 → 마지막 한마디. 쥐 장면은 검은 바탕 + 왼쪽 초상(`Cutscene/Portrait`)
 - 타이틀: `Resources/Art/out/ui/title_bg.png`(키 아트) + `logo.png`(마젠타 빼서 씀). 요청서 `art_requests/title/`

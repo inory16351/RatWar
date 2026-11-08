@@ -158,6 +158,42 @@ const maps = {};
   maps.trench = m;
 }
 
+// 0 훈련: 하수구 출구 앞 개활지 (16 × 20) — 튜토리얼 (Scripts/UI/Tutorial.cs). 임무는 코드에 있음 (MISSIONS 에 넣지 않음)
+//   쥐 출발 z 18~19 → z 13 모래주머니 · 상자 줄 뒤(z 14)로 이동 → z 7 의 고양이 둘이 처음 보임 (거리 7: 시야 8 안 · 깨는 거리 6 밖)
+//   고양이 앞 z 8 모래주머니 3칸 = 수류탄 연습 (둘이 한 칸 띄워 붙어 있음). 오른쪽 벽(12~13, 10)은 측면 돌기 길
+{
+  const m = new Map('drill', 16, 20);
+  m.paste([
+    '..HHHH......T...',
+    '..H..H..........',
+    '......C....T....',
+    '..T.............',
+    '.........,......',
+    '....C.......C...',
+    '................',
+    '................',
+    '.......SSS......',
+    '..,.............',
+    '...WW.......WW..',
+    '.............T..',
+    '....o...........',
+    '....SS..C..SS...',
+    '................',
+    '...,......,.....',
+    '................',
+    '................',
+    '................',
+    '................',
+  ], 0, 0);
+  m.spawn = [[6, 18], [8, 18], [10, 18], [7, 19], [9, 19], [5, 19]];
+  maps.drill = m;
+}
+// 훈련 임무 검사용 (저장 안 함, Tutorial.cs 의 MISSION 과 같게)
+const extraMissions = [
+  { id: 'tut', map: 'drill', cats: [C0('trooper', 'tuxedo', 7, 7, 'A'), C0('trooper', 'chonk', 9, 7, 'A')] },
+];
+function C0(cls, head, x, z, pod) { return { cls, head, x, z, pod }; }
+
 // ── 임무 ──
 const C = (cls, head, x, z, pod, target) => ({ cls, head, x, z, pod, ...(target ? { target: true } : {}) });
 const missions = [
@@ -261,7 +297,7 @@ for (const m of Object.values(maps)) {
   if (cover < 3) err(`출발점 근처 엄폐 ${cover}개 (3개 이상 권장)`);
   else console.log(`  출발점 6칸 안 엄폐 ${cover}`);
 }
-for (const mi of missions) {
+for (const mi of [...missions, ...extraMissions]) {
   const m = maps[mi.map];
   const W = m.W, fx = (x) => (mi.mirror ? W - 1 - x : x);
   const rows = mi.mirror ? mirrorRows(m.rows()) : m.rows();
